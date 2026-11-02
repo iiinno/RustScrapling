@@ -6,6 +6,7 @@ license = "BSD-3-Clause"
 
 [dependencies]
 getrandom = "0.3"
+rusqlite = { workspace = true }
 rustscrapling-fetch = { path = "../rustscrapling-fetch", optional = true }
 rustscrapling-http = { path = "../rustscrapling-http", optional = true }
 serde = { workspace = true }

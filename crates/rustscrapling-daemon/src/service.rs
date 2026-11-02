@@ -1,3 +1,6 @@
+use crate::persistence::{
+    safe_request, safe_response, Persistence, Restored, MAX_CACHE_BODY, MAX_CACHE_ENTRIES,
+};
 use crate::protocol::{
     DaemonError, DaemonRequest, DaemonResponse, FetchRequest, FetchResult, FetchTier, Status,
 };
@@ -17,8 +20,6 @@ use tokio::time::{sleep_until, timeout, Instant};
 use url::Url;
 
 const MAX_FRAME: usize = 16 * 1024 * 1024;
-const MAX_CACHE_BODY: usize = 1024 * 1024;
-const MAX_CACHE_ENTRIES: usize = 32;
 
 pub type FetchFuture<'a> =
     Pin<Box<dyn Future<Output = Result<FetchResult, DaemonError>> + Send + 'a>>;
@@ -78,6 +79,7 @@ type Inflight = OnceCell<Result<FetchResult, DaemonError>>;
 struct Shared {
     backend: Arc<dyn FetchBackend>,
     config: DaemonConfig,
+    persistence: Persistence,
     inflight: Mutex<HashMap<String, Arc<Inflight>>>,
     hosts: Mutex<HashMap<String, Arc<Mutex<Instant>>>>,
     cache: Mutex<HashMap<String, Cached>>,
@@ -88,14 +90,39 @@ struct Shared {
 }
 
 impl Shared {
-    fn new(backend: Arc<dyn FetchBackend>, config: DaemonConfig) -> Self {
+    fn new(
+        backend: Arc<dyn FetchBackend>,
+        config: DaemonConfig,
+        persistence: Persistence,
+        restored: Restored,
+    ) -> Self {
+        let now = Instant::now();
         Self {
             backend,
             config,
+            persistence,
             inflight: Mutex::new(HashMap::new()),
             hosts: Mutex::new(HashMap::new()),
-            cache: Mutex::new(HashMap::new()),
-            learning: Mutex::new(HashMap::new()),
+            cache: Mutex::new(
+                restored
+                    .cache
+                    .into_iter()
+                    .filter_map(|(key, response, age)| {
+                        now.checked_sub(age)
+                            .map(|created| (key, Cached { response, created }))
+                    })
+                    .collect(),
+            ),
+            learning: Mutex::new(
+                restored
+                    .learning
+                    .into_iter()
+                    .filter_map(|(host, tier, remaining)| {
+                        now.checked_add(remaining)
+                            .map(|expires| (host, Learned { tier, expires }))
+                    })
+                    .collect(),
+            ),
             requests: AtomicU64::new(0),
             upstream: AtomicU64::new(0),
             coalesced: AtomicU64::new(0),
@@ -159,6 +186,7 @@ impl Shared {
         key: &str,
         url: &Url,
     ) -> Result<FetchResult, DaemonError> {
+        let persistable = safe_request(&request);
         let host = url
             .host_str()
             .expect("validated in fetch")
@@ -252,7 +280,11 @@ impl Shared {
                         restored.headers.push((name, value));
                     }
                 }
-                self.store_cache(key, restored.clone()).await;
+                if cacheable(&restored) {
+                    self.store_cache(key, restored.clone(), persistable).await;
+                } else {
+                    self.evict_cache(key).await;
+                }
                 return Ok(restored);
             }
             // 304 without matching cached body cannot be represented as 200.
@@ -263,27 +295,27 @@ impl Shared {
         }
         if (200..300).contains(&result.status) && !challenge(&result.body) {
             self.learning.lock().await.insert(
-                host,
+                host.clone(),
                 Learned {
                     tier: result.tier,
                     expires: Instant::now() + self.config.learning_ttl,
                 },
             );
-            if request.method == "GET"
-                && (header(&result.headers, "etag").is_some()
-                    || header(&result.headers, "last-modified").is_some())
-                && !header(&result.headers, "cache-control")
-                    .is_some_and(|v| v.to_ascii_lowercase().contains("no-store"))
-                && header(&result.headers, "vary") != Some("*")
-            {
-                self.store_cache(key, result.clone()).await;
+            self.persistence
+                .save_learning(host, result.tier, self.config.learning_ttl)
+                .await;
+            if request.method == "GET" && cacheable(&result) {
+                self.store_cache(key, result.clone(), persistable).await;
+            } else if request.method == "GET" {
+                self.evict_cache(key).await;
             }
         }
         Ok(result)
     }
 
-    async fn store_cache(&self, key: &str, response: FetchResult) {
+    async fn store_cache(&self, key: &str, response: FetchResult, persistable: bool) {
         if response.body.len() > MAX_CACHE_BODY {
+            self.evict_cache(key).await;
             return;
         }
         let mut cache = self.cache.lock().await;
@@ -299,10 +331,25 @@ impl Shared {
         cache.insert(
             key.into(),
             Cached {
-                response,
+                response: response.clone(),
                 created: Instant::now(),
             },
         );
+        drop(cache);
+        if persistable {
+            if safe_response(&response) {
+                self.persistence
+                    .save_cache(key.to_owned(), response, self.config.learning_ttl)
+                    .await;
+            } else {
+                self.persistence.evict_cache(key.to_owned()).await;
+            }
+        }
+    }
+
+    async fn evict_cache(&self, key: &str) {
+        self.cache.lock().await.remove(key);
+        self.persistence.evict_cache(key.to_owned()).await;
     }
 
     async fn status(&self, address: &str) -> Status {
@@ -329,6 +376,21 @@ fn header<'a>(headers: &'a [(String, String)], name: &str) -> Option<&'a str> {
         .iter()
         .find(|(key, _)| key.eq_ignore_ascii_case(name))
         .map(|(_, value)| value.as_str())
+}
+
+fn cacheable(result: &FetchResult) -> bool {
+    (200..300).contains(&result.status)
+        && (header(&result.headers, "etag").is_some()
+            || header(&result.headers, "last-modified").is_some())
+        && !header(&result.headers, "cache-control").is_some_and(|value| {
+            let lower = value.to_ascii_lowercase();
+            lower.contains("no-store") || lower.contains("private")
+        })
+        && header(&result.headers, "set-cookie").is_none()
+        && !result
+            .headers
+            .iter()
+            .any(|(name, value)| name.eq_ignore_ascii_case("vary") && value.trim() == "*")
 }
 
 fn challenge(body: &[u8]) -> bool {
@@ -373,7 +435,15 @@ impl DaemonServer {
         write_state(&config.state_file, &state)?;
         let (stop, stop_rx) = watch::channel(false);
         let path = config.state_file.clone();
-        let shared = Arc::new(Shared::new(backend, config));
+        let (persistence, restored) =
+            match Persistence::open(&config.state_file, config.learning_ttl) {
+                Ok(value) => value,
+                Err(error) => {
+                    let _ = std::fs::remove_file(&config.state_file);
+                    return Err(error);
+                }
+            };
+        let shared = Arc::new(Shared::new(backend, config, persistence, restored));
         let task = tokio::spawn(serve(
             listener,
             state,

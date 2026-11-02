@@ -41,6 +41,32 @@ impl FetchBackend for FixtureBackend {
     }
 }
 
+struct Private304Backend;
+
+impl FetchBackend for Private304Backend {
+    fn fetch<'a>(&'a self, request: FetchRequest) -> FetchFuture<'a> {
+        Box::pin(async move {
+            let revalidated = request.headers.contains_key("If-None-Match");
+            let mut headers = vec![("ETag".into(), "\"v1\"".into())];
+            if revalidated {
+                headers.push(("Cache-Control".into(), "private, no-store".into()));
+            }
+            Ok(FetchResult {
+                status: if revalidated { 304 } else { 200 },
+                final_url: request.url,
+                headers,
+                body: if revalidated {
+                    Vec::new()
+                } else {
+                    b"initial".to_vec()
+                },
+                tier: FetchTier::Http,
+                protocol: Some("HTTP/1.1".into()),
+            })
+        })
+    }
+}
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn localhost_authenticated_ipc_singleflight_revalidation_rate_and_shutdown() {
     let stamp = SystemTime::now()
@@ -196,6 +222,208 @@ async fn discover_returns_none_without_state_file() {
         std::process::id()
     ));
     assert!(DaemonClient::discover(&path).await.unwrap().is_none());
+}
+
+#[tokio::test]
+async fn cache_and_learning_survive_restart_but_credentials_do_not() {
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let dir = std::env::temp_dir().join(format!(
+        "rustscrapling-persistent-{}-{stamp}",
+        std::process::id()
+    ));
+    let config = DaemonConfig {
+        state_file: dir.join("state.json"),
+        site_interval: Duration::ZERO,
+        learning_ttl: Duration::from_secs(5),
+        request_timeout: Duration::from_secs(5),
+    };
+    let url = "http://example.test/article";
+    let first_backend = Arc::new(FixtureBackend::default());
+    let first = DaemonServer::start(config.clone(), first_backend)
+        .await
+        .unwrap();
+    let client = DaemonClient::from_state_file(&config.state_file).unwrap();
+    assert_eq!(
+        client.fetch(FetchRequest::get(url)).await.unwrap().status,
+        200
+    );
+    let mut private = FetchRequest::get("http://example.test/private");
+    private.headers.insert(
+        "Authorization".into(),
+        "Bearer private-test-token-123".into(),
+    );
+    assert_eq!(client.fetch(private).await.unwrap().status, 200);
+    assert_eq!(
+        client
+            .fetch(FetchRequest::get(
+                "http://example.test/query?token=secret-456"
+            ))
+            .await
+            .unwrap()
+            .status,
+        200
+    );
+    client.stop().await.unwrap();
+    first.wait().await.unwrap();
+
+    let database_path = dir.join("state.json.sqlite3");
+    assert!(database_path.exists());
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        assert_eq!(
+            std::fs::metadata(&database_path)
+                .unwrap()
+                .permissions()
+                .mode()
+                & 0o777,
+            0o600
+        );
+    }
+    let db_bytes = std::fs::read(&database_path).unwrap();
+    assert!(!db_bytes
+        .windows(22)
+        .any(|bytes| bytes == b"private-test-token-123"));
+    assert!(!db_bytes.windows(10).any(|bytes| bytes == b"secret-456"));
+
+    let second_backend = Arc::new(FixtureBackend::default());
+    let second = DaemonServer::start(config.clone(), second_backend.clone())
+        .await
+        .unwrap();
+    let client = DaemonClient::from_state_file(&config.state_file).unwrap();
+    let status = client.status().await.unwrap();
+    assert_eq!(status.cache_entries, 1);
+    assert_eq!(status.learned_sites, 1);
+    let restored = client.fetch(FetchRequest::get(url)).await.unwrap();
+    assert_eq!(restored.status, 200);
+    assert_eq!(restored.body, b"<main>fixture content</main>");
+    let request = second_backend.seen.lock().unwrap()[0].clone();
+    assert_eq!(request.tier, FetchTier::Http);
+    assert_eq!(
+        request.headers.get("If-None-Match").map(String::as_str),
+        Some("\"v1\"")
+    );
+    assert!(request.headers.contains_key("If-Modified-Since"));
+    client.stop().await.unwrap();
+    second.wait().await.unwrap();
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[tokio::test]
+async fn expired_and_corrupted_persistent_rows_are_not_restored() {
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let dir = std::env::temp_dir().join(format!(
+        "rustscrapling-expired-{}-{stamp}",
+        std::process::id()
+    ));
+    let config = DaemonConfig {
+        state_file: dir.join("state.json"),
+        site_interval: Duration::ZERO,
+        learning_ttl: Duration::from_millis(150),
+        request_timeout: Duration::from_secs(5),
+    };
+    let first = DaemonServer::start(config.clone(), Arc::new(FixtureBackend::default()))
+        .await
+        .unwrap();
+    let client = DaemonClient::from_state_file(&config.state_file).unwrap();
+    client
+        .fetch(FetchRequest::get("http://example.test/expire"))
+        .await
+        .unwrap();
+    client.stop().await.unwrap();
+    first.wait().await.unwrap();
+    let db_path = dir.join("state.json.sqlite3");
+    let conn = rusqlite::Connection::open(&db_path).unwrap();
+    conn.execute(
+        "INSERT INTO daemon_cache(request_key,response,created_ms) VALUES (?1,?2,?3)",
+        rusqlite::params!["{}", b"not json", i64::MAX],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO daemon_learning(host,tier,expires_ms) VALUES (?1,?2,?3)",
+        rusqlite::params!["example.invalid", "bogus", i64::MAX],
+    )
+    .unwrap();
+    drop(conn);
+    tokio::time::sleep(Duration::from_millis(180)).await;
+
+    let backend = Arc::new(FixtureBackend::default());
+    let second = DaemonServer::start(config.clone(), backend.clone())
+        .await
+        .unwrap();
+    let client = DaemonClient::from_state_file(&config.state_file).unwrap();
+    let status = client.status().await.unwrap();
+    assert_eq!(status.cache_entries, 0);
+    assert_eq!(status.learned_sites, 0);
+    client
+        .fetch(FetchRequest::get("http://example.test/expire"))
+        .await
+        .unwrap();
+    assert_eq!(backend.seen.lock().unwrap()[0].tier, FetchTier::Auto);
+    assert!(!backend.seen.lock().unwrap()[0]
+        .headers
+        .contains_key("If-None-Match"));
+    client.stop().await.unwrap();
+    second.wait().await.unwrap();
+
+    // A damaged SQLite file reports a typed startup error, releases the token
+    // state file and never converts arbitrary bytes into a cached response.
+    std::fs::write(&db_path, b"not a SQLite database").unwrap();
+    let error = DaemonServer::start(config.clone(), Arc::new(FixtureBackend::default()))
+        .await
+        .err()
+        .expect("corrupt DB must fail safely");
+    assert_eq!(error.kind, "storage");
+    assert!(!config.state_file.exists());
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[tokio::test]
+async fn revalidation_with_no_store_removes_old_disk_entry() {
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let dir = std::env::temp_dir().join(format!(
+        "rustscrapling-no-store-{}-{stamp}",
+        std::process::id()
+    ));
+    let config = DaemonConfig {
+        state_file: dir.join("state.json"),
+        site_interval: Duration::ZERO,
+        learning_ttl: Duration::from_secs(5),
+        request_timeout: Duration::from_secs(5),
+    };
+    let server = DaemonServer::start(config.clone(), Arc::new(Private304Backend))
+        .await
+        .unwrap();
+    let client = DaemonClient::from_state_file(&config.state_file).unwrap();
+    let url = "http://example.test/change";
+    assert_eq!(
+        client.fetch(FetchRequest::get(url)).await.unwrap().body,
+        b"initial"
+    );
+    assert_eq!(
+        client.fetch(FetchRequest::get(url)).await.unwrap().body,
+        b"initial"
+    );
+    assert_eq!(client.status().await.unwrap().cache_entries, 0);
+    client.stop().await.unwrap();
+    server.wait().await.unwrap();
+    let restarted = DaemonServer::start(config.clone(), Arc::new(FixtureBackend::default()))
+        .await
+        .unwrap();
+    let client = DaemonClient::from_state_file(&config.state_file).unwrap();
+    assert_eq!(client.status().await.unwrap().cache_entries, 0);
+    client.stop().await.unwrap();
+    restarted.wait().await.unwrap();
+    std::fs::remove_dir_all(dir).unwrap();
 }
 
 #[cfg(unix)]

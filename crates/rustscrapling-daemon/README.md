@@ -80,10 +80,18 @@ authenticated and removes the state file when the loop exits.
   learned tier is tried first. An error from that tier triggers an auto-policy
   retry. The shared Fetcher also retains its own learning policy.
 
-The cache, per-site schedule and tier learning are **in-memory only** in this
-version. The plan's persistent SQLite knowledge database, cross-restart
-learning, network-level authenticated proxies, large-body disk spill, and
-throughput comparison against Scrapling's fixed oracle remain unimplemented.
+* **Restart persistence**: learned tiers and eligible GET responses survive
+  daemon shutdown in `<state-file>.sqlite3`. Entries retain their original
+  expiry and the same 32-entry/1 MiB body cap applies. Sensitive GETs with
+  credentials, query strings or unrecognized headers are kept in memory only;
+  responses with `Set-Cookie`, `Cache-Control: private/no-store`, or `Vary`
+  are excluded from disk. The database lives in the private state directory,
+  uses file mode `0600` on Unix, and rejects symlinks. A damaged database
+  returns a typed `storage` startup error and does not overwrite it.
+
+Per-site rate-limit schedules are still in memory. Network-level authenticated
+proxies, large-body disk spill, and throughput comparison against Scrapling's
+fixed oracle remain unimplemented.
 This crate does not claim parity with the original benchmark. The IPC
 protocol is local and intentionally simple; further schema versioning and
 cross-process session persistence require additional work.
@@ -93,7 +101,9 @@ cross-process session persistence require additional work.
 `cargo test -p rustscrapling-daemon` uses a local TCP E2E fixture backend.
 It verifies multi-client request coalescing, 304 restoration, per-host rate
 limiting, TTL expiry, 256-bit authentication, typed status/stop and state-file
-cleanup. It needs no external network. `cargo test -p rustscrapling-cli
+cleanup. It also verifies restart persistence, sensitive-request exclusion,
+expired/corrupt entries and damaged-database handling. It needs no external
+network. `cargo test -p rustscrapling-cli
 --test daemon_commands` uses the real CLI binary, a private background daemon
 process and local HTTP fixture for conditional GET, `auto`, override handling,
 and fallback after stop. The CLI dependency enables `fetch-integration` on

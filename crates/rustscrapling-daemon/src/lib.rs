@@ -4,6 +4,7 @@
 //! `fetch-integration` to bind the real `rustscrapling_fetch::Fetcher` once
 //! its HTTP dependency is available on the integration branch.
 
+mod persistence;
 mod protocol;
 mod service;
 
