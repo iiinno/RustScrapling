@@ -2133,6 +2133,7 @@ dependencies = [
  "clap",
  "rustscrapling-adaptive",
  "rustscrapling-browser",
+ "rustscrapling-daemon",
  "rustscrapling-dom",
  "rustscrapling-extract",
  "rustscrapling-fetch",
@@ -2146,6 +2147,15 @@ dependencies = [
 [[package]]
 name = "rustscrapling-daemon"
 version = "0.1.0"
+dependencies = [
+ "getrandom 0.3.4",
+ "rustscrapling-fetch",
+ "rustscrapling-http",
+ "serde",
+ "serde_json",
+ "tokio",
+ "url",
+]
 
 [[package]]
 name = "rustscrapling-dom"

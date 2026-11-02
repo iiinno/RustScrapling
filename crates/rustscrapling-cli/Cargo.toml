@@ -17,6 +17,7 @@ rustscrapling-extract = { path = "../rustscrapling-extract" }
 rustscrapling-fetch = { path = "../rustscrapling-fetch" }
 rustscrapling-browser = { path = "../rustscrapling-browser" }
 rustscrapling-spider = { path = "../rustscrapling-spider" }
+rustscrapling-daemon = { path = "../rustscrapling-daemon", features = ["fetch-integration"] }
 clap.workspace = true
 serde_json.workspace = true
 tokio = { version = "1", features = ["rt", "time"] }

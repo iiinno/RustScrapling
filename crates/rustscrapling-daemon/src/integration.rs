@@ -36,8 +36,20 @@ impl FetchBackend for FetcherBackend {
                         FetchErrorKind::Transport => "transport",
                     }
                     .into(),
-                    message: e.message,
-                    hint: e.hint,
+                    // Never relay backend/URL/proxy diagnostic text over IPC:
+                    // it may contain userinfo or proxy credentials.
+                    message: "acquisition backend request failed".into(),
+                    hint: match e.kind {
+                        FetchErrorKind::Timeout => "Increase timeout or retry later",
+                        FetchErrorKind::Tls => "Check CA trust",
+                        FetchErrorKind::Dns => "Check DNS and hostname",
+                        FetchErrorKind::Blocked | FetchErrorKind::BrowserUnavailable => {
+                            "Try a browser tier"
+                        }
+                        FetchErrorKind::Proxy => "Check proxy configuration",
+                        _ => "Inspect request parameters and retry",
+                    }
+                    .into(),
                 })?;
             let tier = match response.tier {
                 PolicyTier::Auto => FetchTier::Auto,

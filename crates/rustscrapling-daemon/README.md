@@ -30,9 +30,19 @@ if let Some(client) = DaemonClient::discover(&config.state_file).await? {
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
-The daemon **does not implement the CLI command parser**; the CLI owner can
-call these library APIs from `daemon start/stop/status`. `discover()` returns
-`None` when no working daemon is present and callers should use direct fetch.
+The CLI now uses these library APIs with `rustscrapling daemon start`,
+`rustscrapling daemon status` and `rustscrapling daemon stop`. `start` launches
+a separate, silent background CLI process and prints a JSON receipt (never
+the token). The optional `--direct` on `daemon start` disables environment
+proxy handling inside the service. Use `--state-file PATH` on the daemon
+subcommand, or set `RUSTSCRAPLING_DAEMON_STATE_FILE` for automatic discovery
+by `get` and `auto`. The CLI checks the daemon's state before normal GET/auto;
+if no service is available, it runs direct fetch. Authentication/state errors
+are reported rather than silently fetching without the daemon. Options not
+supported by daemon IPC (e.g. an explicit proxy/CA/timeout override) select
+the normal direct path instead of being ignored.
+
+`DaemonClient::discover()` returns `None` when no working daemon is present.
 The daemon has no globally fixed port: `DaemonServer::start()` selects a free
 loopback port, writes it to the state file, and generates a fresh 256-bit token.
 
@@ -45,7 +55,10 @@ published or checked into source control. On Unix, new state directories are
 `0700` and state files are `0600`; the daemon refuses an existing directory
 with insecure permissions. On Windows, `icacls` restricts its dedicated state
 directory to the current account before the state file is created; failure
-aborts launch. Existing state files are never overwritten, even when stale.
+aborts launch. Existing custom Windows directories must have been created by
+RustScrapling (a small `.rustscrapling-private` marker is used) so an accidental
+`--state-file` cannot rewrite ACLs on arbitrary shared directories. Existing
+state files are never overwritten, even when stale.
 This avoids accidentally taking control of another daemon. `stop` is
 authenticated and removes the state file when the loop exits.
 
@@ -72,15 +85,17 @@ version. The plan's persistent SQLite knowledge database, cross-restart
 learning, network-level authenticated proxies, large-body disk spill, and
 throughput comparison against Scrapling's fixed oracle remain unimplemented.
 This crate does not claim parity with the original benchmark. The IPC
-protocol is local and intentionally simple; further schema versioning and CLI
-integration belong to their owning workstreams.
+protocol is local and intentionally simple; further schema versioning and
+cross-process session persistence require additional work.
 
 ## Tests
 
 `cargo test -p rustscrapling-daemon` uses a local TCP E2E fixture backend.
 It verifies multi-client request coalescing, 304 restoration, per-host rate
 limiting, TTL expiry, 256-bit authentication, typed status/stop and state-file
-cleanup. It needs no external network. An independent integration check of
-`--features fetch-integration` requires the HTTP crate implementation to be
-merged into the baseline first. The current isolated branch's HTTP crate is
-only a placeholder.
+cleanup. It needs no external network. `cargo test -p rustscrapling-cli
+--test daemon_commands` uses the real CLI binary, a private background daemon
+process and local HTTP fixture for conditional GET, `auto`, override handling,
+and fallback after stop. The CLI dependency enables `fetch-integration` on
+the now-integrated HTTP crate. Authenticated-proxy and production-site
+success-rate tests remain outstanding.
