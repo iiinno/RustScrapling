@@ -2369,6 +2369,7 @@ name = "rustscrapling-mcp"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "futures-util",
  "regex",
  "rmcp",
  "rustscrapling-browser",
@@ -2376,6 +2377,7 @@ dependencies = [
  "rustscrapling-http",
  "serde_json",
  "tokio",
+ "tokio-tungstenite",
  "url",
  "uuid",
 ]
