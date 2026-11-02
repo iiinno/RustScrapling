@@ -427,10 +427,19 @@ fn run() -> Result<(), String> {
         Command::Delete { url, options } => network::run_request("DELETE", &url, &options),
         Command::Md { target, options } => network::run_markdown(&target, &options),
         Command::Crawl(args) => crawler::run(args),
-        Command::SelectorGen { target, css: css_expr, xpath_expr, full, compat, output } => {
+        Command::SelectorGen {
+            target,
+            css: css_expr,
+            xpath_expr,
+            full,
+            compat,
+            output,
+        } => {
             let parser = if compat { "compat" } else { "html5" };
             let dom = load_dom(&target, parser)?;
-            let root = dom.document_element().ok_or("document has no root element")?;
+            let root = dom
+                .document_element()
+                .ok_or("document has no root element")?;
             let matches = if let Some(expr) = css_expr {
                 css(&dom, root, &expr).map_err(|e| e.to_string())?
             } else if let Some(expr) = xpath_expr {
@@ -438,27 +447,52 @@ fn run() -> Result<(), String> {
             } else {
                 return Err("selector-gen requires --css or --xpath".into());
             };
-            let selected = element_ids(matches).into_iter().next()
+            let selected = element_ids(matches)
+                .into_iter()
+                .next()
                 .ok_or("reference element not found")?;
-            let css = if full { generate_full_css_selector(&dom, selected) }
-                else { generate_css_selector(&dom, selected) }.map_err(|e| e.to_string())?;
-            let xpath = if full { generate_full_xpath_selector(&dom, selected) }
-                else { generate_xpath_selector(&dom, selected) }.map_err(|e| e.to_string())?;
+            let css = if full {
+                generate_full_css_selector(&dom, selected)
+            } else {
+                generate_css_selector(&dom, selected)
+            }
+            .map_err(|e| e.to_string())?;
+            let xpath = if full {
+                generate_full_xpath_selector(&dom, selected)
+            } else {
+                generate_xpath_selector(&dom, selected)
+            }
+            .map_err(|e| e.to_string())?;
             let value = json!({"schema_version":1,"command":"selector-gen", "parser":parser,
                 "path":dom.element_path(selected),"css":css,"xpath":xpath});
             let serialized = match output.format {
                 OutputFormat::Json | OutputFormat::Ndjson => value.to_string(),
                 OutputFormat::Text => format!("CSS: {}\nXPath: {}", css, xpath),
-                OutputFormat::Md => format!("- CSS: `{}`\n- XPath: `{}`",css,xpath),
-                OutputFormat::Html => format!("<code>{}</code><code>{}</code>",escape_html(&css),escape_html(&xpath)),
+                OutputFormat::Md => format!("- CSS: `{}`\n- XPath: `{}`", css, xpath),
+                OutputFormat::Html => format!(
+                    "<code>{}</code><code>{}</code>",
+                    escape_html(&css),
+                    escape_html(&xpath)
+                ),
             };
             let data = format!("{serialized}\n");
             if let Some(path) = output.out {
-                std::fs::write(&path, &data).map_err(|e| format!("writing {}: {e}",path.display()))?;
-                println!("{}",json!({"schema_version":1,"saved_to":path.to_string_lossy(),"chars":data.chars().count(),"headings":[]}));
-            } else if output.max_chars.is_some_and(|max|data.chars().count() > max) {
-                return Err("--max-chars too small for generated selector output; use --out".into());
-            } else { print!("{data}"); }
+                std::fs::write(&path, &data)
+                    .map_err(|e| format!("writing {}: {e}", path.display()))?;
+                println!(
+                    "{}",
+                    json!({"schema_version":1,"saved_to":path.to_string_lossy(),"chars":data.chars().count(),"headings":[]})
+                );
+            } else if output
+                .max_chars
+                .is_some_and(|max| data.chars().count() > max)
+            {
+                return Err(
+                    "--max-chars too small for generated selector output; use --out".into(),
+                );
+            } else {
+                print!("{data}");
+            }
             Ok(())
         }
         Command::Select {

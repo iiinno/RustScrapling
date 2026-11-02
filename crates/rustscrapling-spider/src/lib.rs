@@ -6,11 +6,15 @@ use rustscrapling_dom::html5_backend::{parse_html, Html5Options};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::future::Future;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use url::Url;
+
+mod templates;
+pub use templates::CrawlTemplate;
 
 pub type FetchFuture<'a> = Pin<Box<dyn Future<Output = Result<FetchPage, String>> + Send + 'a>>;
 
@@ -73,6 +77,7 @@ fn default_max_depth() -> usize {
 #[serde(default, deny_unknown_fields)]
 pub struct CrawlSpec {
     pub start_urls: Vec<String>,
+    pub template: CrawlTemplate,
     pub allowed_domains: Vec<String>,
     #[serde(default = "default_max_pages")]
     pub max_pages: usize,
@@ -89,6 +94,7 @@ impl Default for CrawlSpec {
     fn default() -> Self {
         Self {
             start_urls: Vec::new(),
+            template: CrawlTemplate::default(),
             allowed_domains: Vec::new(),
             max_pages: default_max_pages(),
             max_depth: default_max_depth(),
@@ -142,6 +148,8 @@ pub struct CrawlItem {
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 struct Progress {
+    #[serde(default)]
+    spec_hash: String,
     visited_hashes: Vec<String>,
     queue: Vec<(String, usize)>,
 }
@@ -328,17 +336,40 @@ fn state_path(spec: &CrawlSpec) -> Option<PathBuf> {
         .map(|dir| dir.join("crawl-state.json"))
 }
 
+fn spec_hash(spec: &CrawlSpec) -> Result<String, String> {
+    let bytes = serde_json::to_vec(spec).map_err(|e| format!("encoding crawl spec: {e}"))?;
+    Ok(blake3::hash(&bytes).to_hex().to_string())
+}
+
 fn restore(spec: &CrawlSpec) -> Result<Option<Progress>, String> {
     let Some(path) = state_path(spec) else {
         return Ok(None);
     };
-    if !path.exists() {
-        return Ok(None);
+    // Recover the last intact checkpoint if Windows had to move the
+    // previous file aside before an interrupted replacement.
+    let backup = path.with_extension("json.bak");
+    let mut last_error = None;
+    for candidate in [&path, &backup] {
+        if !candidate.exists() {
+            continue;
+        }
+        match std::fs::read(candidate)
+            .map_err(|e| e.to_string())
+            .and_then(|bytes| serde_json::from_slice::<Progress>(&bytes).map_err(|e| e.to_string()))
+        {
+            Ok(progress) => {
+                if !progress.spec_hash.is_empty() && progress.spec_hash != spec_hash(spec)? {
+                    return Err("checkpoint belongs to a different crawl specification".into());
+                }
+                return Ok(Some(progress));
+            }
+            Err(reason) => last_error = Some(reason),
+        }
     }
-    let bytes = std::fs::read(&path).map_err(|e| format!("reading state: {e}"))?;
-    serde_json::from_slice(&bytes)
-        .map(Some)
-        .map_err(|e| format!("invalid state: {e}"))
+    match last_error {
+        Some(reason) => Err(format!("invalid crawl state and backup: {reason}")),
+        None => Ok(None),
+    }
 }
 
 fn persist(spec: &CrawlSpec, progress: &Progress) -> Result<(), String> {
@@ -348,14 +379,38 @@ fn persist(spec: &CrawlSpec, progress: &Progress) -> Result<(), String> {
     let parent = path.parent().ok_or("state has no parent directory")?;
     std::fs::create_dir_all(parent).map_err(|e| format!("creating crawldir: {e}"))?;
     let pending = path.with_extension("json.tmp");
-    let bytes = serde_json::to_vec(progress).map_err(|e| e.to_string())?;
-    std::fs::write(&pending, bytes).map_err(|e| format!("writing state: {e}"))?;
-    // Windows does not rename over an existing target; removal before rename
-    // is safe only for the *known* state file in an explicit crawldir.
-    if path.exists() {
-        std::fs::remove_file(&path).map_err(|e| format!("removing old state: {e}"))?;
+    let mut data = progress.clone();
+    data.spec_hash = spec_hash(spec)?;
+    let bytes = serde_json::to_vec(&data).map_err(|e| e.to_string())?;
+    let mut file = std::fs::File::create(&pending).map_err(|e| format!("creating state: {e}"))?;
+    file.write_all(&bytes)
+        .map_err(|e| format!("writing state: {e}"))?;
+    file.sync_all().map_err(|e| format!("syncing state: {e}"))?;
+    drop(file);
+    #[cfg(windows)]
+    {
+        let backup = path.with_extension("json.bak");
+        if path.exists() {
+            if backup.exists() {
+                std::fs::remove_file(&backup).map_err(|e| format!("removing old backup: {e}"))?;
+            }
+            std::fs::rename(&path, &backup).map_err(|e| format!("backing up state: {e}"))?;
+        }
+        if let Err(err) = std::fs::rename(&pending, &path) {
+            if !path.exists() && backup.exists() {
+                let _ = std::fs::rename(&backup, &path);
+            }
+            return Err(format!("saving state: {err}"));
+        }
+        if backup.exists() {
+            std::fs::remove_file(backup).map_err(|e| format!("cleaning state backup: {e}"))?;
+        }
+        Ok(())
     }
-    std::fs::rename(pending, path).map_err(|e| format!("saving state: {e}"))
+    #[cfg(not(windows))]
+    {
+        std::fs::rename(pending, path).map_err(|e| format!("saving state: {e}"))
+    }
 }
 
 /// Crawl using bounded batches of concurrent fetches. The callback is invoked
@@ -369,15 +424,15 @@ where
     F: FnMut(&CrawlItem) -> Result<(), String>,
 {
     spec.validate()?;
-    let state = restore(spec)?.unwrap_or_else(|| Progress {
-        queue: spec
-            .start_urls
-            .iter()
-            .cloned()
-            .map(|url| (url, 0))
-            .collect(),
-        ..Progress::default()
-    });
+    let state = if let Some(saved) = restore(spec)? {
+        saved
+    } else {
+        let seeds = templates::resolve_seeds(spec, &fetcher).await?;
+        Progress {
+            queue: seeds.into_iter().map(|url| (url, 0)).collect(),
+            ..Progress::default()
+        }
+    };
     let mut visited: HashSet<String> = state.visited_hashes.into_iter().collect();
     let mut queued: HashSet<String> = state.queue.iter().map(|(url, _)| key(url)).collect();
     let mut queue: VecDeque<(String, usize)> = state.queue.into();
@@ -434,7 +489,9 @@ where
         while let Some((url, depth, result)) = batch.next().await {
             let item = match result {
                 Ok(response) => {
-                    let links = if response.content_type.contains("html") && depth < spec.max_depth
+                    let links = if spec.template.follows_links()
+                        && response.content_type.contains("html")
+                        && depth < spec.max_depth
                     {
                         page_links(&response.url, &response.body)
                     } else {
@@ -483,6 +540,7 @@ where
         persist(
             spec,
             &Progress {
+                spec_hash: spec_hash(spec)?,
                 visited_hashes: fingerprints,
                 queue: queue.iter().cloned().collect(),
             },
@@ -559,5 +617,27 @@ mod tests {
         assert!(robots_permitted(&policy, "/private/public/a"));
         assert!(!robots_permitted(&policy, "/x.secret"));
         assert!(robots_permitted(&policy, "/public"));
+    }
+
+    #[test]
+    fn resume_rejects_mismatched_spec_and_recovers_backup() {
+        let dir = tempfile::tempdir().unwrap();
+        let spec = CrawlSpec {
+            start_urls: vec!["https://example.org/one".into()],
+            crawldir: Some(dir.path().to_path_buf()),
+            ..CrawlSpec::default()
+        };
+        persist(&spec, &Progress::default()).unwrap();
+        let other = CrawlSpec {
+            start_urls: vec!["https://example.org/two".into()],
+            ..spec.clone()
+        };
+        assert!(restore(&other)
+            .unwrap_err()
+            .contains("different crawl specification"));
+        let file = state_path(&spec).unwrap();
+        std::fs::copy(&file, file.with_extension("json.bak")).unwrap();
+        std::fs::write(&file, b"{incomplete").unwrap();
+        assert!(restore(&spec).unwrap().is_some());
     }
 }
