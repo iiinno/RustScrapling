@@ -321,7 +321,7 @@ struct Parser<'a> {
     pos: usize,
 }
 
-pub(crate) fn parse(selector: &str) -> Result<(Vec<ComplexSelector>, Option<Pseudo>)> {
+fn parse(selector: &str) -> Result<(Vec<ComplexSelector>, Option<Pseudo>)> {
     let mut p = Parser { src: selector.as_bytes(), pos: 0 };
     let mut groups = Vec::new();
     let mut pseudo = None;

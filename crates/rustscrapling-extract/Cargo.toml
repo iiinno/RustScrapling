@@ -5,3 +5,8 @@ edition = "2021"
 license = "BSD-3-Clause"
 
 [dependencies]
+rustscrapling-dom = { path = "../rustscrapling-dom" }
+htmd = "0.5"
+serde = { workspace = true }
+serde_json = { workspace = true }
+url = { workspace = true }

@@ -2,22 +2,58 @@
 //! Stage 2 adds the local selection commands: select, similar, relocate.
 //! Fetching commands arrive with the fetch crates in later stages.
 
+mod browser_adapter;
+mod crawler;
+mod network;
+
+use std::path::PathBuf;
 use std::process::ExitCode;
 
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use rustscrapling_adaptive::{find_similar, relocate, SqliteStorage};
 use rustscrapling_dom::html5_backend::{parse_html as parse_html5, Html5Options};
 use rustscrapling_dom::libxml_backend::{parse_html as parse_libxml, CompatOptions};
 use rustscrapling_dom::{Dom, NodeId};
 use rustscrapling_select::css::css;
+use rustscrapling_select::generate::{
+    generate_css_selector, generate_full_css_selector, generate_full_xpath_selector,
+    generate_xpath_selector,
+};
 use rustscrapling_select::text_search::{
     find_by_regex, find_by_text, FindByRegexOpts, FindByTextOpts,
 };
 use rustscrapling_select::xpath::xpath;
 use rustscrapling_select::Selection;
+use serde_json::json;
+
+#[derive(Clone, Copy, ValueEnum)]
+enum OutputFormat {
+    Json,
+    Ndjson,
+    Text,
+    Md,
+    Html,
+}
+
+#[derive(Args)]
+struct OutputOptions {
+    /// Output format; JSON is the default for agents.
+    #[arg(long, value_enum, default_value_t = OutputFormat::Json)]
+    format: OutputFormat,
+    /// Save full results to a file; print a small JSON receipt to stdout.
+    #[arg(long)]
+    out: Option<PathBuf>,
+    /// Maximum number of characters printed to stdout (excluding file output).
+    #[arg(long)]
+    max_chars: Option<usize>,
+}
 
 #[derive(Parser)]
-#[command(name = "rustscrapling", version, about = "RustScrapling: adaptive web scraping, Scrapling-compatible")]
+#[command(
+    name = "rustscrapling",
+    version,
+    about = "RustScrapling: adaptive web scraping, Scrapling-compatible"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -25,6 +61,73 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// HTTP GET and article extraction (no browser).
+    Get {
+        url: String,
+        #[command(flatten)]
+        options: network::RequestOptions,
+    },
+    /// Automatically choose HTTP or a configured CDP browser tier.
+    Auto {
+        url: String,
+        #[command(flatten)]
+        options: network::RequestOptions,
+    },
+    /// Render a URL in the configured browser.
+    Fetch {
+        url: String,
+        #[command(flatten)]
+        options: network::RequestOptions,
+    },
+    /// Fetch using the browser's stealth path (no unconditional Runtime.enable).
+    Stealth {
+        url: String,
+        #[command(flatten)]
+        options: network::RequestOptions,
+    },
+    /// HTTP POST with an optional --data body.
+    Post {
+        url: String,
+        #[command(flatten)]
+        options: network::RequestOptions,
+    },
+    /// HTTP PUT with an optional --data body.
+    Put {
+        url: String,
+        #[command(flatten)]
+        options: network::RequestOptions,
+    },
+    /// HTTP DELETE.
+    Delete {
+        url: String,
+        #[command(flatten)]
+        options: network::RequestOptions,
+    },
+    /// Convert a local HTML file or HTTP URL to a safe article representation.
+    Md {
+        target: String,
+        #[command(flatten)]
+        options: network::RequestOptions,
+    },
+    /// Follow links according to a bounded TOML crawler specification.
+    Crawl(crawler::CrawlArgs),
+    /// Generate stable CSS and XPath selectors for an element.
+    SelectorGen {
+        target: String,
+        /// Select the element used as the reference.
+        #[arg(long, conflicts_with = "xpath_expr")]
+        css: Option<String>,
+        #[arg(long = "xpath")]
+        xpath_expr: Option<String>,
+        /// Generate complete paths instead of short ID-rooted paths.
+        #[arg(long)]
+        full: bool,
+        /// Use the original libxml2-compatible HTML parser.
+        #[arg(long)]
+        compat: bool,
+        #[command(flatten)]
+        output: OutputOptions,
+    },
     /// Select elements in a local HTML file (URLs are fetched from stage 3 on).
     Select {
         /// HTML file path, or "-" for stdin.
@@ -53,9 +156,14 @@ enum Command {
         /// Do not clean whitespace before text/regex matching.
         #[arg(long)]
         no_clean: bool,
-        /// Parser: "compat" (libxml2, Scrapling-identical) or "html5".
-        #[arg(long, default_value = "compat")]
+        /// Parser: "html5" (default) or "compat" (libxml2).
+        #[arg(long, default_value = "html5")]
         parser: String,
+        /// Use Scrapling-compatible libxml2 parsing.
+        #[arg(long, conflicts_with = "parser")]
+        compat: bool,
+        #[command(flatten)]
+        output: OutputOptions,
         /// Adaptive identifier (with --auto-save / --adaptive).
         #[arg(long)]
         id: Option<String>,
@@ -94,9 +202,14 @@ enum Command {
         /// Also match on element text.
         #[arg(long)]
         match_text: bool,
-        /// Parser: "compat" or "html5".
-        #[arg(long, default_value = "compat")]
+        /// Parser: "html5" (default) or "compat".
+        #[arg(long, default_value = "html5")]
         parser: String,
+        /// Use Scrapling-compatible libxml2 parsing.
+        #[arg(long, conflicts_with = "parser")]
+        compat: bool,
+        #[command(flatten)]
+        output: OutputOptions,
     },
     /// Relocate an element previously saved under --id.
     Relocate {
@@ -114,9 +227,14 @@ enum Command {
         /// Page URL (separates adaptive storage by domain).
         #[arg(long)]
         url: Option<String>,
-        /// Parser: "compat" or "html5".
-        #[arg(long, default_value = "compat")]
+        /// Parser: "html5" (default) or "compat".
+        #[arg(long, default_value = "html5")]
         parser: String,
+        /// Use Scrapling-compatible libxml2 parsing.
+        #[arg(long, conflicts_with = "parser")]
+        compat: bool,
+        #[command(flatten)]
+        output: OutputOptions,
     },
 }
 
@@ -129,7 +247,10 @@ fn load_dom(target: &str, parser: &str) -> Result<Dom, String> {
             .map_err(|e| format!("reading stdin: {e}"))?;
         buf
     } else if target.starts_with("http://") || target.starts_with("https://") {
-        return Err("URL targets arrive with the fetch commands in stage 3; pass a local file for now".into());
+        return Err(
+            "URL targets arrive with the fetch commands in stage 3; pass a local file for now"
+                .into(),
+        );
     } else {
         std::fs::read_to_string(target).map_err(|e| format!("reading {target}: {e}"))?
     };
@@ -140,10 +261,142 @@ fn load_dom(target: &str, parser: &str) -> Result<Dom, String> {
     }
 }
 
-fn print_paths(dom: &Dom, ids: &[NodeId]) {
-    for &id in ids {
-        println!("{}", dom.element_path(id));
+#[derive(Clone)]
+enum ResultItem {
+    Element(String),
+    Text(String),
+}
+
+fn escape_html(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+}
+
+fn render_items(
+    command: &str,
+    parser: &str,
+    items: &[ResultItem],
+    truncated: bool,
+    format: OutputFormat,
+) -> String {
+    let out = match format {
+        OutputFormat::Json => json!({
+            "schema_version": 1,
+            "command": command,
+            "parser": parser,
+            "truncated": truncated,
+            "results": items.iter().map(|item| match item {
+                ResultItem::Element(path) => json!({"kind": "element", "path": path}),
+                ResultItem::Text(value) => json!({"kind": "text", "value": value}),
+            }).collect::<Vec<_>>(),
+        })
+        .to_string(),
+        OutputFormat::Ndjson => items
+            .iter()
+            .map(|item| match item {
+                ResultItem::Element(path) => {
+                    json!({"schema_version": 1, "kind": "element", "path": path}).to_string()
+                }
+                ResultItem::Text(value) => {
+                    json!({"schema_version": 1, "kind": "text", "value": value}).to_string()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n"),
+        OutputFormat::Text => items
+            .iter()
+            .map(|item| match item {
+                ResultItem::Element(path) | ResultItem::Text(path) => path.as_str(),
+            })
+            .collect::<Vec<_>>()
+            .join("\n"),
+        OutputFormat::Md => items
+            .iter()
+            .map(|item| match item {
+                ResultItem::Element(path) => format!("- `{}`", path.replace('`', "\\`")),
+                ResultItem::Text(value) => format!("- {}", value),
+            })
+            .collect::<Vec<_>>()
+            .join("\n"),
+        OutputFormat::Html => {
+            let mut html = String::from("<ul>");
+            for item in items {
+                let value = match item {
+                    ResultItem::Element(path) | ResultItem::Text(path) => path,
+                };
+                html.push_str("<li>");
+                html.push_str(&escape_html(value));
+                html.push_str("</li>");
+            }
+            html.push_str("</ul>");
+            html
+        }
+    };
+    format!("{out}\n")
+}
+
+fn output_results(
+    command: &str,
+    parser: &str,
+    dom: &Dom,
+    ids: &[NodeId],
+    texts: &[String],
+    opts: &OutputOptions,
+) -> Result<(), String> {
+    let items: Vec<ResultItem> = ids
+        .iter()
+        .map(|&id| ResultItem::Element(dom.element_path(id)))
+        .chain(texts.iter().cloned().map(ResultItem::Text))
+        .collect();
+    let full = render_items(command, parser, &items, false, opts.format);
+    if let Some(file) = &opts.out {
+        std::fs::write(file, &full).map_err(|e| format!("writing {}: {e}", file.display()))?;
+        println!(
+            "{}",
+            json!({
+                "schema_version": 1,
+                "command": command,
+                "saved_to": file.to_string_lossy(),
+                "chars": full.chars().count(),
+                "headings": [],
+            })
+        );
+        return Ok(());
     }
+
+    let content = match opts.max_chars {
+        None => full,
+        Some(limit) if full.chars().count() <= limit => full,
+        Some(limit) => {
+            // Keep JSON/NDJSON records intact. Find the longest prefix of
+            // results that fits; never slice in the middle of UTF-8 or JSON.
+            let mut low = 0;
+            let mut high = items.len();
+            while low < high {
+                let mid = low + (high - low + 1) / 2;
+                if render_items(command, parser, &items[..mid], true, opts.format)
+                    .chars()
+                    .count()
+                    <= limit
+                {
+                    low = mid;
+                } else {
+                    high = mid - 1;
+                }
+            }
+            let shortened = render_items(command, parser, &items[..low], true, opts.format);
+            if shortened.chars().count() > limit {
+                return Err(format!(
+                    "--max-chars {limit} is too small for the output envelope"
+                ));
+            }
+            shortened
+        }
+    };
+    print!("{content}");
+    Ok(())
 }
 
 fn element_ids(selections: Vec<Selection>) -> Vec<NodeId> {
@@ -159,6 +412,55 @@ fn element_ids(selections: Vec<Selection>) -> Vec<NodeId> {
 fn run() -> Result<(), String> {
     let cli = Cli::parse();
     match cli.command {
+        Command::Get { url, options } => network::run_request("GET", &url, &options),
+        Command::Auto { url, options } => {
+            network::run_tier(&url, &options, rustscrapling_fetch::FetchTier::Auto)
+        }
+        Command::Fetch { url, options } => {
+            network::run_tier(&url, &options, rustscrapling_fetch::FetchTier::Browser)
+        }
+        Command::Stealth { url, options } => {
+            network::run_tier(&url, &options, rustscrapling_fetch::FetchTier::Browser)
+        }
+        Command::Post { url, options } => network::run_request("POST", &url, &options),
+        Command::Put { url, options } => network::run_request("PUT", &url, &options),
+        Command::Delete { url, options } => network::run_request("DELETE", &url, &options),
+        Command::Md { target, options } => network::run_markdown(&target, &options),
+        Command::Crawl(args) => crawler::run(args),
+        Command::SelectorGen { target, css: css_expr, xpath_expr, full, compat, output } => {
+            let parser = if compat { "compat" } else { "html5" };
+            let dom = load_dom(&target, parser)?;
+            let root = dom.document_element().ok_or("document has no root element")?;
+            let matches = if let Some(expr) = css_expr {
+                css(&dom, root, &expr).map_err(|e| e.to_string())?
+            } else if let Some(expr) = xpath_expr {
+                xpath(&dom, root, &expr, &[]).map_err(|e| e.to_string())?
+            } else {
+                return Err("selector-gen requires --css or --xpath".into());
+            };
+            let selected = element_ids(matches).into_iter().next()
+                .ok_or("reference element not found")?;
+            let css = if full { generate_full_css_selector(&dom, selected) }
+                else { generate_css_selector(&dom, selected) }.map_err(|e| e.to_string())?;
+            let xpath = if full { generate_full_xpath_selector(&dom, selected) }
+                else { generate_xpath_selector(&dom, selected) }.map_err(|e| e.to_string())?;
+            let value = json!({"schema_version":1,"command":"selector-gen", "parser":parser,
+                "path":dom.element_path(selected),"css":css,"xpath":xpath});
+            let serialized = match output.format {
+                OutputFormat::Json | OutputFormat::Ndjson => value.to_string(),
+                OutputFormat::Text => format!("CSS: {}\nXPath: {}", css, xpath),
+                OutputFormat::Md => format!("- CSS: `{}`\n- XPath: `{}`",css,xpath),
+                OutputFormat::Html => format!("<code>{}</code><code>{}</code>",escape_html(&css),escape_html(&xpath)),
+            };
+            let data = format!("{serialized}\n");
+            if let Some(path) = output.out {
+                std::fs::write(&path, &data).map_err(|e| format!("writing {}: {e}",path.display()))?;
+                println!("{}",json!({"schema_version":1,"saved_to":path.to_string_lossy(),"chars":data.chars().count(),"headings":[]}));
+            } else if output.max_chars.is_some_and(|max|data.chars().count() > max) {
+                return Err("--max-chars too small for generated selector output; use --out".into());
+            } else { print!("{data}"); }
+            Ok(())
+        }
         Command::Select {
             target,
             css: css_expr,
@@ -170,6 +472,8 @@ fn run() -> Result<(), String> {
             case_sensitive,
             no_clean,
             parser,
+            compat,
+            output,
             id,
             auto_save,
             adaptive,
@@ -177,8 +481,11 @@ fn run() -> Result<(), String> {
             storage_file,
             url,
         } => {
+            let parser = if compat { "compat" } else { parser.as_str() };
             let dom = load_dom(&target, &parser)?;
-            let root = dom.document_element().ok_or("document has no root element")?;
+            let root = dom
+                .document_element()
+                .ok_or("document has no root element")?;
             let mut results: Vec<NodeId> = Vec::new();
             let mut texts: Vec<String> = Vec::new();
             if let Some(expr) = &css_expr {
@@ -248,10 +555,7 @@ fn run() -> Result<(), String> {
                     }
                 }
             }
-            print_paths(&dom, &results);
-            for t in &texts {
-                println!("{t}");
-            }
+            output_results("select", parser, &dom, &results, &texts, &output)?;
             Ok(())
         }
         Command::Similar {
@@ -262,9 +566,14 @@ fn run() -> Result<(), String> {
             ignore,
             match_text,
             parser,
+            compat,
+            output,
         } => {
+            let parser = if compat { "compat" } else { parser.as_str() };
             let dom = load_dom(&target, &parser)?;
-            let root = dom.document_element().ok_or("document has no root element")?;
+            let root = dom
+                .document_element()
+                .ok_or("document has no root element")?;
             let base = if let Some(expr) = &css_expr {
                 element_ids(css(&dom, root, expr).map_err(|e| e.to_string())?)
                     .into_iter()
@@ -279,7 +588,7 @@ fn run() -> Result<(), String> {
             .ok_or("reference element not found")?;
             let ignore_refs: Vec<&str> = ignore.iter().map(|s| s.as_str()).collect();
             let found = find_similar(&dom, base, threshold, &ignore_refs, match_text);
-            print_paths(&dom, &found);
+            output_results("similar", parser, &dom, &found, &[], &output)?;
             Ok(())
         }
         Command::Relocate {
@@ -289,9 +598,14 @@ fn run() -> Result<(), String> {
             storage_file,
             url,
             parser,
+            compat,
+            output,
         } => {
+            let parser = if compat { "compat" } else { parser.as_str() };
             let dom = load_dom(&target, &parser)?;
-            let root = dom.document_element().ok_or("document has no root element")?;
+            let root = dom
+                .document_element()
+                .ok_or("document has no root element")?;
             let storage = SqliteStorage::open(&storage_file, url.as_deref())
                 .map_err(|e| format!("opening storage: {e}"))?;
             let dict = storage
@@ -299,9 +613,46 @@ fn run() -> Result<(), String> {
                 .map_err(|e| format!("retrieving from storage: {e}"))?
                 .ok_or_else(|| format!("no element saved under id '{id}'"))?;
             let found = relocate(&dom, root, &dict, percentage);
-            print_paths(&dom, &found);
+            output_results("relocate", parser, &dom, &found, &[], &output)?;
             Ok(())
         }
+    }
+}
+
+fn error_details(message: &str) -> (&'static str, &'static str) {
+    if message.starts_with("reading ") || message.starts_with("writing ") {
+        (
+            "io",
+            "Check the input and output file paths and permissions",
+        )
+    } else if message.starts_with("opening storage")
+        || message.starts_with("retrieving from storage")
+        || message.starts_with("saving to storage")
+    {
+        ("storage", "Check the SQLite file and its permissions")
+    } else if message.starts_with("no element saved") || message == "reference element not found" {
+        (
+            "not_found",
+            "Check the selector or save an element with --id and --auto-save",
+        )
+    } else if message.starts_with("invalid regex")
+        || message.starts_with("unknown parser")
+        || message.contains("parse")
+    {
+        (
+            "parse",
+            "Check the input HTML, selector, and parser setting",
+        )
+    } else if message.starts_with("URL targets arrive") {
+        (
+            "unsupported",
+            "Use a local HTML file until HTTP fetching is available",
+        )
+    } else {
+        (
+            "invalid_arguments",
+            "Check arguments and input data; see --help",
+        )
     }
 }
 
@@ -309,7 +660,23 @@ fn main() -> ExitCode {
     match run() {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
-            eprintln!("error: {e}");
+            // The acquisition module already returns an error with a typed,
+            // versioned envelope. Preserve it rather than double-encoding it.
+            if serde_json::from_str::<serde_json::Value>(&e)
+                .ok()
+                .is_some_and(|value| value.get("error").is_some())
+            {
+                eprintln!("{e}");
+                return ExitCode::FAILURE;
+            }
+            let (kind, hint) = error_details(&e);
+            eprintln!(
+                "{}",
+                json!({
+                    "schema_version": 1,
+                    "error": {"kind": kind, "message": e, "hint": hint}
+                })
+            );
             ExitCode::FAILURE
         }
     }

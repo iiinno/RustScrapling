@@ -116,14 +116,71 @@ fn truthy(t: &Option<String>) -> Option<&str> {
 /// original.
 pub fn calculate_similarity_score(dom: &Dom, original: &ElementDict, candidate: NodeId) -> f64 {
     let refs: Option<Vec<SibRef>> = original.siblings.as_ref().map(|s| sib_refs(s));
+    let uniform = uniform_tag(refs.as_deref());
     let mut scratch = Vec::new();
-    score_inner(dom, original, refs.as_deref(), candidate, &mut scratch, None)
+    score_inner(
+        dom,
+        original,
+        refs.as_deref(),
+        uniform,
+        candidate,
+        &mut scratch,
+        None,
+    )
+}
+
+fn uniform_tag<'a>(siblings: Option<&[SibRef<'a>]>) -> Option<SibRef<'a>> {
+    let siblings = siblings?;
+    let first = *siblings.first()?;
+    siblings.iter().all(|s| *s == first).then_some(first)
+}
+
+/// A common adaptive case is a long list of identical sibling tags. When
+/// the original list is uniform, a candidate with no matching sibling tags
+/// has ratio 0, while an equally long, uniform list has ratio 1. Both are
+/// exact SequenceMatcher results and need no temporary sibling allocation.
+fn uniform_sibling_ratio(
+    dom: &Dom,
+    candidate: NodeId,
+    original_len: usize,
+    original_tag: SibRef<'_>,
+) -> Option<f64> {
+    let Some(parent) = element_parent(dom, candidate) else {
+        return Some(0.0);
+    };
+    let mut count = 0;
+    let mut seen_matching = false;
+    let mut all_matching = true;
+    for &child in dom.children(parent) {
+        if child == candidate {
+            continue;
+        }
+        let tag = match dom.node(child).kind {
+            NodeKind::Element => SibRef::Tag(dom.node(child).tag.as_str()),
+            NodeKind::Comment => SibRef::Other,
+            _ => continue,
+        };
+        count += 1;
+        if tag == original_tag {
+            seen_matching = true;
+        } else {
+            all_matching = false;
+        }
+    }
+    if !seen_matching {
+        Some(0.0)
+    } else if all_matching && count == original_len {
+        Some(1.0)
+    } else {
+        None
+    }
 }
 
 fn score_inner<'a>(
     dom: &'a Dom,
     original: &ElementDict,
     original_siblings: Option<&[SibRef<'a>]>,
+    uniform_sibling_tag: Option<SibRef<'a>>,
     candidate: NodeId,
     scratch: &mut Vec<SibRef<'a>>,
     caches: Option<&ScoreCaches<'a>>,
@@ -171,13 +228,7 @@ fn score_inner<'a>(
 
     if let Some(parent_name) = truthy(&original.parent_name) {
         let parent = element_parent(dom, candidate);
-        let components = caches.and_then(|c| {
-            c.parents
-                .lock()
-                .unwrap()
-                .get(&parent)
-                .copied()
-        });
+        let components = caches.and_then(|c| c.parents.lock().unwrap().get(&parent).copied());
         let (tag_ratio, parent_diff, parent_text_ratio, parent_checks) = match components {
             Some(cached) => cached,
             None => {
@@ -220,25 +271,29 @@ fn score_inner<'a>(
 
     if let Some(siblings) = original_siblings {
         if !siblings.is_empty() {
-            candidate_siblings_into(dom, candidate, scratch);
-            let ratio = if siblings == scratch.as_slice() {
-                1.0
-            } else if let Some(c) = caches {
-                match c.siblings.lock().unwrap().get(scratch.as_slice()) {
-                    Some(&r) => r,
-                    None => {
-                        let r = seq_ratio(siblings, scratch);
-                        if scratch.len() <= 64 {
-                            c.siblings
-                                .lock()
-                                .unwrap()
-                                .insert(scratch.clone(), r);
+            let ratio = match uniform_sibling_tag
+                .and_then(|tag| uniform_sibling_ratio(dom, candidate, siblings.len(), tag))
+            {
+                Some(ratio) => ratio,
+                None => {
+                    candidate_siblings_into(dom, candidate, scratch);
+                    if siblings == scratch.as_slice() {
+                        1.0
+                    } else if let Some(c) = caches {
+                        match c.siblings.lock().unwrap().get(scratch.as_slice()) {
+                            Some(&r) => r,
+                            None => {
+                                let r = seq_ratio(siblings, scratch);
+                                if scratch.len() <= 64 {
+                                    c.siblings.lock().unwrap().insert(scratch.clone(), r);
+                                }
+                                r
+                            }
                         }
-                        r
+                    } else {
+                        seq_ratio(siblings, scratch)
                     }
                 }
-            } else {
-                seq_ratio(siblings, scratch)
             };
             score += ratio;
             checks += 1;
@@ -273,12 +328,7 @@ fn candidate_siblings_into<'a>(dom: &'a Dom, id: NodeId, out: &mut Vec<SibRef<'a
 /// (the scope element itself is not a candidate, matching XPath `.//*`),
 /// in parallel, and return the elements tied at the highest score when
 /// that score reaches `percentage`.
-pub fn relocate(
-    dom: &Dom,
-    scope: NodeId,
-    original: &ElementDict,
-    percentage: i64,
-) -> Vec<NodeId> {
+pub fn relocate(dom: &Dom, scope: NodeId, original: &ElementDict, percentage: i64) -> Vec<NodeId> {
     let candidates: Vec<NodeId> = dom
         .descendants_or_self(scope)
         .into_iter()
@@ -289,6 +339,7 @@ pub fn relocate(
         return Vec::new();
     }
     let original_siblings: Option<Vec<SibRef>> = original.siblings.as_ref().map(|s| sib_refs(s));
+    let uniform = uniform_tag(original_siblings.as_deref());
     let caches = ScoreCaches::default();
     let scores: Vec<f64> = candidates
         .par_iter()
@@ -297,6 +348,7 @@ pub fn relocate(
                 dom,
                 original,
                 original_siblings.as_deref(),
+                uniform,
                 c,
                 scratch,
                 Some(&caches),
@@ -326,33 +378,31 @@ fn get_attributes<'a>(dom: &'a Dom, id: NodeId, ignore: &[&str]) -> AttrView<'a>
 }
 
 /// Port of `Selector.__are_alike`.
-fn are_alike(
-    dom: &Dom,
+fn are_alike<'a>(
+    dom: &'a Dom,
     original: NodeId,
-    original_attributes: &AttrView,
+    original_attributes: &AttrView<'a>,
     candidate: NodeId,
     ignore_attributes: &[&str],
     similarity_threshold: f64,
     match_text: bool,
+    ratios: &mut HashMap<(&'a str, &'a str), f64>,
 ) -> bool {
     let candidate_attributes = get_attributes(dom, candidate, ignore_attributes);
     let mut score: f64 = 0.0;
     let mut checks: usize = 0;
 
     if !original_attributes.is_empty() {
-        score += original_attributes
-            .iter()
-            .map(|(k, v)| {
-                str_ratio(
-                    v,
-                    candidate_attributes
-                        .iter()
-                        .find(|(ck, _)| ck == k)
-                        .map(|(_, cv)| *cv)
-                        .unwrap_or(""),
-                )
-            })
-            .sum::<f64>();
+        for &(k, v) in original_attributes {
+            let candidate_value = candidate_attributes
+                .iter()
+                .find(|(ck, _)| *ck == k)
+                .map(|(_, cv)| *cv)
+                .unwrap_or("");
+            score += *ratios
+                .entry((v, candidate_value))
+                .or_insert_with(|| str_ratio(v, candidate_value));
+        }
         checks += original_attributes.len().max(candidate_attributes.len());
     } else if candidate_attributes.is_empty() {
         score += 1.0;
@@ -403,6 +453,9 @@ pub fn find_similar(
         return Vec::new();
     };
     let mut out = Vec::new();
+    // Many elements in a product list share attribute values. Reuse exact
+    // SequenceMatcher results when identical value pairs recur.
+    let mut ratios = HashMap::new();
     for candidate in dom.descendants_or_self(root) {
         if candidate == node || !dom.node(candidate).is_element() {
             continue;
@@ -438,6 +491,7 @@ pub fn find_similar(
             ignore_attributes,
             similarity_threshold,
             match_text,
+            &mut ratios,
         ) {
             out.push(candidate);
         }

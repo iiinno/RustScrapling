@@ -5,3 +5,7 @@ edition = "2021"
 license = "BSD-3-Clause"
 
 [dependencies]
+rustscrapling-http = { path = "../rustscrapling-http" }
+tokio = { version = "1", features = ["sync", "macros", "rt"] }
+serde = { workspace = true }
+url = { workspace = true }

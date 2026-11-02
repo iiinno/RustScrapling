@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use rustscrapling_adaptive::seqmatch::SequenceMatcher;
+use rustscrapling_adaptive::seqmatch::{py_round2, SequenceMatcher};
 use rustscrapling_adaptive::{
     base_url, calculate_similarity_score, element_to_dict, find_similar, relocate, SqliteStorage,
 };
@@ -90,6 +90,18 @@ fn seqmatch_ratios_match_difflib() {
 }
 
 #[test]
+fn round2_matches_cpython_binary_float_oracle() {
+    let cases = load_json("stage2_round.json");
+    assert_eq!(cases.as_array().unwrap().len(), 8003);
+    for case in cases.as_array().unwrap() {
+        let source = case[0].as_str().unwrap();
+        let x: f64 = source.parse().unwrap();
+        let expected: f64 = case[1].as_str().unwrap().parse().unwrap();
+        assert_eq!(py_round2(x), expected, "Python round({source}, 2)");
+    }
+}
+
+#[test]
 fn element_dicts_match_oracle() {
     let data = load_json("stage2_dicts.json");
     let stage1 = load_json("stage1.json");
@@ -154,7 +166,10 @@ fn find_results_match_oracle() {
             .collect()
     };
     assert_eq!(
-        paths_of(&dom, &find_similar(&dom, base, 0.2, &["href", "src"], false)),
+        paths_of(
+            &dom,
+            &find_similar(&dom, base, 0.2, &["href", "src"], false)
+        ),
         expect("similar_default")
     );
     assert_eq!(
@@ -162,7 +177,10 @@ fn find_results_match_oracle() {
         expect("similar_match_text")
     );
     assert_eq!(
-        paths_of(&dom, &find_similar(&dom, base, 0.9, &["href", "src"], false)),
+        paths_of(
+            &dom,
+            &find_similar(&dom, base, 0.9, &["href", "src"], false)
+        ),
         expect("similar_threshold_09")
     );
 
@@ -172,13 +190,19 @@ fn find_results_match_oracle() {
         let text = case[0].as_str().unwrap();
         let kw = &case[1];
         let opts = FindByTextOpts {
-            first_match: kw.get("first_match").and_then(|v| v.as_bool()).unwrap_or(true),
+            first_match: kw
+                .get("first_match")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true),
             partial: kw.get("partial").and_then(|v| v.as_bool()).unwrap_or(false),
             case_sensitive: kw
                 .get("case_sensitive")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false),
-            clean_match: kw.get("clean_match").and_then(|v| v.as_bool()).unwrap_or(true),
+            clean_match: kw
+                .get("clean_match")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true),
         };
         let got = paths_of(&dom, &find_by_text(&dom, root, text, opts));
         let want: Vec<String> = expected
@@ -196,12 +220,18 @@ fn find_results_match_oracle() {
         let pattern = case[0].as_str().unwrap();
         let kw = &case[1];
         let opts = FindByRegexOpts {
-            first_match: kw.get("first_match").and_then(|v| v.as_bool()).unwrap_or(true),
+            first_match: kw
+                .get("first_match")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true),
             case_sensitive: kw
                 .get("case_sensitive")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false),
-            clean_match: kw.get("clean_match").and_then(|v| v.as_bool()).unwrap_or(true),
+            clean_match: kw
+                .get("clean_match")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true),
         };
         let got = paths_of(&dom, &find_by_regex(&dom, root, pattern, opts).unwrap());
         let want: Vec<String> = expected
@@ -241,8 +271,14 @@ fn oracle_database_relocates() {
             .map(|v| v.as_str().unwrap().to_string())
             .collect()
     };
-    assert_eq!(paths_of(&dom, &relocate(&dom, root, &dict, 40)), want("relocated_40"));
-    assert_eq!(paths_of(&dom, &relocate(&dom, root, &dict, 0)), want("relocated_0"));
+    assert_eq!(
+        paths_of(&dom, &relocate(&dom, root, &dict, 40)),
+        want("relocated_40")
+    );
+    assert_eq!(
+        paths_of(&dom, &relocate(&dom, root, &dict, 0)),
+        want("relocated_0")
+    );
     for (path, score) in data["scores"].as_object().unwrap() {
         let id = map[path];
         assert_eq!(
@@ -257,7 +293,10 @@ fn oracle_database_relocates() {
 #[test]
 fn base_url_cases() {
     assert_eq!(base_url(Some("https://example.com/shop")), "example.com");
-    assert_eq!(base_url(Some("https://sub.example.co.uk/x")), "example.co.uk");
+    assert_eq!(
+        base_url(Some("https://sub.example.co.uk/x")),
+        "example.co.uk"
+    );
     assert_eq!(base_url(Some("http://www.bbc.co.uk/news")), "bbc.co.uk");
     assert_eq!(base_url(Some("example.com")), "example.com");
     assert_eq!(base_url(Some("http://localhost:8000/a")), "default");

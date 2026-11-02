@@ -125,7 +125,11 @@ impl<'a, T: Eq + Hash> SequenceMatcher<'a, T> {
             }
         }
         matcher.b2j = if map.len() <= 64 {
-            B2J::Linear(map.into_iter().map(|(k, v)| (k, SmallVec::from_vec(v))).collect())
+            B2J::Linear(
+                map.into_iter()
+                    .map(|(k, v)| (k, SmallVec::from_vec(v)))
+                    .collect(),
+            )
         } else {
             B2J::Hashed(map)
         };
@@ -241,9 +245,14 @@ impl<'a, T: Eq + Hash> SequenceMatcher<'a, T> {
         if self.matching_blocks.is_none() {
             if self.a == self.b {
                 // Identical sequences: CPython's algorithm produces one
-                // full-length block; take it directly.
+                // full-length block; take it directly. For empty sequences
+                // the block and the sentinel are the same zero-sized block.
                 let n = self.a.len();
-                self.matching_blocks = Some(vec![(0, 0, n), (n, n, 0)]);
+                self.matching_blocks = Some(if n == 0 {
+                    vec![(0, 0, 0)]
+                } else {
+                    vec![(0, 0, n), (n, n, 0)]
+                });
                 return self.matching_blocks.as_deref().unwrap();
             }
             let mut blocks = Vec::new();
@@ -392,7 +401,10 @@ fn tiny_ratio(a: &[char], b: &[char]) -> f64 {
             bestb -= 1;
             bestsize += 1;
         }
-        while besta + bestsize < ahi && bestb + bestsize < bhi && a[besta + bestsize] == b[bestb + bestsize] {
+        while besta + bestsize < ahi
+            && bestb + bestsize < bhi
+            && a[besta + bestsize] == b[bestb + bestsize]
+        {
             bestsize += 1;
         }
         (besta, bestb, bestsize)
@@ -483,9 +495,9 @@ pub fn py_round2(x: f64) -> f64 {
     if (bits >> 52) & 0x7ff == 0 {
         return 0.0; // subnormal: far below the 0.005 rounding quantum
     }
+    // x = mantissa * 2^(exp-52); x*100 = mantissa*25 * 2^(exp-50)
     let exp = ((bits >> 52) & 0x7ff) as i64 - 1023;
     let mantissa = (bits & 0xf_ffff_ffff_ffff) | 0x10_0000_0000_0000; // 53-bit
-    // x = mantissa * 2^(exp-52); x*100 = mantissa*25 * 2^(exp-50)
     let scaled = mantissa as u128 * 25;
     let shift = 50 - exp;
     let rounded: u128 = if shift <= 0 {
@@ -546,17 +558,21 @@ mod tests {
         for _ in 0..4000 {
             let la = (next() % 65) as usize;
             let lb = (next() % 65) as usize;
-            let a: String = (0..la)
-                .map(|_| alphabet[(next() % 8) as usize])
-                .collect();
-            let b: String = (0..lb)
-                .map(|_| alphabet[(next() % 8) as usize])
-                .collect();
+            let a: String = (0..la).map(|_| alphabet[(next() % 8) as usize]).collect();
+            let b: String = (0..lb).map(|_| alphabet[(next() % 8) as usize]).collect();
             let av: Vec<char> = a.chars().collect();
             let bv: Vec<char> = b.chars().collect();
             let generic = SequenceMatcher::new(&av, &bv).ratio();
             assert_eq!(str_ratio(&a, &b), generic, "mismatch for {a:?} vs {b:?}");
         }
+    }
+
+    #[test]
+    fn empty_matching_blocks() {
+        assert_eq!(
+            SequenceMatcher::<char>::new(&[], &[]).matching_blocks(),
+            &[(0, 0, 0)]
+        );
     }
 
     #[test]
@@ -567,6 +583,13 @@ mod tests {
         assert_eq!(py_round2(-0.001), 0.0);
         assert_eq!(py_round2(82.6), 82.6);
         assert_eq!(py_round2(79.74), 79.74);
+    }
+
+    #[test]
+    fn round2_non_finite() {
+        assert_eq!(py_round2(f64::INFINITY), f64::INFINITY);
+        assert_eq!(py_round2(f64::NEG_INFINITY), f64::NEG_INFINITY);
+        assert!(py_round2(f64::NAN).is_nan());
     }
 
     #[test]

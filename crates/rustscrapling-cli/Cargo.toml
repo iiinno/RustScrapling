@@ -12,4 +12,11 @@ path = "src/main.rs"
 rustscrapling-dom = { path = "../rustscrapling-dom" }
 rustscrapling-select = { path = "../rustscrapling-select" }
 rustscrapling-adaptive = { path = "../rustscrapling-adaptive" }
+rustscrapling-http = { path = "../rustscrapling-http" }
+rustscrapling-extract = { path = "../rustscrapling-extract" }
+rustscrapling-fetch = { path = "../rustscrapling-fetch" }
+rustscrapling-browser = { path = "../rustscrapling-browser" }
+rustscrapling-spider = { path = "../rustscrapling-spider" }
 clap.workspace = true
+serde_json.workspace = true
+tokio = { version = "1", features = ["rt", "time"] }

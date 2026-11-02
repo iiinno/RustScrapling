@@ -5,3 +5,11 @@ edition = "2021"
 license = "BSD-3-Clause"
 
 [dependencies]
+chromiumoxide_cdp = "0.9.1"
+chromiumoxide_types = "0.9.1"
+futures-util = "0.3"
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { version = "1", features = ["process", "io-util", "net", "sync", "time", "macros", "rt-multi-thread", "fs"] }
+tokio-tungstenite = { version = "0.27", features = ["connect", "rustls-tls-webpki-roots"] }
+url = { workspace = true }

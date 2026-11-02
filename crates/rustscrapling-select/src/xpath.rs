@@ -27,7 +27,7 @@ enum Value {
 }
 
 impl Value {
-    fn to_bool(&self, dom: &Dom) -> bool {
+    fn to_bool(&self, _dom: &Dom) -> bool {
         match self {
             Value::Bool(b) => *b,
             Value::Num(n) => *n != 0.0 && !n.is_nan(),

@@ -5,7 +5,7 @@
 use std::path::Path;
 use std::sync::Mutex;
 
-use rusqlite::Connection;
+use rusqlite::{types::ValueRef, Connection};
 use rustscrapling_dom::{Dom, NodeId};
 
 use crate::dict::{element_to_dict, ElementDict};
@@ -68,9 +68,6 @@ impl SqliteStorage {
 
     pub fn save_dict(&self, dict: &ElementDict, identifier: &str) -> rusqlite::Result<()> {
         let conn = self.conn.lock().expect("storage lock");
-        // Bind the JSON as bytes: Scrapling stores orjson's bytes, so
-        // its files hold a BLOB here; matching that keeps files written
-        // by RustScrapling indistinguishable from the original's.
         conn.execute(
             "INSERT OR REPLACE INTO storage (url, identifier, element_data) VALUES (?1, ?2, ?3)",
             rusqlite::params![self.base, identifier, dict.to_json().as_bytes()],
@@ -94,15 +91,24 @@ impl SqliteStorage {
         let mut rows = stmt.query(rusqlite::params![self.base, identifier])?;
         match rows.next()? {
             Some(row) => {
-                // Scrapling stores orjson's bytes (a BLOB); accept both
-                // BLOB and TEXT so files written either way read back.
-                use rusqlite::types::Value;
-                let text = match row.get::<_, Value>(0)? {
-                    Value::Blob(data) => String::from_utf8(data).ok(),
-                    Value::Text(s) => Some(s),
-                    _ => None,
+                // orjson's dumps returns bytes, so Scrapling stores
+                // element_data as a BLOB. Rust stores the same bytes, and
+                // reading accepts TEXT too so older Rust-written databases
+                // still load.
+                let value = row.get_ref(0)?;
+                let bytes = match value {
+                    ValueRef::Text(bytes) | ValueRef::Blob(bytes) => bytes,
+                    _ => {
+                        return Err(rusqlite::Error::InvalidColumnType(
+                            0,
+                            "element_data".to_string(),
+                            value.data_type(),
+                        ))
+                    }
                 };
-                Ok(text.and_then(|s| ElementDict::from_json(&s)))
+                Ok(std::str::from_utf8(bytes)
+                    .ok()
+                    .and_then(ElementDict::from_json))
             }
             None => Ok(None),
         }
@@ -142,6 +148,25 @@ mod tests {
         let back = storage.retrieve("prod").unwrap().expect("stored dict");
         assert_eq!(back.to_json(), dict.to_json());
         assert!(storage.retrieve("missing").unwrap().is_none());
+
+        // Rows written by older Rust versions are TEXT; the same reader
+        // must accept them as well as the BLOB rows written above.
+        {
+            let conn = rusqlite::Connection::open(&path).unwrap();
+            conn.execute(
+                "INSERT OR REPLACE INTO storage (url, identifier, element_data) \
+                 VALUES (?1, ?2, ?3)",
+                rusqlite::params!["example.com", "prod_text", dict.to_json()],
+            )
+            .unwrap();
+        }
+        let storage = SqliteStorage::open(&path, Some("https://example.com/shop")).unwrap();
+        let text_back = storage
+            .retrieve("prod_text")
+            .unwrap()
+            .expect("stored text dict");
+        assert_eq!(text_back.to_json(), dict.to_json());
+
         let _ = std::fs::remove_file(&path);
     }
 }

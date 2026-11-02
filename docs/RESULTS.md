@@ -16,26 +16,28 @@ html5ever 解析の未達について（Explain the Number）: 同じページ�
 
 選択の一致: `cargo test -p rustscrapling-select` の fixture 試験で、互換モードが oracle の正解データ88件（CSS 59 + XPath 29、エラー症例含む）と 100% 一致。既定モードとの差30件は docs/COMPAT.md に分類済み（tbody 補完と空白テキストの2クラスのみ、選択要素の集合に差なし）。セレクタ生成は本家の test_selector_generation の8症例＋id 短縮2症例を css/xpath・full/短縮の全組合せと往復選択で再現した。
 
-## 段階2（2026-11-02）
+## 段階2 adaptive（2026-11-02、Windows PC上の WSL2）
 
-計測条件: 段階1と同じ（Muse VM、release、lto、CARGO_BUILD_JOBS=2、付録Aページ 416,497バイト）。relocate は best-of-3（ウォームアップ1回）、find_by_text / find_similar は best-of-5。計測コード: `crates/rustscrapling-adaptive/examples/bench_adaptive.rs`。この VM は負荷変動が大きく（load average 0.1〜4.7、steal 約5〜7%）、単発の数値は大きく振れるため、複数回の最良値で判定した。
+**互換性検証:** 本家固定コミットから生成した `fixtures/stage2_*.json` と `fixtures/oracle_storage.db` を使用。WSL Ubuntu 24.04、Rust 1.99.1、libxml2 2.9.14 を利用し、`cargo test -p rustscrapling-adaptive -p rustscrapling-cli --offline` で、Unicode文字列・タグ列・autojunk境界を含む `SequenceMatcher` 10,000件×3種が Python の `difflib` と **30,000/30,000件完全一致**。独立した Python 3.12 の `round(x, 2)` 正解データ **8,003/8,003件一致**。正解データの `element_to_dict`、`find_similar`、`find_by_text`、`find_by_regex`、スコア、`relocate(percentage=0,40)`、登録可能ドメイン、Python本家の SQLite BLOB 読込を照合。CLIの `select` / `similar` / `relocate` / `select --adaptive` を本家DBで実行し、さらに `--auto-save` でRustが保存したSQLite BLOBの読み戻し（BLOB/TEXT両対応）も通過。`python oracle/verify_stage2.py` による本家側からRust生成DBへの逆方向読込・JSONバイト単位の一致・再特定にも成功。**注意:** ローカルの別途インストール済み Python Scrapling は 0.4.9 であり、計画が要求する0.5固定コミットと同じものではない。追加の `round` 正解データはCPython標準関数だけを使って生成し、既存のScrapling正解データは再生成していない。
 
-| 処理 | RustScrapling | 本家（BASELINE.md） | 段階目標 | 判定 |
-|---|---|---|---|---|
-| relocate（並列） | 28.0〜30.7 ms | 5305〜5677 ms | 50 ms以下 | 達成（本家の約1/180） |
-| find_by_text | 0.91〜1.09 ms | 67.8〜70.0 ms | 5 ms以下 | 達成 |
-| find_similar | 1.40〜1.43 ms | 42.5〜43.0 ms | 3 ms以下 | 達成 |
+**性能測定条件:** AMD Ryzen 7 7735HS（8コア16スレッド）、WSL2 Ubuntu 24.04、メモリ7.8GiB、Rust 1.99.1。`[profile.release] lto = true`、`CARGO_BUILD_JOBS=2`、Rayonは既定スレッド数、libxml2互換DOM、付録Aの2000商品・約416KB合成ページを使用。`cargo run --release -p rustscrapling-adaptive --example bench_adaptive --offline`。`std::time::Instant` による各1回ウォームアップ後の best-of-3（relocate）、best-of-5（検索）、HTML解析時間は除外。共有Windowsホスト上の他のCargoビルドと負荷が重なったため変動があり、Criterionによる負荷を抑えた再測定は未実施。段階1のMuse VMおよび本家基準値との**同一環境・同一日の直接比較ではない**。
 
-正しさの照合（すべて oracle の正解データと一致）:
+| 処理 | 今回の実測（ms） | 段階2目標 | 判定 |
+|---|---|---|---|
+| `relocate`（最初のreleaseビルド直後） | 111.25 | ≤50 | 未達 |
+| `find_by_text`（同上） | 8.03 | ≤5 | 未達 |
+| `find_similar`（同上） | 12.65 | ≤3 | 未達 |
+| `relocate`（同一バイナリ再実行3回） | 85.50 / 111.94 / 88.86 | ≤50 | 未達 |
+| `find_by_text`（同上） | 2.42 / 3.87 / 2.57 | ≤5 | 各回達成 |
+| `find_similar`（同上） | 11.01 / 12.06 / 9.77 | ≤3 | 未達 |
+| `relocate`（同一兄弟タグの厳密スコア最適化後、1回） | 49.53 | ≤50 | 単回達成、再測定要 |
+| `find_by_text`（同上） | 7.01 | ≤5 | 未達 |
+| `find_similar`（同上） | 15.09 | ≤3 | 未達 |
+| `relocate`（短い入力インデックス＋属性類似度メモ化後のrelease再ビルド直後） | 51.73 | ≤50 | 単回未達 |
+| `find_by_text`（同上） | 6.66 | ≤5 | 未達 |
+| `find_similar`（同上） | 8.49 | ≤3 | 未達 |
+| `relocate`（最終releaseバイナリ再実行3回） | 33.66 / 35.83 / 33.46 | ≤50 | 各回達成 |
+| `find_by_text`（同上） | 5.85 / 6.28 / 3.23 | ≤5 | 1/3回達成 |
+| `find_similar`（同上） | 9.38 / 6.12 / 6.65 | ≤3 | 未達 |
 
-- SequenceMatcher 比率: ランダム生成3万件（文字列・タプル・長さ150〜420の長文）で difflib と完全一致。
-- element_to_dict: general / filter 文書の全要素辞書が本家と完全一致。
-- find_similar / find_by_text / find_by_regex: fixture の全ケース一致（閾値0.9で空、partial・大小文字・clean の各組合せ含む）。
-- storage: 本家が書いた DB を Rust が読んで relocate 一致。逆向き（Rust が書いた DB を本家が読む）は `oracle/verify_stage2.py` で JSON バイト同一と relocate 一致を確認。
-- CLI スモーク: select（css/xpath/text）、similar、保存→ページ改変→relocate の一巡を通した。この過程で「Rust が書いた DB を Rust が読めない」不具合（element_data の TEXT/BLOB 非対称）を検出して修正し、回帰テスト `storage::tests::rust_written_db_roundtrips` を追加した（詳細は COMPAT.md 5節）。
-
-性能の内訳と教訓（Explain the Number）:
-
-- relocate の支配コストは siblings 比率だった。候補ごとに「元の要素の兄弟1999件」と候補の兄弟を SequenceMatcher で比べるため、候補約1万件 × 兄弟走査が効く。兄弟リスト単位のメモ化（異なる兄弟リストは実ページでは数種類しかない）と、親ステージの構成要素（タグ比率・属性 dict_diff・親テキスト比率）メモ化で逐次 167 ms → 並列 28 ms まで短縮した。メモ化は構成要素を分けて保持し、加算順序を変えないためスコアはビット単位で不変（fixture の個別スコア照合で確認済み）。
-- 途中の大きな落とし穴: SequenceMatcher の DP 行バッファに `SmallVec<[usize; 64]>`（インライン64要素＝512バイト）を使い、`mem::swap` で入れ替えたため、行ごとに約3KBのコピーが発生し relocate が約6倍に悪化した（逐次 164 ms → 958 ms）。参照の入れ替え（ping-pong）に変えて解消。バッファの値渡し swap はインライン容量に比例する。
-- 同じく、Scratch バッファを matcher 構造体へ移した際に find_longest_match 呼び出し間のリセット漏れがあり、古い行の値が次の呼び出しの初行に混入した（difflib との照合テストが検出）。呼び出し冒頭で touched リストに基づき両バッファを初期化して修正。
+最終実装は `relocate` を追加実測3回とも50ms以下に収めた。ただし、共有ホストの負荷変動があるため、管理された専用環境での Criterion 計測による確認が残る。`find_by_text` は3回中2回、`find_similar` は3回とも段階2の目標未達。特に類似検索は `str_ratio` の小配列用インデックスと属性値の計算結果メモ化後でも目標と差がある。対象選択クレートの速度改善は段階2担当範囲外であり、この結果を未達として記録する。

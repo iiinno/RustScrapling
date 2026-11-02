@@ -1,0 +1,7 @@
+<!doctype html><html lang="en"><head><title>RustScrapling local test</title></head>
+<body><main><h1>RustScrapling browser</h1><p>A local fixture rendered by Chrome via CDP DOM commands.</p>
+<div id="shadow-host"></div>
+<script>
+  const shadow = document.getElementById('shadow-host').attachShadow({mode:'open'});
+  shadow.innerHTML = '<strong id="shadow-label">shadow-dom-visible</strong>';
+</script></main></body></html>

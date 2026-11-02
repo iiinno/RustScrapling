@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "stage2-cli-v1.schema.json",
+  "title": "RustScrapling stage 2 CLI output (version 1)",
+  "description": "The default JSON output of select, similar, and relocate. --out replaces the result payload on stdout with a receipt. Errors go to stderr with a nonzero exit code.",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "command", "parser", "truncated", "results"],
+      "properties": {
+        "schema_version": { "const": 1 },
+        "command": { "enum": ["select", "similar", "relocate"] },
+        "parser": { "enum": ["html5", "compat"] },
+        "truncated": { "type": "boolean" },
+        "results": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "path"],
+                "properties": { "kind": { "const": "element" }, "path": { "type": "string" } }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "value"],
+                "properties": { "kind": { "const": "text" }, "value": { "type": "string" } }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "command", "saved_to", "chars", "headings"],
+      "properties": {
+        "schema_version": { "const": 1 },
+        "command": { "enum": ["select", "similar", "relocate"] },
+        "saved_to": { "type": "string" },
+        "chars": { "type": "integer", "minimum": 0 },
+        "headings": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "error"],
+      "properties": {
+        "schema_version": { "const": 1 },
+        "error": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "message", "hint"],
+          "properties": {
+            "kind": { "type": "string" },
+            "message": { "type": "string" },
+            "hint": { "type": "string" }
+          }
+        }
+      }
+    }
+  ]
+}
