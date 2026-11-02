@@ -70,8 +70,8 @@ struct Session {
 enum Engine {
     Http(HttpClient),
     Browser {
-        client: BrowserClient,
-        page: BrowserPage,
+        client: Box<BrowserClient>,
+        page: Box<BrowserPage>,
         last_url: Option<String>,
         network: Vec<NetworkRecord>,
     },
@@ -186,8 +186,8 @@ impl RuntimeBackend {
             .map_err(|_| BackendError::new("session_busy", "Session has active operations"))?
             .into_inner();
         if let Engine::Browser { client, page, .. } = session.engine {
-            let closed = page.close().await;
-            client.shutdown().await?;
+            let closed = (*page).close().await;
+            (*client).shutdown().await?;
             closed?;
         }
         Ok(structured(
@@ -399,8 +399,8 @@ impl RuntimeBackend {
         self.add_session(
             args,
             Engine::Browser {
-                client,
-                page,
+                client: Box::new(client),
+                page: Box::new(page),
                 last_url: None,
                 network: vec![],
             },

@@ -125,7 +125,7 @@ async fn browser_get_and_session_if_chrome_is_available() {
     ];
     let chrome = candidates
         .into_iter()
-        .filter_map(|name| std::env::var_os(name))
+        .filter_map(std::env::var_os)
         .find(|path| std::path::Path::new(path).is_file());
     #[cfg(windows)]
     let chrome = chrome.or_else(|| {
