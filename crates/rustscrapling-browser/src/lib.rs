@@ -16,6 +16,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::process::{Child, Command};
 use tokio::sync::Mutex;
 use tokio::time::{sleep, timeout};
@@ -85,10 +86,14 @@ pub struct BrowserResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct BrowserState {
     pub version: u8,
     pub cookies: Vec<Value>,
 }
+
+const MAX_STATE_BYTES: usize = 4 * 1024 * 1024;
+const MAX_SCREENSHOT_BASE64_BYTES: usize = 8 * 1024 * 1024;
 
 /// An independent browser connection with a single reusable default tab.
 /// Use `open_page` to create additional tabs in the same browser context.
@@ -296,6 +301,11 @@ impl BrowserClient {
                 "unsupported browser state version".into(),
             ));
         }
+        if state.cookies.len() > 4096 {
+            return Err(BrowserError::InvalidArgument(
+                "too many cookies in browser state".into(),
+            ));
+        }
         let mut cookies = Vec::new();
         for value in &state.cookies {
             let mut cookie = serde_json::Map::new();
@@ -318,14 +328,19 @@ impl BrowserClient {
                     cookie.insert(field.to_owned(), value.clone());
                 }
             }
-            if !cookie.contains_key("name")
-                || !cookie.contains_key("value")
-                || !cookie.contains_key("domain")
+            if ["name", "value", "domain"]
+                .iter()
+                .any(|field| !cookie.get(*field).is_some_and(Value::is_string))
             {
-                continue;
+                return Err(BrowserError::InvalidArgument(
+                    "invalid cookie in browser state".into(),
+                ));
             }
             cookies.push(Value::Object(cookie));
         }
+        self.connection
+            .send("Storage.clearCookies", json!({}), None)
+            .await?;
         if !cookies.is_empty() {
             self.connection
                 .send("Storage.setCookies", json!({"cookies":cookies}), None)
@@ -337,17 +352,61 @@ impl BrowserClient {
     pub async fn save_state_file(&self, path: impl AsRef<Path>) -> Result<(), BrowserError> {
         let json = serde_json::to_vec_pretty(&self.save_state().await?)
             .map_err(|e| BrowserError::Io(e.to_string()))?;
-        tokio::fs::write(path, json)
+        if json.len() > MAX_STATE_BYTES {
+            return Err(BrowserError::InvalidArgument(
+                "browser state exceeds 4 MiB".into(),
+            ));
+        }
+        // create_new is atomic and does not follow a symlink at the destination.
+        // Refuse to overwrite existing state containing session credentials.
+        let mut options = tokio::fs::OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)]
+        {
+            options.mode(0o600);
+        }
+        let path = path.as_ref();
+        let mut file = options
+            .open(path)
             .await
-            .map_err(|e| BrowserError::Io(e.to_string()))
+            .map_err(|e| BrowserError::Io(e.to_string()))?;
+        let written = async {
+            file.write_all(&json).await?;
+            file.sync_all().await
+        }
+        .await;
+        if let Err(error) = written {
+            let _ = tokio::fs::remove_file(path).await;
+            return Err(BrowserError::Io(error.to_string()));
+        }
+        Ok(())
     }
 
     pub async fn restore_state_file(&self, path: impl AsRef<Path>) -> Result<(), BrowserError> {
-        let bytes = tokio::fs::read(path)
+        let path = path.as_ref();
+        let metadata = tokio::fs::symlink_metadata(path)
             .await
             .map_err(|e| BrowserError::Io(e.to_string()))?;
+        if !metadata.file_type().is_file() || metadata.len() > MAX_STATE_BYTES as u64 {
+            return Err(BrowserError::InvalidArgument(
+                "state must be a regular file under 4 MiB".into(),
+            ));
+        }
+        let file = tokio::fs::File::open(path)
+            .await
+            .map_err(|e| BrowserError::Io(e.to_string()))?;
+        let mut bytes = Vec::new();
+        file.take(MAX_STATE_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)
+            .await
+            .map_err(|e| BrowserError::Io(e.to_string()))?;
+        if bytes.len() > MAX_STATE_BYTES {
+            return Err(BrowserError::InvalidArgument(
+                "browser state exceeds 4 MiB".into(),
+            ));
+        }
         let state: BrowserState = serde_json::from_slice(&bytes)
-            .map_err(|e| BrowserError::InvalidArgument(e.to_string()))?;
+            .map_err(|_| BrowserError::InvalidArgument("invalid browser state JSON".into()))?;
         self.restore_state(&state).await
     }
 
@@ -517,6 +576,70 @@ impl BrowserPage {
             .pointer("/result/value")
             .cloned()
             .unwrap_or(Value::Null))
+    }
+
+    /// Returns an encoded PNG/JPEG CDP screenshot; limits page size and response size.
+    /// This does not initialize Runtime or execute page JavaScript.
+    pub async fn screenshot(
+        &self,
+        image_type: &str,
+        quality: Option<u8>,
+        full_page: bool,
+    ) -> Result<String, BrowserError> {
+        if !matches!(image_type, "png" | "jpeg") || (image_type == "png" && quality.is_some()) {
+            return Err(BrowserError::InvalidArgument(
+                "invalid screenshot format or quality".into(),
+            ));
+        }
+        let mut args = json!({"format": image_type, "fromSurface": true});
+        if let Some(quality) = quality {
+            if quality > 100 {
+                return Err(BrowserError::InvalidArgument(
+                    "JPEG quality must be 0-100".into(),
+                ));
+            }
+            args["quality"] = json!(quality);
+        }
+        if full_page {
+            let layout = self.raw("Page.getLayoutMetrics", json!({})).await?;
+            let size = layout
+                .get("cssContentSize")
+                .or_else(|| layout.get("contentSize"))
+                .ok_or_else(|| BrowserError::Protocol("CDP layout metrics missing".into()))?;
+            let width = size["width"].as_f64().unwrap_or(0.0);
+            let height = size["height"].as_f64().unwrap_or(0.0);
+            if !(width.is_finite()
+                && height.is_finite()
+                && width > 0.0
+                && height > 0.0
+                && width <= 8192.0
+                && height <= 8192.0
+                && width * height <= 32_000_000.0)
+            {
+                return Err(BrowserError::InvalidArgument(
+                    "full-page screenshot exceeds 8192px or 32MP limits".into(),
+                ));
+            }
+            args["captureBeyondViewport"] = json!(true);
+            args["clip"] = json!({"x":0,"y":0,"width":width,"height":height,"scale":1});
+        }
+        let response = self.raw("Page.captureScreenshot", args).await?;
+        let encoded = response
+            .get("data")
+            .and_then(Value::as_str)
+            .ok_or_else(|| BrowserError::Protocol("screenshot data missing".into()))?;
+        if encoded.is_empty()
+            || encoded.len() > MAX_SCREENSHOT_BASE64_BYTES
+            || encoded.len() % 4 != 0
+            || !encoded
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b == b'+' || b == b'/' || b == b'=')
+        {
+            return Err(BrowserError::Protocol(
+                "invalid or oversized screenshot data".into(),
+            ));
+        }
+        Ok(encoded.to_owned())
     }
 
     pub async fn close(self) -> Result<(), BrowserError> {

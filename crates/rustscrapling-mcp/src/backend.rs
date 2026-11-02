@@ -91,11 +91,14 @@ impl RuntimeBackend {
             "make_request" => self.http_request(&args, None).await,
             "open_request_session" => self.open_http(&args).await,
             "session_make_request" => {
-                let session = self.session(required(&args,"session_id")?).await?;
+                let session = self.session(required(&args, "session_id")?).await?;
                 let guard = session.lock().await;
                 match &guard.engine {
                     Engine::Http(client) => self.http_request(&args, Some(client)).await,
-                    _ => Err(BackendError::new("session_type", "Expected an HTTP session")),
+                    _ => Err(BackendError::new(
+                        "session_type",
+                        "Expected an HTTP session",
+                    )),
                 }
             }
             "browser_fetch_once" => self.browser_once(&args).await,
@@ -108,11 +111,13 @@ impl RuntimeBackend {
             "browser_network_request" => self.network_request(&args).await,
             "list_sessions" => self.list_sessions().await,
             "close_session" => self.close_session(&args).await,
-            "browser_save_state" | "browser_load_state" => Err(BackendError::new("unsupported_operation",
-                "Browser state currently supports cookies only; upstream requires cookies, localStorage and IndexedDB")),
-            "browser_screenshot" => Err(BackendError::new("unsupported_operation",
-                "The integrated CDP backend does not expose screenshot capture")),
-            _ => Err(BackendError::new("unknown_tool", format!("Unknown tool '{name}'"))),
+            "browser_save_state" => self.browser_save_state(&args).await,
+            "browser_load_state" => self.browser_load_state(&args).await,
+            "browser_screenshot" => self.browser_screenshot(&args).await,
+            _ => Err(BackendError::new(
+                "unknown_tool",
+                format!("Unknown tool '{name}'"),
+            )),
         }
     }
 
@@ -580,6 +585,92 @@ impl RuntimeBackend {
         }
         Ok(text(format!("Completed {} wait action(s)", actions.len())))
     }
+    async fn browser_save_state(&self, args: &Map<String, Value>) -> Outcome {
+        let path = state_file_path(required(args, "path")?)?;
+        let session = self.session(required(args, "session_id")?).await?;
+        let session = session.lock().await;
+        let Engine::Browser { client, .. } = &session.engine else {
+            return Err(BackendError::new(
+                "session_type",
+                "Expected browser session",
+            ));
+        };
+        client.save_state_file(&path).await?;
+        Ok(structured(
+            json!({"saved":true,"path":required(args,"path")?,"contents":"cookies_only","note":"localStorage and IndexedDB are not captured"}),
+        ))
+    }
+    async fn browser_load_state(&self, args: &Map<String, Value>) -> Outcome {
+        let path = state_file_path(required(args, "path")?)?;
+        let session = self.session(required(args, "session_id")?).await?;
+        let session = session.lock().await;
+        let Engine::Browser { client, .. } = &session.engine else {
+            return Err(BackendError::new(
+                "session_type",
+                "Expected browser session",
+            ));
+        };
+        client.restore_state_file(&path).await?;
+        Ok(structured(
+            json!({"loaded":true,"path":required(args,"path")?,"contents":"cookies_only","note":"localStorage and IndexedDB are unchanged; reload pages to use restored cookies"}),
+        ))
+    }
+    async fn browser_screenshot(&self, args: &Map<String, Value>) -> Outcome {
+        reject_some(args, "selector")?;
+        reject_some(args, "ref")?;
+        let format = opt_str(args, "image_type")?.unwrap_or("png");
+        if !matches!(format, "png" | "jpeg") {
+            return Err(BackendError::new(
+                "invalid_arguments",
+                "image_type must be png or jpeg",
+            ));
+        }
+        let quality = if args.get("quality").is_some_and(|v| !v.is_null()) {
+            let value = number(args, "quality", 0.0)?;
+            if format != "jpeg" || value > 100.0 || value.fract() != 0.0 {
+                return Err(BackendError::new(
+                    "invalid_arguments",
+                    "quality is valid only for JPEG (integer 0-100)",
+                ));
+            }
+            Some(value as u8)
+        } else {
+            None
+        };
+        let full_page = opt_bool(args, "full_page", false)?;
+        let timeout_ms = number(args, "timeout", 30000.0)?;
+        if timeout_ms > 300_000.0 {
+            return Err(BackendError::new(
+                "invalid_arguments",
+                "Screenshot timeout cannot exceed 300000ms",
+            ));
+        }
+        let session = self.session(required(args, "session_id")?).await?;
+        let session = session.lock().await;
+        let Engine::Browser { page, last_url, .. } = &session.engine else {
+            return Err(BackendError::new(
+                "session_type",
+                "Expected browser session",
+            ));
+        };
+        if last_url.is_none() {
+            return Err(BackendError::new("no_page", "Call browser_fetch first"));
+        }
+        let capture = page.screenshot(format, quality, full_page);
+        let encoded = if timeout_ms == 0.0 {
+            capture.await?
+        } else {
+            tokio::time::timeout(Duration::from_millis(timeout_ms as u64), capture)
+                .await
+                .map_err(|_| BackendError::new("timeout", "Screenshot timed out"))??
+        };
+        Ok(CallToolResult::success(vec![
+            ContentBlock::image(encoded, format!("image/{format}")),
+            ContentBlock::text(
+                json!({"url":last_url,"format":format,"full_page":full_page}).to_string(),
+            ),
+        ]))
+    }
     async fn network_list(&self, args: &Map<String, Value>) -> Outcome {
         let pattern = opt_str(args, "url_pattern")?
             .map(regex::Regex::new)
@@ -647,6 +738,82 @@ impl RuntimeBackend {
             )),
         }
     }
+}
+
+/// State is a credential-bearing file. MCP callers can address only a safe
+/// filename in a dedicated directory, never arbitrary host filesystem paths.
+fn state_file_path(name: &str) -> Result<PathBuf, BackendError> {
+    let stem = name.strip_suffix(".json").ok_or_else(|| {
+        BackendError::new("invalid_state_path", "State filename must end in .json")
+    })?;
+    if stem.is_empty()
+        || stem.len() > 64
+        || !stem
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-')
+    {
+        return Err(BackendError::new(
+            "invalid_state_path",
+            "Use a simple filename such as session.json (letters, digits, _ or -)",
+        ));
+    }
+    let root = std::env::var_os("RUSTSCRAPLING_STATE_DIR")
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
+        .unwrap_or_else(default_state_dir);
+    if std::fs::symlink_metadata(&root).is_err() {
+        std::fs::create_dir_all(&root)
+            .map_err(|_| BackendError::new("state_io", "Cannot create browser state directory"))?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).map_err(
+                |_| BackendError::new("state_io", "Cannot protect browser state directory"),
+            )?;
+        }
+    }
+    let metadata = std::fs::symlink_metadata(&root)
+        .map_err(|_| BackendError::new("state_io", "Cannot inspect browser state directory"))?;
+    if !metadata.file_type().is_dir() || metadata.file_type().is_symlink() {
+        return Err(BackendError::new(
+            "invalid_state_path",
+            "Browser state directory must not be a symlink",
+        ));
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if metadata.permissions().mode() & 0o077 != 0 {
+            return Err(BackendError::new(
+                "state_permissions",
+                "Browser state directory must have private permissions (0700)",
+            ));
+        }
+    }
+    Ok(root.join(name))
+}
+
+fn default_state_dir() -> PathBuf {
+    #[cfg(windows)]
+    {
+        if let Some(data) = std::env::var_os("LOCALAPPDATA") {
+            return PathBuf::from(data)
+                .join("RustScrapling")
+                .join("browser-states");
+        }
+    }
+    #[cfg(unix)]
+    {
+        if let Some(data) = std::env::var_os("XDG_STATE_HOME") {
+            return PathBuf::from(data)
+                .join("rustscrapling")
+                .join("browser-states");
+        }
+        if let Some(home) = std::env::var_os("HOME") {
+            return PathBuf::from(home).join(".local/state/rustscrapling/browser-states");
+        }
+    }
+    std::env::temp_dir().join("rustscrapling-browser-states")
 }
 
 fn required<'a>(args: &'a Map<String, Value>, key: &str) -> Result<&'a str, BackendError> {

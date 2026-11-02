@@ -57,8 +57,14 @@ response status, URL, headers, resource type and failures. Captured request
 bodies are not currently retained. `BrowserState` stores cookies through
 `Storage.getCookies` / `Storage.setCookies`; localStorage is intentionally not
 read automatically because its normal access would require script evaluation.
-The JSON files produced by `save_state_file()` may contain session secrets;
-store them with appropriate filesystem permissions.
+The JSON files produced by `save_state_file()` may contain session secrets.
+This API creates files exclusively (existing files and symlinks are not overwritten),
+restricts serialized state and reads to 4 MiB, and saves with `0600` on Unix.
+The caller remains responsible for selecting a private directory. Restoring
+valid state replaces current browser cookies; localStorage and IndexedDB are
+not represented. `BrowserPage::screenshot()` captures the viewport or full
+page as base64 PNG/JPEG via `Page.captureScreenshot`, bounded to 32 MP for
+full pages and 8 MiB encoded output. Neither method enables Runtime.
 
 Cloudflare and CAPTCHA checks detect common visible challenge markers and
 Cloudflare's 403 server header. This is only a signal of a block, not a
