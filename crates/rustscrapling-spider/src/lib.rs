@@ -307,12 +307,35 @@ fn host_allowed(spec: &CrawlSpec, url: &Url) -> bool {
 
 /// Extract HTTP(S) links using the same HTML5 DOM as the selector crate.
 pub fn page_links(base: &str, html: &str) -> Vec<String> {
+    page_links_limited(base, html, usize::MAX)
+}
+
+/// Limit links before allocating result strings, not just when adding them to
+/// the crawl queue. A large sitemap-like HTML page can otherwise exhaust
+/// memory even when the crawl specification requests only a few pages.
+fn page_links_limited(base: &str, html: &str, limit: usize) -> Vec<String> {
+    if limit == 0 {
+        return Vec::new();
+    }
     let Ok(base) = valid_url(base) else {
         return Vec::new();
     };
     let Ok(dom) = parse_html(html, &Html5Options::default()) else {
         return Vec::new();
     };
+    // HTML's first <base href> inside <head> sets relative-link resolution.
+    // Keep the same safety checks as ordinary fetched and discovered URLs.
+    let base = dom
+        .descendants_or_self(dom.root)
+        .into_iter()
+        .find(|&id| {
+            dom.node(id).tag == "base"
+                && dom.attr(id, "href").is_some()
+                && dom.ancestors(id).iter().any(|&a| dom.node(a).tag == "head")
+        })
+        .and_then(|id| base.join(dom.attr(id, "href")?).ok())
+        .filter(|url| valid_url(url.as_str()).is_ok())
+        .unwrap_or(base);
     let mut seen = HashSet::new();
     let mut links = Vec::new();
     for node in dom.descendants_or_self(dom.root) {
@@ -332,6 +355,9 @@ pub fn page_links(base: &str, html: &str) -> Vec<String> {
         let value = url.to_string();
         if seen.insert(value.clone()) {
             links.push(value);
+            if links.len() == limit {
+                break;
+            }
         }
     }
     links
@@ -436,7 +462,11 @@ where
     } else {
         let seeds = templates::resolve_seeds(spec, &fetcher).await?;
         Progress {
-            queue: seeds.into_iter().map(|url| (url, 0)).collect(),
+            queue: seeds
+                .into_iter()
+                .take(spec.max_pages)
+                .map(|url| (url, 0))
+                .collect(),
             ..Progress::default()
         }
     };
@@ -513,7 +543,13 @@ where
                         && response.content_type.contains("html")
                         && depth < spec.max_depth
                     {
-                        page_links(&response.url, &response.body)
+                        page_links_limited(
+                            &response.url,
+                            &response.body,
+                            spec.max_pages
+                                .saturating_sub(visited.len())
+                                .saturating_sub(queue.len()),
+                        )
                     } else {
                         Vec::new()
                     };
@@ -728,6 +764,73 @@ mod tests {
             "<a href='/b'>b</a><a href='/b#x'>b2</a><a href='javascript:alert(1)'>no</a>",
         );
         assert_eq!(links, vec!["https://example.com/b"]);
+    }
+
+    #[test]
+    fn respects_html_base_and_bounds_link_discovery() {
+        let html = "<html><head><base href='https://example.com/docs/'></head><body>\
+            <a href='one#top'>first</a><a href='one#next'>duplicate</a>\
+            <a href='two'>second</a><a href='three'>third</a></body></html>";
+        assert_eq!(
+            page_links_limited("https://example.com/index", html, 2),
+            vec![
+                "https://example.com/docs/one".to_owned(),
+                "https://example.com/docs/two".to_owned(),
+            ]
+        );
+        assert!(page_links_limited("https://example.com/index", html, 0).is_empty());
+        assert_eq!(
+            page_links_limited(
+                "https://example.com/index",
+                "<html><head><base href='javascript:alert(1)'></head><body><a href='/safe'>safe</a></body></html>",
+                1,
+            ),
+            vec!["https://example.com/safe".to_owned()]
+        );
+    }
+
+    struct LinkFlood;
+    impl Fetcher for LinkFlood {
+        fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
+            Box::pin(async move {
+                let body = if url.ends_with("/start") {
+                    (0..2000)
+                        .map(|id| format!("<a href='/page/{id}'>Page</a>"))
+                        .collect::<String>()
+                } else {
+                    "<p>Done</p>".to_owned()
+                };
+                Ok(FetchPage {
+                    status: 200,
+                    url: url.to_owned(),
+                    content_type: "text/html".into(),
+                    body,
+                })
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn large_link_pages_do_not_grow_queue_beyond_max_pages() {
+        let spec = CrawlSpec {
+            start_urls: vec!["https://example.com/start".into()],
+            max_pages: 3,
+            max_depth: 1,
+            concurrency: 1,
+            ..CrawlSpec::default()
+        };
+        let mut visited = Vec::new();
+        let result = crawl(&spec, Arc::new(LinkFlood), |item| {
+            visited.push(item.url.clone());
+            Ok(())
+        })
+        .await
+        .unwrap();
+        assert_eq!(result.visited, 3);
+        assert_eq!(result.remaining, 0);
+        assert_eq!(visited.len(), 3);
+        assert!(visited[1].ends_with("/page/0"));
+        assert!(visited[2].ends_with("/page/1"));
     }
 
     #[test]
