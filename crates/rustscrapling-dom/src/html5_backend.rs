@@ -18,16 +18,9 @@ use std::borrow::Cow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
+#[derive(Default)]
 pub struct Html5Options {
     pub keep_comments: bool,
-}
-
-impl Default for Html5Options {
-    fn default() -> Self {
-        Html5Options {
-            keep_comments: false,
-        }
-    }
 }
 
 pub fn parse_html(input: &str, opts: &Html5Options) -> Result<Dom, String> {
@@ -56,8 +49,7 @@ struct ArenaSink {
 impl ArenaSink {
     fn new(keep_comments: bool) -> Self {
         let dom = Dom::new();
-        let mut names = Vec::new();
-        names.push(None); // document node
+        let names = vec![None]; // document node
         ArenaSink {
             dom: RefCell::new(dom),
             names: RefCell::new(names),

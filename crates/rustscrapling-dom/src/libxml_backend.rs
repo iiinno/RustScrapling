@@ -23,16 +23,9 @@ use libxml::bindings::{
 use libxml::parser::{Parser, ParserOptions};
 use std::ffi::CStr;
 
+#[derive(Default)]
 pub struct CompatOptions {
     pub keep_comments: bool,
-}
-
-impl Default for CompatOptions {
-    fn default() -> Self {
-        CompatOptions {
-            keep_comments: false,
-        }
-    }
 }
 
 pub fn parse_html(input: &str, opts: &CompatOptions) -> Result<Dom, String> {
