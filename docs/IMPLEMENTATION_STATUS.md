@@ -11,8 +11,8 @@
 | 4 CDP browser | 低レベルCDP、DOM/Shadow DOM、ページ再利用、Cookie状態、Networkイベント、外部接続 | Windows Chromeで1 unit＋1実ブラウザE2E PASS。D-007に沿い明示evaluate以外ではRuntime.enableなしを確認 | CAPTCHA/Cloudflare solver、DoH、広告ブロック全件、認証proxy、network body記録など未完。実サイト成功率比較なし | 部分達成 |
 | 5 Auto/Daemon | HTTP→browser→headed tier、ブロック検知、24h学習、認証IPC、daemon start/stop/status、同一URL取得集約、ETag/Last-Modified、レート制限。SQLiteで学習tier・安全な条件付きGETキャッシュを再起動後に復元 | daemonテスト6件（再起動・TTL・304復元・機密データ除外・破損DBを含む）とCLI daemon計2件PASS。localhost 150ページ×並列8: 0.79秒、最大RSS24.99MiBは永続化追加前の参考値 | `fetch-integration`全体再検証、同条件での本家比較、24h連続試験未達 | 部分達成 |
 | 6 Crawl | TOML指定、同一URL指紋重複排除、bounded queue、並列、robots.txt、checkpoint。6種のテンプレートとNDJSON/JSON/CSV/XML出力、取得開始時点のホスト別速度制限、クエリを含むrobots判定 | WSLのcrawlerテスト9件PASS（遅いバッチ構築中の速度制限も検証）、CLIの出力形式テストPASS | Python Spiderの全ミドルウェア互換、クラッシュ後のexactly-once保証、AutoThrottle等未完。全テンプレートの本家比較未実施 | 部分達成 |
-| 7 MCP | rmcp stdio、本家16ツール/137引数、実HTTP・ブラウザ/CDP取得、セッション・本文抽出、未対応エラー | tool catalog2件、stdio1件、HTTP/CDPバックエンド3件PASS | 本家の全行動互換、screenshot・完全なbrowser state・全アクション未達 | 部分達成 |
-| 8 仕上げ | ローカルCLI E2E、監査・回帰、CI・再現スクリプト、150ページ負荷試験 | WSL workspace68件PASS、CLI E2E6件PASS、固定150ページ×8で最大RSS24.99MiB | 1時間ファジング、24時間連続稼働、約200URL本家比較、実サイト成功率/速度/メモリ比較未達 | 未達 |
+| 7 MCP | rmcp stdio、本家16ツール/137引数、実HTTP・ブラウザ/CDP取得、セッション・本文抽出。Cookie限定のbrowser state保存/復元、CDP PNG/JPEG screenshot取得を追加 | tool catalog2件、stdio1件、HTTP/CDPバックエンド3件と追加mock CDP 1件PASS。mockは画像転送とCookieの往復を検証 | 実Chromeでの新機能E2E未実施。localStorage/IndexedDB、selector/ref screenshot、ARIA、全アクション/本家互換未達 | 部分達成 |
+| 8 仕上げ | ローカルCLI E2E、監査・回帰、CI・再現スクリプト、150ページ負荷試験 | 永続化・MCP mock・クローラ修正を統合後にWSL `cargo test --workspace --lib --tests --locked --offline` 終了コード0。従来のCLI E2E6件PASS、固定150ページ×8で最大RSS24.99MiBは追加変更前の測定 | 追加変更後の負荷再計測、1時間ファジング、24時間連続稼働、約200URL本家比較、実サイト成功率/速度/メモリ比較未達 | 未達 |
 
 ## 実装と計測の扱い
 

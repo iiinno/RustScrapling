@@ -1,5 +1,16 @@
 # RESULTS.md: 測定と検証の結果
 
+## 2026-11-03 引き継ぎ統合後ワークスペース再検証
+
+- `integration/plan-v2-recovered` にクローラ修正、SQLite永続化、MCP Cookie state・CDP screenshotとmock CDP試験を統合した後、WSL2 Ubuntu 24.04（Rust 1.99.1、`CARGO_TARGET_DIR=/root/rustscrapling-target`、`CARGO_BUILD_JOBS=2`）で `cargo test --workspace --lib --tests --locked --offline` を実行し **終了コード0** を確認。既存テストと追加テストを通過した。
+- この再検証でChrome実機依存テストはChrome実行ファイル不在のため内部スキップ。新規MCPのmock CDP E2Eは別途1件PASS。24時間試験や本家との同条件比較は行っていない。
+
+## 2026-11-03 MCPブラウザ状態とCDP画像の追加検証
+
+- `feat/mcp-browser-state` を統合。Windows上のWSL2 Ubuntu 24.04で `cargo test -p rustscrapling-browser -p rustscrapling-mcp --tests` はPASS、追加の `cargo test -p rustscrapling-mcp --test mock_cdp` は1/1 PASS。モックCDPとMCPを接続し、PNG/JPEGスクリーンショットのbase64返送、full_page clip・qualityパラメータ、Cookieの保存→値変更→復元→再保存を検証した。
+- 新機能の実Chrome E2EはWSL環境にChrome実行ファイルがなく内部スキップされたため未実施。Windows native の初回依存ビルドはBoringSSLのNASM不足により完了していない。これらを成功として計上しない。
+- ブラウザ状態はCookieのみ（最大4MiB、専用非公開ディレクトリ、単純ファイル名、上書き禁止）、localStorageとIndexedDBは対象外。スクリーンショットはPNG/JPEG、32MP/8MiB上限。selector/ref指定の撮影も未実装。
+
 ## 2026-11-03 Daemon SQLite永続化
 
 - Windows 11ネイティブ（Rust 1.99.1）、`cargo check -p rustscrapling-daemon`、`cargo test -p rustscrapling-daemon`（6件）、`cargo clippy -p rustscrapling-daemon --all-targets -- -D warnings`がPASS。担当worktree `feat/daemon-persistent` の実測結果を統合コミットへ採用。
