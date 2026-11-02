@@ -101,11 +101,7 @@ impl Dom {
         self.push(Node::new(kind))
     }
 
-    pub fn create_detached_element(
-        &mut self,
-        tag: &str,
-        attrs: Vec<(String, String)>,
-    ) -> NodeId {
+    pub fn create_detached_element(&mut self, tag: &str, attrs: Vec<(String, String)>) -> NodeId {
         let mut node = Node::new(NodeKind::Element);
         node.tag = tag.to_ascii_lowercase();
         node.attrs = attrs;
@@ -137,9 +133,7 @@ impl Dom {
     /// Remove a node from its parent (the node stays in the arena).
     pub fn detach(&mut self, child: NodeId) {
         if let Some(parent) = self.nodes[child as usize].parent.take() {
-            self.nodes[parent as usize]
-                .children
-                .retain(|&c| c != child);
+            self.nodes[parent as usize].children.retain(|&c| c != child);
         }
     }
 
@@ -377,11 +371,7 @@ mod tests {
         let mut dom = Dom::new();
         let html = dom.add_element(dom.root, "html", vec![]);
         let body = dom.add_element(html, "body", vec![]);
-        let div = dom.add_element(
-            body,
-            "div",
-            vec![("id".to_string(), "x".to_string())],
-        );
+        let div = dom.add_element(body, "div", vec![("id".to_string(), "x".to_string())]);
         dom.add_text(div, "before");
         let span = dom.add_element(div, "span", vec![]);
         dom.add_text(span, "inner");
@@ -415,5 +405,5 @@ mod tests {
     }
 }
 
-pub mod libxml_backend;
 pub mod html5_backend;
+pub mod libxml_backend;

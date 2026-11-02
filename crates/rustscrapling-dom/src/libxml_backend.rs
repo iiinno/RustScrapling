@@ -15,9 +15,10 @@
 
 use crate::{Dom, NodeId};
 use libxml::bindings::{
-    xmlAttr, xmlElementType, xmlElementType_XML_CDATA_SECTION_NODE, xmlElementType_XML_COMMENT_NODE,
-    xmlElementType_XML_DOCUMENT_TYPE_NODE, xmlElementType_XML_DTD_NODE, xmlElementType_XML_ELEMENT_NODE,
-    xmlElementType_XML_TEXT_NODE, xmlNode,
+    xmlAttr, xmlElementType, xmlElementType_XML_CDATA_SECTION_NODE,
+    xmlElementType_XML_COMMENT_NODE, xmlElementType_XML_DOCUMENT_TYPE_NODE,
+    xmlElementType_XML_DTD_NODE, xmlElementType_XML_ELEMENT_NODE, xmlElementType_XML_TEXT_NODE,
+    xmlNode,
 };
 use libxml::parser::{Parser, ParserOptions};
 use std::ffi::CStr;
@@ -28,7 +29,9 @@ pub struct CompatOptions {
 
 impl Default for CompatOptions {
     fn default() -> Self {
-        CompatOptions { keep_comments: false }
+        CompatOptions {
+            keep_comments: false,
+        }
     }
 }
 
@@ -89,7 +92,9 @@ unsafe fn convert(node_ptr: *mut xmlNode, parent: NodeId, dom: &mut Dom, keep_co
             let content = cstr_to_string((*node_ptr).content as *const i8);
             dom.add_comment(parent, &content);
         }
-    } else if node_type == xmlElementType_XML_DOCUMENT_TYPE_NODE || node_type == xmlElementType_XML_DTD_NODE {
+    } else if node_type == xmlElementType_XML_DOCUMENT_TYPE_NODE
+        || node_type == xmlElementType_XML_DTD_NODE
+    {
         let name = cstr_to_string((*node_ptr).name as *const i8);
         dom.add_doctype(parent, &name);
     }
@@ -179,7 +184,12 @@ mod tests {
         // whitespace strings). The arena must keep them too.
         let html = "<html><body><div class=\"container\">\n  <p>First</p>\n  <p>Second</p>\n</div></body></html>";
         let dom = parse_html(html, &CompatOptions::default()).unwrap();
-        let texts: Vec<String> = dom.nodes.iter().filter(|n| n.kind == NodeKind::Text).map(|n| n.data.clone()).collect();
+        let texts: Vec<String> = dom
+            .nodes
+            .iter()
+            .filter(|n| n.kind == NodeKind::Text)
+            .map(|n| n.data.clone())
+            .collect();
         assert_eq!(texts, vec!["\n  ", "First", "\n  ", "Second", "\n"]);
     }
 
@@ -192,7 +202,12 @@ mod tests {
             .into_iter()
             .find(|&n| dom.node(n).tag == "div")
             .unwrap();
-        let names: Vec<&str> = dom.node(div).attrs.iter().map(|(k, _)| k.as_str()).collect();
+        let names: Vec<&str> = dom
+            .node(div)
+            .attrs
+            .iter()
+            .map(|(k, _)| k.as_str())
+            .collect();
         assert_eq!(names, vec!["z", "a", "m"]);
     }
 }

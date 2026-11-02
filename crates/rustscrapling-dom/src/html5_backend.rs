@@ -24,7 +24,9 @@ pub struct Html5Options {
 
 impl Default for Html5Options {
     fn default() -> Self {
-        Html5Options { keep_comments: false }
+        Html5Options {
+            keep_comments: false,
+        }
     }
 }
 
@@ -91,9 +93,7 @@ impl ArenaSink {
     fn append_node_or_text(&self, parent: NodeId, child: NodeOrText<NodeId>) {
         match child {
             NodeOrText::AppendNode(id) => {
-                if !self.keep_comments
-                    && self.dom.borrow().node(id).kind == NodeKind::Comment
-                {
+                if !self.keep_comments && self.dom.borrow().node(id).kind == NodeKind::Comment {
                     return;
                 }
                 self.dom.borrow_mut().attach(parent, id);
@@ -221,9 +221,7 @@ impl TreeSink for ArenaSink {
     fn append_before_sibling(&self, sibling: &NodeId, new_node: NodeOrText<NodeId>) {
         match new_node {
             NodeOrText::AppendNode(id) => {
-                if !self.keep_comments
-                    && self.dom.borrow().node(id).kind == NodeKind::Comment
-                {
+                if !self.keep_comments && self.dom.borrow().node(id).kind == NodeKind::Comment {
                     return;
                 }
                 self.dom.borrow_mut().insert_before(*sibling, id);
