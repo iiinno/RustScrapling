@@ -1,5 +1,14 @@
 # RESULTS.md: 測定と検証の結果
 
+## 2026-11-03 統合再検証
+
+- 環境は Windows 11 上の WSL2 Ubuntu 24.04、Rust 1.99.1、libxml2 2.9.14。Debug test、Cargo.lock固定、ビルド並列数2。
+- cargo test --workspace --lib --tests --locked は終了コード0。Adaptive14、Browser2、CLI5、Daemon4、DOM10、Extract5、Fetch3、HTTP/TLS/QUIC8、MCP6、Select5、Spider6の計68件がPASSした。Adaptiveの30,000ケース照合を含む。
+- HTTP/3: ローカルQUICサーバで自己署名CAを明示的に信頼し、実際のHTTP/3ネゴシエーションと本文受信を確認。HTTP/2フォールバックをHTTP/3成功としてカウントしない。
+- python3 tests/e2e_local.py /root/rustscrapling-target/debug/rustscrapling は6件PASS。localhostのHTTP GET/POST、Markdown、select、auto、crawlを検証。
+- python3 scripts/stress_local.py /root/rustscrapling-target/debug/rustscrapling はlocalhost固定HTML150ページ、並列数8、0.79秒、最大RSS24.99MiB、再開0.025秒。外部ネットワークや本家との差を測ったものではない。
+- 24時間安定性、約200件の実サイトによる本家比較、Cloudflare成功率、Adaptiveの残りの速度目標は、これらの試験では達成を証明できない。
+
 ## 2026-11-03 WSL統合追試
 
 - 機能復旧後のcargo test --workspace --lib --testsでは、Adaptive 8 unit + 6 fixture、Browser 1 unit + 1 localhost E2E、CLI 1 unit + 1 integration、Daemon 4 integration、DOM 10 unit、Extract 2 unit + 3 fixture、Fetch 3 unitまでPASSしたが、HTTP/3のローカル試験でRustls CryptoProvider自動選択例外があり、全体としてFAIL。全体合格を主張しない。
