@@ -444,7 +444,7 @@ where
     let mut queued: HashSet<String> = state.queue.iter().map(|(url, _)| key(url)).collect();
     let mut queue: VecDeque<(String, usize)> = state.queue.into();
     let mut summary = CrawlSummary::default();
-    // Shared per-origin gates must run in the futures themselves. A timestamp
+    // Shared per-host gates must run in the futures themselves. A timestamp
     // computed while filling a batch can be stale before the first poll.
     let mut site_clock = HashMap::<String, Arc<tokio::sync::Mutex<Option<Instant>>>>::new();
     let mut robot_cache = HashMap::<String, Option<Vec<RobotsRule>>>::new();
