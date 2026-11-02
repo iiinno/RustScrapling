@@ -1,5 +1,11 @@
 # RESULTS.md: 測定と検証の結果
 
+## 2026-11-03 Daemon SQLite永続化
+
+- Windows 11ネイティブ（Rust 1.99.1）、`cargo check -p rustscrapling-daemon`、`cargo test -p rustscrapling-daemon`（6件）、`cargo clippy -p rustscrapling-daemon --all-targets -- -D warnings`がPASS。担当worktree `feat/daemon-persistent` の実測結果を統合コミットへ採用。
+- 再起動をまたぐ条件付きGET本文/ETag・304復元、学習tierのTTL、キャッシュ期限切れ、Cookie・認証・クエリ等を含むリクエストの非永続化、private/no-store/Vary/Set-Cookie応答の非永続化、壊れたDBの型付きエラーを試験した。DBは専用private状態ディレクトリに保存される。
+- `fetch-integration`機能を付けた検査、クロスプロセス実CLI E2E、本家と同じ実サイトでの性能・成功率比較はこの確認に含まれない。
+
 ## 2026-11-03 クローラの速度制限・robots追試
 
 - 環境: Windows 11上のWSL2 Ubuntu 24.04、rootユーザーのRust 1.99.1、Debug test、Cargo.lock固定。`cargo test -p rustscrapling-spider --locked --offline` は9件PASS。
