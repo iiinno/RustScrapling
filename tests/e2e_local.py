@@ -155,8 +155,12 @@ class CliSmoke(unittest.TestCase):
             self.assertEqual(len(json.loads(dest.read_text())["results"]), 1)
             selector = self.cli("selector-gen", str(page), "--css", "h1", "--compat")
             self.assertEqual(selector["schema_version"], 1)
-            self.assertIn("h1", selector["css"])
-            self.assertIn("h1", selector["xpath"])
+            # Scrapling intentionally shortens an element with an ID to
+            # "#title" instead of redundantly retaining its h1 tag.
+            self.assertEqual(selector["css"], "#title")
+            self.assertIn("title", selector["xpath"])
+            roundtrip = self.cli("select", str(page), "--css", selector["css"], "--compat")
+            self.assertEqual(len(roundtrip["results"]), 1)
 
 
 if __name__ == "__main__":
