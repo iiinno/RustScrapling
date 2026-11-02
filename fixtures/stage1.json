@@ -1,0 +1,3111 @@
+{
+ "docs": [
+  {
+   "name": "general",
+   "html": "\n    <html>\n    <head>\n        <title>Complex Web Page</title>\n        <style>\n            .hidden { display: none; }\n        </style>\n    </head>\n    <body>\n        <header>\n            <nav>\n                <ul>\n                    <li><a href=\"#home\">Home</a></li>\n                    <li><a href=\"#about\">About</a></li>\n                    <li><a href=\"#contact\">Contact</a></li>\n                </ul>\n            </nav>\n        </header>\n        <main>\n            <section id=\"products\" schema='{\"jsonable\": \"data\"}'>\n                <h2>Products</h2>\n                <div class=\"product-list\">\n                    <article class=\"product\" data-id=\"1\">\n                        <h3>Product 1</h3>\n                        <p class=\"description\">This is product 1</p>\n                        <span class=\"price\">$10.99</span>\n                        <div class=\"hidden stock\">In stock: 5</div>\n                    </article>\n                    <article class=\"product\" data-id=\"2\">\n                        <h3>Product 2</h3>\n                        <p class=\"description\">This is product 2</p>\n                        <span class=\"price\">$20.99</span>\n                        <div class=\"hidden stock\">In stock: 3</div>\n                    </article>\n                    <article class=\"product\" data-id=\"3\">\n                        <h3>Product 3</h3>\n                        <p class=\"description\">This is product 3</p>\n                        <span class=\"price\">$15.99</span>\n                        <div class=\"hidden stock\">Out of stock</div>\n                    </article>\n                </div>\n            </section>\n            <section id=\"reviews\">\n                <h2>Customer Reviews</h2>\n                <div class=\"review-list\">\n                    <div class=\"review\" data-rating=\"5\">\n                        <p class=\"review-text\">Great product!</p>\n                        <span class=\"reviewer\">John Doe</span>\n                    </div>\n                    <div class=\"review\" data-rating=\"4\">\n                        <p class=\"review-text\">Good value for money.</p>\n                        <span class=\"reviewer\">Jane Smith</span>\n                    </div>\n                </div>\n            </section>\n        </main>\n        <footer>\n            <p>&copy; 2024 Our Company</p>\n        </footer>\n        <script id=\"page-data\" type=\"application/json\">\n            {\"lastUpdated\": \"2024-09-22T10:30:00Z\", \"totalProducts\": 3}\n        </script>\n    </body>\n    </html>\n    ",
+   "css": [
+    {
+     "expr": "main #products .product-list article.product",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "1"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "2"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "3"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "main #products .product-list article.product:not(:contains(\"Out of stock\"))",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "1"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "2"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": ".product",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "1"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "2"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "3"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": ".price",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]/span",
+       "tag": "span",
+       "text": "$10.99",
+       "tail": "\n                        ",
+       "text_content": "$10.99",
+       "attrib": [
+        [
+         "class",
+         "price"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]/span",
+       "tag": "span",
+       "text": "$20.99",
+       "tail": "\n                        ",
+       "text_content": "$20.99",
+       "attrib": [
+        [
+         "class",
+         "price"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]/span",
+       "tag": "span",
+       "text": "$15.99",
+       "tail": "\n                        ",
+       "text_content": "$15.99",
+       "attrib": [
+        [
+         "class",
+         "price"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": ".product .price::text",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "$10.99"
+      },
+      {
+       "kind": "text",
+       "value": "$20.99"
+      },
+      {
+       "kind": "text",
+       "value": "$15.99"
+      }
+     ]
+    },
+    {
+     "expr": "#page-data::text",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "\n            {\"lastUpdated\": \"2024-09-22T10:30:00Z\", \"totalProducts\": 3}\n        "
+      }
+     ]
+    },
+    {
+     "expr": "#products::attr(schema)",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "{\"jsonable\": \"data\"}"
+      }
+     ]
+    },
+    {
+     "expr": "article.product[data-id=\"2\"] .price",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]/span",
+       "tag": "span",
+       "text": "$20.99",
+       "tail": "\n                        ",
+       "text_content": "$20.99",
+       "attrib": [
+        [
+         "class",
+         "price"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "article[data-id]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "1"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "2"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "3"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "div.review-list > div.review",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div/div[1]",
+       "tag": "div",
+       "text": "\n                        ",
+       "tail": "\n                    ",
+       "text_content": "\n                        Great product!\n                        John Doe\n                    ",
+       "attrib": [
+        [
+         "class",
+         "review"
+        ],
+        [
+         "data-rating",
+         "5"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div/div[2]",
+       "tag": "div",
+       "text": "\n                        ",
+       "tail": "\n                ",
+       "text_content": "\n                        Good value for money.\n                        Jane Smith\n                    ",
+       "attrib": [
+        [
+         "class",
+         "review"
+        ],
+        [
+         "data-rating",
+         "4"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "ul li a",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[1]/a",
+       "tag": "a",
+       "text": "Home",
+       "tail": null,
+       "text_content": "Home",
+       "attrib": [
+        [
+         "href",
+         "#home"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[2]/a",
+       "tag": "a",
+       "text": "About",
+       "tail": null,
+       "text_content": "About",
+       "attrib": [
+        [
+         "href",
+         "#about"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[3]/a",
+       "tag": "a",
+       "text": "Contact",
+       "tail": null,
+       "text_content": "Contact",
+       "attrib": [
+        [
+         "href",
+         "#contact"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "li:first-child",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[1]",
+       "tag": "li",
+       "text": null,
+       "tail": "\n                    ",
+       "text_content": "Home",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "li:last-child",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[3]",
+       "tag": "li",
+       "text": null,
+       "tail": "\n                ",
+       "text_content": "Contact",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "li:nth-child(2)",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[2]",
+       "tag": "li",
+       "text": null,
+       "tail": "\n                    ",
+       "text_content": "About",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "li:nth-child(odd)",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[1]",
+       "tag": "li",
+       "text": null,
+       "tail": "\n                    ",
+       "text_content": "Home",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[3]",
+       "tag": "li",
+       "text": null,
+       "tail": "\n                ",
+       "text_content": "Contact",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "li:nth-child(even)",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[2]",
+       "tag": "li",
+       "text": null,
+       "tail": "\n                    ",
+       "text_content": "About",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "article:nth-of-type(2)",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "2"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "article:first-of-type",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "1"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "article:last-of-type",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "3"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "span:only-of-type",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]/span",
+       "tag": "span",
+       "text": "$10.99",
+       "tail": "\n                        ",
+       "text_content": "$10.99",
+       "attrib": [
+        [
+         "class",
+         "price"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]/span",
+       "tag": "span",
+       "text": "$20.99",
+       "tail": "\n                        ",
+       "text_content": "$20.99",
+       "attrib": [
+        [
+         "class",
+         "price"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]/span",
+       "tag": "span",
+       "text": "$15.99",
+       "tail": "\n                        ",
+       "text_content": "$15.99",
+       "attrib": [
+        [
+         "class",
+         "price"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div/div[1]/span",
+       "tag": "span",
+       "text": "John Doe",
+       "tail": "\n                    ",
+       "text_content": "John Doe",
+       "attrib": [
+        [
+         "class",
+         "reviewer"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div/div[2]/span",
+       "tag": "span",
+       "text": "Jane Smith",
+       "tail": "\n                    ",
+       "text_content": "Jane Smith",
+       "attrib": [
+        [
+         "class",
+         "reviewer"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "p.description:empty",
+     "vars": {},
+     "results": []
+    },
+    {
+     "expr": "div.stock:hidden",
+     "vars": {},
+     "results": [],
+     "error": "SelectorSyntaxError"
+    },
+    {
+     "expr": "*",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html",
+       "tag": "html",
+       "text": null,
+       "tail": null,
+       "text_content": "Complex Web Page\n            .hidden { display: none; }\n        \n        Home\n                    About\n                    Contact\n                Products\n                \n                    Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    \n            Customer Reviews\n                \n                    \n                        Great product!\n                        John Doe\n                    \n                    \n                        Good value for money.\n                        Jane Smith\n                    \n                \n            © 2024 Our Company\n        \n            {\"lastUpdated\": \"2024-09-22T10:30:00Z\", \"totalProducts\": 3}\n        ",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/head",
+       "tag": "head",
+       "text": null,
+       "tail": null,
+       "text_content": "Complex Web Page\n            .hidden { display: none; }\n        ",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/head/title",
+       "tag": "title",
+       "text": "Complex Web Page",
+       "tail": null,
+       "text_content": "Complex Web Page",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/head/style",
+       "tag": "style",
+       "text": "\n            .hidden { display: none; }\n        ",
+       "tail": null,
+       "text_content": "\n            .hidden { display: none; }\n        ",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body",
+       "tag": "body",
+       "text": "\n        ",
+       "tail": null,
+       "text_content": "\n        Home\n                    About\n                    Contact\n                Products\n                \n                    Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    \n            Customer Reviews\n                \n                    \n                        Great product!\n                        John Doe\n                    \n                    \n                        Good value for money.\n                        Jane Smith\n                    \n                \n            © 2024 Our Company\n        \n            {\"lastUpdated\": \"2024-09-22T10:30:00Z\", \"totalProducts\": 3}\n        ",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/header",
+       "tag": "header",
+       "text": null,
+       "tail": null,
+       "text_content": "Home\n                    About\n                    Contact\n                ",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav",
+       "tag": "nav",
+       "text": null,
+       "tail": null,
+       "text_content": "Home\n                    About\n                    Contact\n                ",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul",
+       "tag": "ul",
+       "text": null,
+       "tail": null,
+       "text_content": "Home\n                    About\n                    Contact\n                ",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[1]",
+       "tag": "li",
+       "text": null,
+       "tail": "\n                    ",
+       "text_content": "Home",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[1]/a",
+       "tag": "a",
+       "text": "Home",
+       "tail": null,
+       "text_content": "Home",
+       "attrib": [
+        [
+         "href",
+         "#home"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[2]",
+       "tag": "li",
+       "text": null,
+       "tail": "\n                    ",
+       "text_content": "About",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[2]/a",
+       "tag": "a",
+       "text": "About",
+       "tail": null,
+       "text_content": "About",
+       "attrib": [
+        [
+         "href",
+         "#about"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[3]",
+       "tag": "li",
+       "text": null,
+       "tail": "\n                ",
+       "text_content": "Contact",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[3]/a",
+       "tag": "a",
+       "text": "Contact",
+       "tail": null,
+       "text_content": "Contact",
+       "attrib": [
+        [
+         "href",
+         "#contact"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main",
+       "tag": "main",
+       "text": null,
+       "tail": null,
+       "text_content": "Products\n                \n                    Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    \n            Customer Reviews\n                \n                    \n                        Great product!\n                        John Doe\n                    \n                    \n                        Good value for money.\n                        Jane Smith\n                    \n                \n            ",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]",
+       "tag": "section",
+       "text": null,
+       "tail": null,
+       "text_content": "Products\n                \n                    Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    \n            ",
+       "attrib": [
+        [
+         "id",
+         "products"
+        ],
+        [
+         "schema",
+         "{\"jsonable\": \"data\"}"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/h2",
+       "tag": "h2",
+       "text": "Products",
+       "tail": "\n                ",
+       "text_content": "Products",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div",
+       "tag": "div",
+       "text": "\n                    ",
+       "tail": "\n            ",
+       "text_content": "\n                    Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product-list"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "1"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]/h3",
+       "tag": "h3",
+       "text": "Product 1",
+       "tail": "\n                        ",
+       "text_content": "Product 1",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]/p",
+       "tag": "p",
+       "text": "This is product 1",
+       "tail": "\n                        ",
+       "text_content": "This is product 1",
+       "attrib": [
+        [
+         "class",
+         "description"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]/span",
+       "tag": "span",
+       "text": "$10.99",
+       "tail": "\n                        ",
+       "text_content": "$10.99",
+       "attrib": [
+        [
+         "class",
+         "price"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]/div",
+       "tag": "div",
+       "text": "In stock: 5",
+       "tail": "\n                    ",
+       "text_content": "In stock: 5",
+       "attrib": [
+        [
+         "class",
+         "hidden stock"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "2"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]/h3",
+       "tag": "h3",
+       "text": "Product 2",
+       "tail": "\n                        ",
+       "text_content": "Product 2",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]/p",
+       "tag": "p",
+       "text": "This is product 2",
+       "tail": "\n                        ",
+       "text_content": "This is product 2",
+       "attrib": [
+        [
+         "class",
+         "description"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]/span",
+       "tag": "span",
+       "text": "$20.99",
+       "tail": "\n                        ",
+       "text_content": "$20.99",
+       "attrib": [
+        [
+         "class",
+         "price"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]/div",
+       "tag": "div",
+       "text": "In stock: 3",
+       "tail": "\n                    ",
+       "text_content": "In stock: 3",
+       "attrib": [
+        [
+         "class",
+         "hidden stock"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "3"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]/h3",
+       "tag": "h3",
+       "text": "Product 3",
+       "tail": "\n                        ",
+       "text_content": "Product 3",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]/p",
+       "tag": "p",
+       "text": "This is product 3",
+       "tail": "\n                        ",
+       "text_content": "This is product 3",
+       "attrib": [
+        [
+         "class",
+         "description"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]/span",
+       "tag": "span",
+       "text": "$15.99",
+       "tail": "\n                        ",
+       "text_content": "$15.99",
+       "attrib": [
+        [
+         "class",
+         "price"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]/div",
+       "tag": "div",
+       "text": "Out of stock",
+       "tail": "\n                    ",
+       "text_content": "Out of stock",
+       "attrib": [
+        [
+         "class",
+         "hidden stock"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]",
+       "tag": "section",
+       "text": null,
+       "tail": null,
+       "text_content": "Customer Reviews\n                \n                    \n                        Great product!\n                        John Doe\n                    \n                    \n                        Good value for money.\n                        Jane Smith\n                    \n                \n            ",
+       "attrib": [
+        [
+         "id",
+         "reviews"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/h2",
+       "tag": "h2",
+       "text": "Customer Reviews",
+       "tail": "\n                ",
+       "text_content": "Customer Reviews",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div",
+       "tag": "div",
+       "text": "\n                    ",
+       "tail": "\n            ",
+       "text_content": "\n                    \n                        Great product!\n                        John Doe\n                    \n                    \n                        Good value for money.\n                        Jane Smith\n                    \n                ",
+       "attrib": [
+        [
+         "class",
+         "review-list"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div/div[1]",
+       "tag": "div",
+       "text": "\n                        ",
+       "tail": "\n                    ",
+       "text_content": "\n                        Great product!\n                        John Doe\n                    ",
+       "attrib": [
+        [
+         "class",
+         "review"
+        ],
+        [
+         "data-rating",
+         "5"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div/div[1]/p",
+       "tag": "p",
+       "text": "Great product!",
+       "tail": "\n                        ",
+       "text_content": "Great product!",
+       "attrib": [
+        [
+         "class",
+         "review-text"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div/div[1]/span",
+       "tag": "span",
+       "text": "John Doe",
+       "tail": "\n                    ",
+       "text_content": "John Doe",
+       "attrib": [
+        [
+         "class",
+         "reviewer"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div/div[2]",
+       "tag": "div",
+       "text": "\n                        ",
+       "tail": "\n                ",
+       "text_content": "\n                        Good value for money.\n                        Jane Smith\n                    ",
+       "attrib": [
+        [
+         "class",
+         "review"
+        ],
+        [
+         "data-rating",
+         "4"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div/div[2]/p",
+       "tag": "p",
+       "text": "Good value for money.",
+       "tail": "\n                        ",
+       "text_content": "Good value for money.",
+       "attrib": [
+        [
+         "class",
+         "review-text"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div/div[2]/span",
+       "tag": "span",
+       "text": "Jane Smith",
+       "tail": "\n                    ",
+       "text_content": "Jane Smith",
+       "attrib": [
+        [
+         "class",
+         "reviewer"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/footer",
+       "tag": "footer",
+       "text": null,
+       "tail": null,
+       "text_content": "© 2024 Our Company\n        ",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/footer/p",
+       "tag": "p",
+       "text": "© 2024 Our Company",
+       "tail": "\n        ",
+       "text_content": "© 2024 Our Company",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/script",
+       "tag": "script",
+       "text": "\n            {\"lastUpdated\": \"2024-09-22T10:30:00Z\", \"totalProducts\": 3}\n        ",
+       "tail": null,
+       "text_content": "\n            {\"lastUpdated\": \"2024-09-22T10:30:00Z\", \"totalProducts\": 3}\n        ",
+       "attrib": [
+        [
+         "id",
+         "page-data"
+        ],
+        [
+         "type",
+         "application/json"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "section, footer",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]",
+       "tag": "section",
+       "text": null,
+       "tail": null,
+       "text_content": "Products\n                \n                    Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    \n            ",
+       "attrib": [
+        [
+         "id",
+         "products"
+        ],
+        [
+         "schema",
+         "{\"jsonable\": \"data\"}"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]",
+       "tag": "section",
+       "text": null,
+       "tail": null,
+       "text_content": "Customer Reviews\n                \n                    \n                        Great product!\n                        John Doe\n                    \n                    \n                        Good value for money.\n                        Jane Smith\n                    \n                \n            ",
+       "attrib": [
+        [
+         "id",
+         "reviews"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/footer",
+       "tag": "footer",
+       "text": null,
+       "tail": null,
+       "text_content": "© 2024 Our Company\n        ",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "article.product + article.product",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "2"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "3"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "article.product ~ article.product",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "2"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "3"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "div.product-list article .price::text",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "$10.99"
+      },
+      {
+       "kind": "text",
+       "value": "$20.99"
+      },
+      {
+       "kind": "text",
+       "value": "$15.99"
+      }
+     ]
+    },
+    {
+     "expr": "a[href^=\"#\"]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[1]/a",
+       "tag": "a",
+       "text": "Home",
+       "tail": null,
+       "text_content": "Home",
+       "attrib": [
+        [
+         "href",
+         "#home"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[2]/a",
+       "tag": "a",
+       "text": "About",
+       "tail": null,
+       "text_content": "About",
+       "attrib": [
+        [
+         "href",
+         "#about"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[3]/a",
+       "tag": "a",
+       "text": "Contact",
+       "tail": null,
+       "text_content": "Contact",
+       "attrib": [
+        [
+         "href",
+         "#contact"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "a[href$=\"about\"]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[2]/a",
+       "tag": "a",
+       "text": "About",
+       "tail": null,
+       "text_content": "About",
+       "attrib": [
+        [
+         "href",
+         "#about"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "a[href*=\"contact\"]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[3]/a",
+       "tag": "a",
+       "text": "Contact",
+       "tail": null,
+       "text_content": "Contact",
+       "attrib": [
+        [
+         "href",
+         "#contact"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "div[class~=\"stock\"]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]/div",
+       "tag": "div",
+       "text": "In stock: 5",
+       "tail": "\n                    ",
+       "text_content": "In stock: 5",
+       "attrib": [
+        [
+         "class",
+         "hidden stock"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]/div",
+       "tag": "div",
+       "text": "In stock: 3",
+       "tail": "\n                    ",
+       "text_content": "In stock: 3",
+       "attrib": [
+        [
+         "class",
+         "hidden stock"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]/div",
+       "tag": "div",
+       "text": "Out of stock",
+       "tail": "\n                    ",
+       "text_content": "Out of stock",
+       "attrib": [
+        [
+         "class",
+         "hidden stock"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "div[class|=\"hidden\"]",
+     "vars": {},
+     "results": []
+    },
+    {
+     "expr": "span[class]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]/span",
+       "tag": "span",
+       "text": "$10.99",
+       "tail": "\n                        ",
+       "text_content": "$10.99",
+       "attrib": [
+        [
+         "class",
+         "price"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]/span",
+       "tag": "span",
+       "text": "$20.99",
+       "tail": "\n                        ",
+       "text_content": "$20.99",
+       "attrib": [
+        [
+         "class",
+         "price"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]/span",
+       "tag": "span",
+       "text": "$15.99",
+       "tail": "\n                        ",
+       "text_content": "$15.99",
+       "attrib": [
+        [
+         "class",
+         "price"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div/div[1]/span",
+       "tag": "span",
+       "text": "John Doe",
+       "tail": "\n                    ",
+       "text_content": "John Doe",
+       "attrib": [
+        [
+         "class",
+         "reviewer"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div/div[2]/span",
+       "tag": "span",
+       "text": "Jane Smith",
+       "tail": "\n                    ",
+       "text_content": "Jane Smith",
+       "attrib": [
+        [
+         "class",
+         "reviewer"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": ":root",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html",
+       "tag": "html",
+       "text": null,
+       "tail": null,
+       "text_content": "Complex Web Page\n            .hidden { display: none; }\n        \n        Home\n                    About\n                    Contact\n                Products\n                \n                    Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    \n            Customer Reviews\n                \n                    \n                        Great product!\n                        John Doe\n                    \n                    \n                        Good value for money.\n                        Jane Smith\n                    \n                \n            © 2024 Our Company\n        \n            {\"lastUpdated\": \"2024-09-22T10:30:00Z\", \"totalProducts\": 3}\n        ",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "body > main",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main",
+       "tag": "main",
+       "text": null,
+       "tail": null,
+       "text_content": "Products\n                \n                    Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    \n            Customer Reviews\n                \n                    \n                        Great product!\n                        John Doe\n                    \n                    \n                        Good value for money.\n                        Jane Smith\n                    \n                \n            ",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "main > *",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]",
+       "tag": "section",
+       "text": null,
+       "tail": null,
+       "text_content": "Products\n                \n                    Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    \n            ",
+       "attrib": [
+        [
+         "id",
+         "products"
+        ],
+        [
+         "schema",
+         "{\"jsonable\": \"data\"}"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]",
+       "tag": "section",
+       "text": null,
+       "tail": null,
+       "text_content": "Customer Reviews\n                \n                    \n                        Great product!\n                        John Doe\n                    \n                    \n                        Good value for money.\n                        Jane Smith\n                    \n                \n            ",
+       "attrib": [
+        [
+         "id",
+         "reviews"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "article:not(.product)",
+     "vars": {},
+     "results": []
+    },
+    {
+     "expr": "div:not(.review):not(.review-list)",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div",
+       "tag": "div",
+       "text": "\n                    ",
+       "tail": "\n            ",
+       "text_content": "\n                    Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product-list"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]/div",
+       "tag": "div",
+       "text": "In stock: 5",
+       "tail": "\n                    ",
+       "text_content": "In stock: 5",
+       "attrib": [
+        [
+         "class",
+         "hidden stock"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]/div",
+       "tag": "div",
+       "text": "In stock: 3",
+       "tail": "\n                    ",
+       "text_content": "In stock: 3",
+       "attrib": [
+        [
+         "class",
+         "hidden stock"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]/div",
+       "tag": "div",
+       "text": "Out of stock",
+       "tail": "\n                    ",
+       "text_content": "Out of stock",
+       "attrib": [
+        [
+         "class",
+         "hidden stock"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "p::text",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "This is product 1"
+      },
+      {
+       "kind": "text",
+       "value": "This is product 2"
+      },
+      {
+       "kind": "text",
+       "value": "This is product 3"
+      },
+      {
+       "kind": "text",
+       "value": "Great product!"
+      },
+      {
+       "kind": "text",
+       "value": "Good value for money."
+      },
+      {
+       "kind": "text",
+       "value": "© 2024 Our Company"
+      }
+     ]
+    },
+    {
+     "expr": ".review::attr(data-rating)",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "5"
+      },
+      {
+       "kind": "text",
+       "value": "4"
+      }
+     ]
+    },
+    {
+     "expr": "4 ayo",
+     "vars": {},
+     "results": [],
+     "error": "SelectorSyntaxError"
+    }
+   ],
+   "xpath": [
+    {
+     "expr": "//section[@id=\"reviews\"]//div[contains(@class, \"review\") and @data-rating >= 4]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div/div[1]",
+       "tag": "div",
+       "text": "\n                        ",
+       "tail": "\n                    ",
+       "text_content": "\n                        Great product!\n                        John Doe\n                    ",
+       "attrib": [
+        [
+         "class",
+         "review"
+        ],
+        [
+         "data-rating",
+         "5"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div/div[2]",
+       "tag": "div",
+       "text": "\n                        ",
+       "tail": "\n                ",
+       "text_content": "\n                        Good value for money.\n                        Jane Smith\n                    ",
+       "attrib": [
+        [
+         "class",
+         "review"
+        ],
+        [
+         "data-rating",
+         "4"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "//article[contains(@class, \"product\")][number(translate(substring-after(.//span[@class=\"price\"], \"$\"), \",\", \"\")) > 15]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "2"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "3"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "//article[@data-id='2']//span[@class='price']/text()",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "$20.99"
+      }
+     ]
+    },
+    {
+     "expr": "//ul/li/a/text()",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "Home"
+      },
+      {
+       "kind": "text",
+       "value": "About"
+      },
+      {
+       "kind": "text",
+       "value": "Contact"
+      }
+     ]
+    },
+    {
+     "expr": "//div[@class='product-list']/article[2]/h3/text()",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "Product 2"
+      }
+     ]
+    },
+    {
+     "expr": "//article[position() = 1]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "1"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "//article[last()]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "3"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "//span[@class='price']",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]/span",
+       "tag": "span",
+       "text": "$10.99",
+       "tail": "\n                        ",
+       "text_content": "$10.99",
+       "attrib": [
+        [
+         "class",
+         "price"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]/span",
+       "tag": "span",
+       "text": "$20.99",
+       "tail": "\n                        ",
+       "text_content": "$20.99",
+       "attrib": [
+        [
+         "class",
+         "price"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]/span",
+       "tag": "span",
+       "text": "$15.99",
+       "tail": "\n                        ",
+       "text_content": "$15.99",
+       "attrib": [
+        [
+         "class",
+         "price"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "//main//article[not(@data-id='1')]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "2"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "3"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "//section[@id='products']/@schema",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "{\"jsonable\": \"data\"}"
+      }
+     ]
+    },
+    {
+     "expr": "//footer/p/text()",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "© 2024 Our Company"
+      }
+     ]
+    },
+    {
+     "expr": "//a[starts-with(@href, '#')]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[1]/a",
+       "tag": "a",
+       "text": "Home",
+       "tail": null,
+       "text_content": "Home",
+       "attrib": [
+        [
+         "href",
+         "#home"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[2]/a",
+       "tag": "a",
+       "text": "About",
+       "tail": null,
+       "text_content": "About",
+       "attrib": [
+        [
+         "href",
+         "#about"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/header/nav/ul/li[3]/a",
+       "tag": "a",
+       "text": "Contact",
+       "tail": null,
+       "text_content": "Contact",
+       "attrib": [
+        [
+         "href",
+         "#contact"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "//div[contains(concat(' ', normalize-space(@class), ' '), ' stock ')]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[1]/div",
+       "tag": "div",
+       "text": "In stock: 5",
+       "tail": "\n                    ",
+       "text_content": "In stock: 5",
+       "attrib": [
+        [
+         "class",
+         "hidden stock"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]/div",
+       "tag": "div",
+       "text": "In stock: 3",
+       "tail": "\n                    ",
+       "text_content": "In stock: 3",
+       "attrib": [
+        [
+         "class",
+         "hidden stock"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]/div",
+       "tag": "div",
+       "text": "Out of stock",
+       "tail": "\n                    ",
+       "text_content": "Out of stock",
+       "attrib": [
+        [
+         "class",
+         "hidden stock"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "//article[@data-id > 1 and @data-id < 3]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "2"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "//h3/../@data-id",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "1"
+      },
+      {
+       "kind": "text",
+       "value": "2"
+      },
+      {
+       "kind": "text",
+       "value": "3"
+      }
+     ]
+    },
+    {
+     "expr": "//article[1]/following-sibling::article",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "2"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[3]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "3"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "//article[3]/preceding-sibling::article[1]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div/article[2]",
+       "tag": "article",
+       "text": null,
+       "tail": null,
+       "text_content": "Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product"
+        ],
+        [
+         "data-id",
+         "2"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "//article[2]/ancestor::*",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html",
+       "tag": "html",
+       "text": null,
+       "tail": null,
+       "text_content": "Complex Web Page\n            .hidden { display: none; }\n        \n        Home\n                    About\n                    Contact\n                Products\n                \n                    Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    \n            Customer Reviews\n                \n                    \n                        Great product!\n                        John Doe\n                    \n                    \n                        Good value for money.\n                        Jane Smith\n                    \n                \n            © 2024 Our Company\n        \n            {\"lastUpdated\": \"2024-09-22T10:30:00Z\", \"totalProducts\": 3}\n        ",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body",
+       "tag": "body",
+       "text": "\n        ",
+       "tail": null,
+       "text_content": "\n        Home\n                    About\n                    Contact\n                Products\n                \n                    Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    \n            Customer Reviews\n                \n                    \n                        Great product!\n                        John Doe\n                    \n                    \n                        Good value for money.\n                        Jane Smith\n                    \n                \n            © 2024 Our Company\n        \n            {\"lastUpdated\": \"2024-09-22T10:30:00Z\", \"totalProducts\": 3}\n        ",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main",
+       "tag": "main",
+       "text": null,
+       "tail": null,
+       "text_content": "Products\n                \n                    Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    \n            Customer Reviews\n                \n                    \n                        Great product!\n                        John Doe\n                    \n                    \n                        Good value for money.\n                        Jane Smith\n                    \n                \n            ",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]",
+       "tag": "section",
+       "text": null,
+       "tail": null,
+       "text_content": "Products\n                \n                    Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    \n            ",
+       "attrib": [
+        [
+         "id",
+         "products"
+        ],
+        [
+         "schema",
+         "{\"jsonable\": \"data\"}"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[1]/div",
+       "tag": "div",
+       "text": "\n                    ",
+       "tail": "\n            ",
+       "text_content": "\n                    Product 1\n                        This is product 1\n                        $10.99\n                        In stock: 5\n                    Product 2\n                        This is product 2\n                        $20.99\n                        In stock: 3\n                    Product 3\n                        This is product 3\n                        $15.99\n                        Out of stock\n                    ",
+       "attrib": [
+        [
+         "class",
+         "product-list"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "//span[@class='reviewer']/parent::div",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div/div[1]",
+       "tag": "div",
+       "text": "\n                        ",
+       "tail": "\n                    ",
+       "text_content": "\n                        Great product!\n                        John Doe\n                    ",
+       "attrib": [
+        [
+         "class",
+         "review"
+        ],
+        [
+         "data-rating",
+         "5"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/main/section[2]/div/div[2]",
+       "tag": "div",
+       "text": "\n                        ",
+       "tail": "\n                ",
+       "text_content": "\n                        Good value for money.\n                        Jane Smith\n                    ",
+       "attrib": [
+        [
+         "class",
+         "review"
+        ],
+        [
+         "data-rating",
+         "4"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "//*[@id='page-data']",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/script",
+       "tag": "script",
+       "text": "\n            {\"lastUpdated\": \"2024-09-22T10:30:00Z\", \"totalProducts\": 3}\n        ",
+       "tail": null,
+       "text_content": "\n            {\"lastUpdated\": \"2024-09-22T10:30:00Z\", \"totalProducts\": 3}\n        ",
+       "attrib": [
+        [
+         "id",
+         "page-data"
+        ],
+        [
+         "type",
+         "application/json"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "count(//article)",
+     "vars": {},
+     "results": [],
+     "error": "TypeError"
+    },
+    {
+     "expr": "4 ayo",
+     "vars": {},
+     "results": [],
+     "error": "SelectorSyntaxError"
+    }
+   ]
+  },
+  {
+   "name": "complex",
+   "html": "\n        <html>\n            <body>\n                <div class=\"container\" data-test='{\"key\": \"value\"}'>\n                    <p>First paragraph</p>\n                    <!-- Comment -->\n                    <p>Second paragraph</p>\n                    <div class=\"nested\">\n                        <span id=\"special\">Special content</span>\n                        <span>Regular content</span>\n                    </div>\n                    <table>\n                        <tr><td>Cell 1</td><td>Cell 2</td></tr>\n                        <tr><td>Cell 3</td><td>Cell 4</td></tr>\n                    </table>\n                </div>\n            </body>\n        </html>\n        ",
+   "css": [
+    {
+     "expr": "p::text",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "First paragraph"
+      },
+      {
+       "kind": "text",
+       "value": "Second paragraph"
+      }
+     ]
+    },
+    {
+     "expr": "p",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/div/p[1]",
+       "tag": "p",
+       "text": "First paragraph",
+       "tail": "\n                    \n                    ",
+       "text_content": "First paragraph",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/div/p[2]",
+       "tag": "p",
+       "text": "Second paragraph",
+       "tail": "\n                    ",
+       "text_content": "Second paragraph",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "div.container > p",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/div/p[1]",
+       "tag": "p",
+       "text": "First paragraph",
+       "tail": "\n                    \n                    ",
+       "text_content": "First paragraph",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/div/p[2]",
+       "tag": "p",
+       "text": "Second paragraph",
+       "tail": "\n                    ",
+       "text_content": "Second paragraph",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "div.container p",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/div/p[1]",
+       "tag": "p",
+       "text": "First paragraph",
+       "tail": "\n                    \n                    ",
+       "text_content": "First paragraph",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/div/p[2]",
+       "tag": "p",
+       "text": "Second paragraph",
+       "tail": "\n                    ",
+       "text_content": "Second paragraph",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "span#special",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/div/div/span[1]",
+       "tag": "span",
+       "text": "Special content",
+       "tail": "\n                        ",
+       "text_content": "Special content",
+       "attrib": [
+        [
+         "id",
+         "special"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "div.nested span",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/div/div/span[1]",
+       "tag": "span",
+       "text": "Special content",
+       "tail": "\n                        ",
+       "text_content": "Special content",
+       "attrib": [
+        [
+         "id",
+         "special"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/div/div/span[2]",
+       "tag": "span",
+       "text": "Regular content",
+       "tail": "\n                    ",
+       "text_content": "Regular content",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "table td",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/div/table/tr[1]/td[1]",
+       "tag": "td",
+       "text": "Cell 1",
+       "tail": null,
+       "text_content": "Cell 1",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/div/table/tr[1]/td[2]",
+       "tag": "td",
+       "text": "Cell 2",
+       "tail": null,
+       "text_content": "Cell 2",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/div/table/tr[2]/td[1]",
+       "tag": "td",
+       "text": "Cell 3",
+       "tail": null,
+       "text_content": "Cell 3",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/div/table/tr[2]/td[2]",
+       "tag": "td",
+       "text": "Cell 4",
+       "tail": null,
+       "text_content": "Cell 4",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "td:first-child",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/div/table/tr[1]/td[1]",
+       "tag": "td",
+       "text": "Cell 1",
+       "tail": null,
+       "text_content": "Cell 1",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/div/table/tr[2]/td[1]",
+       "tag": "td",
+       "text": "Cell 3",
+       "tail": null,
+       "text_content": "Cell 3",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "tr:nth-child(2) td",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/div/table/tr[2]/td[1]",
+       "tag": "td",
+       "text": "Cell 3",
+       "tail": null,
+       "text_content": "Cell 3",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/div/table/tr[2]/td[2]",
+       "tag": "td",
+       "text": "Cell 4",
+       "tail": null,
+       "text_content": "Cell 4",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "div::attr(data-test)",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "{\"key\": \"value\"}"
+      }
+     ]
+    },
+    {
+     "expr": "div.container::text",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "\n                    "
+      },
+      {
+       "kind": "text",
+       "value": "\n                    \n                    "
+      },
+      {
+       "kind": "text",
+       "value": "\n                    "
+      },
+      {
+       "kind": "text",
+       "value": "\n                    "
+      }
+     ]
+    }
+   ],
+   "xpath": [
+    {
+     "expr": "//td[text()=$cell_text]",
+     "vars": {
+      "cell_text": "Cell 1"
+     },
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/div/table/tr[1]/td[1]",
+       "tag": "td",
+       "text": "Cell 1",
+       "tail": null,
+       "text_content": "Cell 1",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "//div[@class='container']/p",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/div/p[1]",
+       "tag": "p",
+       "text": "First paragraph",
+       "tail": "\n                    \n                    ",
+       "text_content": "First paragraph",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/div/p[2]",
+       "tag": "p",
+       "text": "Second paragraph",
+       "tail": "\n                    ",
+       "text_content": "Second paragraph",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "//span[@id='special']/text()",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "Special content"
+      }
+     ]
+    },
+    {
+     "expr": "//table//td[2]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/div/table/tr[1]/td[2]",
+       "tag": "td",
+       "text": "Cell 2",
+       "tail": null,
+       "text_content": "Cell 2",
+       "attrib": []
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/div/table/tr[2]/td[2]",
+       "tag": "td",
+       "text": "Cell 4",
+       "tail": null,
+       "text_content": "Cell 4",
+       "attrib": []
+      }
+     ]
+    },
+    {
+     "expr": "//div[@class='nested']//span[1]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/div/div/span[1]",
+       "tag": "span",
+       "text": "Special content",
+       "tail": "\n                        ",
+       "text_content": "Special content",
+       "attrib": [
+        [
+         "id",
+         "special"
+        ]
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "filter",
+   "html": "\n    <html><body>\n        <ul>\n            <li class=\"item\" data-value=\"10\">Apple</li>\n            <li class=\"item\" data-value=\"5\">Banana</li>\n            <li class=\"item\" data-value=\"20\">Cherry</li>\n            <li class=\"item disabled\" data-value=\"0\">Durian</li>\n        </ul>\n    </body></html>\n    ",
+   "css": [
+    {
+     "expr": "li.item",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/ul/li[1]",
+       "tag": "li",
+       "text": "Apple",
+       "tail": "\n            ",
+       "text_content": "Apple",
+       "attrib": [
+        [
+         "class",
+         "item"
+        ],
+        [
+         "data-value",
+         "10"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/ul/li[2]",
+       "tag": "li",
+       "text": "Banana",
+       "tail": "\n            ",
+       "text_content": "Banana",
+       "attrib": [
+        [
+         "class",
+         "item"
+        ],
+        [
+         "data-value",
+         "5"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/ul/li[3]",
+       "tag": "li",
+       "text": "Cherry",
+       "tail": "\n            ",
+       "text_content": "Cherry",
+       "attrib": [
+        [
+         "class",
+         "item"
+        ],
+        [
+         "data-value",
+         "20"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/ul/li[4]",
+       "tag": "li",
+       "text": "Durian",
+       "tail": "\n        ",
+       "text_content": "Durian",
+       "attrib": [
+        [
+         "class",
+         "item disabled"
+        ],
+        [
+         "data-value",
+         "0"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "li.item.disabled",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/ul/li[4]",
+       "tag": "li",
+       "text": "Durian",
+       "tail": "\n        ",
+       "text_content": "Durian",
+       "attrib": [
+        [
+         "class",
+         "item disabled"
+        ],
+        [
+         "data-value",
+         "0"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "li[data-value=\"10\"]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/ul/li[1]",
+       "tag": "li",
+       "text": "Apple",
+       "tail": "\n            ",
+       "text_content": "Apple",
+       "attrib": [
+        [
+         "class",
+         "item"
+        ],
+        [
+         "data-value",
+         "10"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "li[data-value>=\"10\"]",
+     "vars": {},
+     "results": [],
+     "error": "SelectorSyntaxError"
+    },
+    {
+     "expr": "li::text",
+     "vars": {},
+     "results": [
+      {
+       "kind": "text",
+       "value": "Apple"
+      },
+      {
+       "kind": "text",
+       "value": "Banana"
+      },
+      {
+       "kind": "text",
+       "value": "Cherry"
+      },
+      {
+       "kind": "text",
+       "value": "Durian"
+      }
+     ]
+    },
+    {
+     "expr": "ul > li:nth-last-child(1)",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/ul/li[4]",
+       "tag": "li",
+       "text": "Durian",
+       "tail": "\n        ",
+       "text_content": "Durian",
+       "attrib": [
+        [
+         "class",
+         "item disabled"
+        ],
+        [
+         "data-value",
+         "0"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "li + li",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/ul/li[2]",
+       "tag": "li",
+       "text": "Banana",
+       "tail": "\n            ",
+       "text_content": "Banana",
+       "attrib": [
+        [
+         "class",
+         "item"
+        ],
+        [
+         "data-value",
+         "5"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/ul/li[3]",
+       "tag": "li",
+       "text": "Cherry",
+       "tail": "\n            ",
+       "text_content": "Cherry",
+       "attrib": [
+        [
+         "class",
+         "item"
+        ],
+        [
+         "data-value",
+         "20"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/ul/li[4]",
+       "tag": "li",
+       "text": "Durian",
+       "tail": "\n        ",
+       "text_content": "Durian",
+       "attrib": [
+        [
+         "class",
+         "item disabled"
+        ],
+        [
+         "data-value",
+         "0"
+        ]
+       ]
+      }
+     ]
+    }
+   ],
+   "xpath": [
+    {
+     "expr": "//li[@data-value >= 10]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/ul/li[1]",
+       "tag": "li",
+       "text": "Apple",
+       "tail": "\n            ",
+       "text_content": "Apple",
+       "attrib": [
+        [
+         "class",
+         "item"
+        ],
+        [
+         "data-value",
+         "10"
+        ]
+       ]
+      },
+      {
+       "kind": "element",
+       "path": "/html/body/ul/li[3]",
+       "tag": "li",
+       "text": "Cherry",
+       "tail": "\n            ",
+       "text_content": "Cherry",
+       "attrib": [
+        [
+         "class",
+         "item"
+        ],
+        [
+         "data-value",
+         "20"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "expr": "//li[contains(@class, 'disabled')]",
+     "vars": {},
+     "results": [
+      {
+       "kind": "element",
+       "path": "/html/body/ul/li[4]",
+       "tag": "li",
+       "text": "Durian",
+       "tail": "\n        ",
+       "text_content": "Durian",
+       "attrib": [
+        [
+         "class",
+         "item disabled"
+        ],
+        [
+         "data-value",
+         "0"
+        ]
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "appendix",
+   "html": "",
+   "css_counts": {
+    ".product": 2000,
+    ".price": 2000,
+    ".price::text": 2000,
+    "#list > div": 2000,
+    "div.product.p3": 286,
+    "a": 2000
+   },
+   "xpath_counts": {
+    "//span[@class='price']": 2000,
+    "//div[@id='list']/div[1501]": 1,
+    "//a[text()='Product number 42 name']": 1
+   },
+   "css": [],
+   "xpath": []
+  }
+ ]
+}
