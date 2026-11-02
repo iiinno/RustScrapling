@@ -119,8 +119,13 @@ async fn start(cfg: DaemonConfig, direct: bool) -> Result<(), String> {
         // belong to a slow or temporarily inaccessible daemon.
         return Err(json!({"schema_version":1,"error":{"kind":"stale_state","message":"An inactive daemon state file exists","hint":"Inspect it before moving or deleting it"}}).to_string());
     }
-    let executable =
-        std::env::current_exe().map_err(|_| "Cannot locate daemon executable".to_owned())?;
+    let executable = std::env::current_exe().map_err(|_| {
+        json!({
+            "schema_version":1,
+            "error":{"kind":"spawn","message":"Cannot locate daemon executable"}
+        })
+        .to_string()
+    })?;
     let mut command = Command::new(executable);
     command
         .arg("daemon")
@@ -159,7 +164,13 @@ async fn start(cfg: DaemonConfig, direct: bool) -> Result<(), String> {
         }
         if child
             .try_wait()
-            .map_err(|_| "Could not query daemon process".to_owned())?
+            .map_err(|_| {
+                json!({
+                    "schema_version":1,
+                    "error":{"kind":"startup","message":"Could not query daemon process"}
+                })
+                .to_string()
+            })?
             .is_some()
         {
             return Err(json!({"schema_version":1,"error":{"kind":"startup","message":"Daemon exited before startup","hint":"Check the state directory permissions and configuration"}}).to_string());

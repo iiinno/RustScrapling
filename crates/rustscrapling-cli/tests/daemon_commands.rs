@@ -4,10 +4,10 @@ use serde_json::Value;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
-use std::process::{Command, Output};
+use std::process::{Command, Output, Stdio};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 struct Fixture {
     addr: String,
@@ -98,7 +98,8 @@ fn binary() -> PathBuf {
 }
 
 fn command(args: &[&str], state: &std::path::Path) -> Output {
-    Command::new(binary())
+    let mut process = Command::new(binary());
+    let mut child = process
         .args(args)
         .env("RUSTSCRAPLING_DAEMON_STATE_FILE", state)
         .env("NO_PROXY", "127.0.0.1,localhost")
@@ -109,8 +110,22 @@ fn command(args: &[&str], state: &std::path::Path) -> Output {
         .env_remove("http_proxy")
         .env_remove("https_proxy")
         .env_remove("all_proxy")
-        .output()
-        .unwrap()
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("spawn CLI test process");
+    let deadline = Instant::now() + Duration::from_secs(30);
+    loop {
+        if child.try_wait().expect("query CLI test process").is_some() {
+            return child.wait_with_output().expect("collect CLI test output");
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait_with_output();
+            panic!("CLI process timed out for arguments: {args:?}");
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    }
 }
 
 fn json_ok(result: &Output) -> Value {
@@ -121,6 +136,31 @@ fn json_ok(result: &Output) -> Value {
         String::from_utf8_lossy(&result.stdout)
     );
     serde_json::from_slice::<Value>(&result.stdout).expect("CLI outputs one JSON document")
+}
+
+fn error_kind(result: &Output) -> String {
+    assert!(
+        !result.status.success(),
+        "unexpected successful CLI response: {}",
+        String::from_utf8_lossy(&result.stdout)
+    );
+    let error: Value = serde_json::from_slice(&result.stderr)
+        .expect("failed CLI process must return a JSON error on stderr");
+    assert_eq!(error["schema_version"], 1);
+    error["error"]["kind"]
+        .as_str()
+        .expect("typed CLI error.kind")
+        .to_owned()
+}
+
+fn wait_for_stop(state: &std::path::Path) {
+    for _ in 0..100 {
+        if !state.exists() {
+            return;
+        }
+        std::thread::sleep(Duration::from_millis(30));
+    }
+    panic!("daemon did not remove the token state file");
 }
 
 struct Cleanup(PathBuf);
@@ -269,5 +309,163 @@ fn daemon_rejects_non_loopback_state_without_echoing_token() {
     let error: Value = serde_json::from_slice(&outcome.stderr).unwrap();
     assert_eq!(error["error"]["kind"], "state");
     assert!(!String::from_utf8_lossy(&outcome.stderr).contains(&secret));
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn daemon_cli_restart_restores_disk_cache_and_learned_tier() {
+    let fixture = Fixture::new();
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let root = std::env::temp_dir().join(format!(
+        "rustscrapling-daemon-restart-{}-{stamp}",
+        std::process::id()
+    ));
+    let state = root.join("private").join("daemon.json");
+    let _cleanup = Cleanup(state.clone());
+    let url = format!("http://{}/fixture", fixture.addr);
+
+    let started = json_ok(&command(&["daemon", "start", "--direct"], &state));
+    let first_pid = started["daemon"]["status"]["pid"].as_u64().unwrap();
+    assert_eq!(started["daemon"]["started"], true);
+    assert_eq!(json_ok(&command(&["get", &url], &state))["status"], 200);
+    assert_eq!(json_ok(&command(&["auto", &url], &state))["status"], 200);
+    let before = json_ok(&command(&["daemon", "status"], &state));
+    assert!(
+        before["daemon"]["status"]["learned_sites"]
+            .as_u64()
+            .unwrap()
+            >= 1
+    );
+    assert!(
+        before["daemon"]["status"]["cache_entries"]
+            .as_u64()
+            .unwrap()
+            >= 1
+    );
+    let secret: Value = serde_json::from_slice(&std::fs::read(&state).unwrap()).unwrap();
+    let token = secret["token"].as_str().unwrap().to_owned();
+    assert_eq!(token.len(), 64);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = std::fs::metadata(&state).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode, 0o600);
+        assert_eq!(
+            std::fs::metadata(state.parent().unwrap())
+                .unwrap()
+                .permissions()
+                .mode()
+                & 0o777,
+            0o700
+        );
+    }
+    assert_eq!(
+        json_ok(&command(&["daemon", "stop"], &state))["daemon"]["stopping"],
+        true
+    );
+    wait_for_stop(&state);
+    let db = root.join("private").join("daemon.json.sqlite3");
+    assert!(db.exists(), "cache database survives daemon shutdown");
+    let disk = std::fs::read(&db).unwrap();
+    assert!(
+        !disk
+            .windows(token.len())
+            .any(|bytes| bytes == token.as_bytes()),
+        "daemon auth token must never be persisted in SQLite"
+    );
+
+    let restarted = json_ok(&command(&["daemon", "start", "--direct"], &state));
+    assert_eq!(restarted["daemon"]["started"], true);
+    assert_ne!(
+        restarted["daemon"]["status"]["pid"].as_u64().unwrap(),
+        first_pid
+    );
+    assert!(
+        restarted["daemon"]["status"]["cache_entries"]
+            .as_u64()
+            .unwrap()
+            >= 1
+    );
+    assert!(
+        restarted["daemon"]["status"]["learned_sites"]
+            .as_u64()
+            .unwrap()
+            >= 1
+    );
+    let second = json_ok(&command(&["get", &url], &state));
+    assert_eq!(second["status"], 200);
+    assert!(second["content"]["text"]
+        .as_str()
+        .unwrap()
+        .contains("daemon origin fixture"));
+    assert_eq!(json_ok(&command(&["auto", &url], &state))["status"], 200);
+    assert!(
+        fixture.conditional.load(Ordering::SeqCst) >= 2,
+        "different CLI processes after daemon restart must send validators to origin"
+    );
+    let now = json_ok(&command(&["daemon", "status"], &state));
+    assert!(now["daemon"]["status"]["requests"].as_u64().unwrap() >= 2);
+    assert!(!started.to_string().contains(&token));
+    assert!(!restarted.to_string().contains(&token));
+    assert!(!now.to_string().contains(&token));
+    assert_eq!(
+        json_ok(&command(&["daemon", "stop"], &state))["daemon"]["stopping"],
+        true
+    );
+    wait_for_stop(&state);
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn daemon_cli_startup_failure_is_typed_and_never_claims_success() {
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let root = std::env::temp_dir().join(format!(
+        "rustscrapling-daemon-start-failure-{}-{stamp}",
+        std::process::id()
+    ));
+    let state = root.join("private").join("daemon.json");
+    let _cleanup = Cleanup(state.clone());
+    json_ok(&command(&["daemon", "start", "--direct"], &state));
+    assert_eq!(
+        json_ok(&command(&["daemon", "stop"], &state))["daemon"]["stopping"],
+        true
+    );
+    wait_for_stop(&state);
+    let db = root.join("private").join("daemon.json.sqlite3");
+    let sentinel = b"invalid sqlite file - do not erase - secret is sentinel-789";
+    std::fs::write(&db, sentinel).unwrap();
+    let failure = command(&["daemon", "start", "--direct"], &state);
+    assert_eq!(error_kind(&failure), "startup");
+    assert!(!String::from_utf8_lossy(&failure.stderr).contains("sentinel-789"));
+    assert!(!String::from_utf8_lossy(&failure.stdout).contains("started"));
+    assert_eq!(std::fs::read(&db).unwrap().as_slice(), sentinel);
+    assert!(
+        !state.exists(),
+        "failed child must remove its temporary token state"
+    );
+    assert_eq!(
+        error_kind(&command(&["daemon", "status"], &state)),
+        "not_running"
+    );
+
+    // A stale state file is never overwritten merely because it is malformed.
+    std::fs::write(&state, b"invalid state - do not overwrite").unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&state, std::fs::Permissions::from_mode(0o600)).unwrap();
+    }
+    let stale = command(&["daemon", "start"], &state);
+    assert_eq!(error_kind(&stale), "io");
+    assert_eq!(
+        std::fs::read(&state).unwrap().as_slice(),
+        b"invalid state - do not overwrite"
+    );
     std::fs::remove_dir_all(root).unwrap();
 }
