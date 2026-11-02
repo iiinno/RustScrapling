@@ -1,0 +1,9 @@
+[package]
+name = "trial-libxml"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+libxml = "0.3.23"
+
+[workspace]

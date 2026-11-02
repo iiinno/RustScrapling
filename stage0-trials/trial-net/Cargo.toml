@@ -1,0 +1,12 @@
+[package]
+name = "trial-net"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chromiumoxide = "0.9.1"
+futures = "0.3.34"
+tokio = { version = "1.54.1", features = ["full"] }
+wreq = "0.16.3"
+
+[workspace]

@@ -1,0 +1,7 @@
+/target
+target/
+__pycache__/
+oracle/.venv/
+oracle/scrapling-src/
+*.db
+!fixtures/*.db

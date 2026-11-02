@@ -1,0 +1,32 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/rustscrapling-dom",
+  "crates/rustscrapling-select",
+  "crates/rustscrapling-adaptive",
+  "crates/rustscrapling-extract",
+  "crates/rustscrapling-http",
+  "crates/rustscrapling-browser",
+  "crates/rustscrapling-fetch",
+  "crates/rustscrapling-spider",
+  "crates/rustscrapling-daemon",
+  "crates/rustscrapling-mcp",
+  "crates/rustscrapling-cli",
+]
+
+[workspace.dependencies]
+rayon = "1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }
+psl = "2"
+regex = "1"
+url = "2"
+clap = { version = "4", features = ["derive"] }
+smallvec = "1"
+
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.release]
+lto = true

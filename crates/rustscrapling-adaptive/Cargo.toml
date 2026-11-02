@@ -1,0 +1,16 @@
+[package]
+name = "rustscrapling-adaptive"
+version = "0.1.0"
+edition = "2021"
+license = "BSD-3-Clause"
+
+[dependencies]
+rustscrapling-dom = { path = "../rustscrapling-dom" }
+rustscrapling-select = { path = "../rustscrapling-select" }
+rayon.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+psl.workspace = true
+url.workspace = true
+smallvec.workspace = true

@@ -1,0 +1,97 @@
+# DECISIONS.md: 判断の記録
+
+Plan.md の「判断済みの事項」は変えていない。ここには段階0の下調べ結果と、計画にない判断点への対処を記録する。
+
+## D-001 crates.io への到達（2026-11-02、段階0）
+
+- `https://index.crates.io/config.json` は 200。個別クレートのインデックス（`index.crates.io/se/rd/serde`）も 200。
+- `https://static.crates.io/crates/serde/serde-1.0.219.crate` の実ファイル取得も 200（78,983 バイト、gzip として検証）。
+- 先行実測の「crates.io から 403」は、`static.crates.io` ルートへの HEAD と `storage.googleapis.com` ルートへの HEAD に対する 403 であり、ルート一覧が禁止されているだけだった。実ファイルの取得は通る。
+- `cargo add` / `cargo fetch` / `cargo build`（外部クレート取得を含む）が実際に通ることを段階0の試行クレート群で確認済み。cargo は使える。全体を止める理由はなかった。
+
+## D-002 Rust ツールチェーン（2026-11-02、段階0）
+
+- rustup（minimal profile）で stable を導入。`rustc 1.99.1 (58cf8f9c3 2026-10-13)`、`cargo 1.99.1`。
+- ビルド設定は Plan 4章どおり: `CARGO_TARGET_DIR=/home/hatch/rustscrapling-target`、`TMPDIR=/home/hatch/tmp`、`CARGO_BUILD_JOBS=2`、root `Cargo.toml` に `[profile.dev] debug = "line-tables-only"` と `[profile.release] lto = true`。
+- 再現用に `scripts/env.sh` へ同じ値を置いた。
+- 空のワークスペース（Plan 8章の11クレート）で `cargo build` が通ることを確認（11クレート全てコンパイル、約1.3秒）。
+
+## D-003 Chrome for Testing（2026-11-02、段階0）
+
+- Stable 156.0.8078.80（linux64）を `/home/hatch/chrome-for-testing/chrome-linux64/chrome` に導入。不足共有ライブラリなし（ldd で not found 0件）。
+- headless は `file://` ページの `--dump-dom` で動作確認。
+- headed は `xvfb-run` 下で起動し、CDP の `/json/version` が `Chrome/156.0.8078.80` を返し、UA に Headless が付かないこと（`Chrome/156.0.0.0` 表記）で確認した。証跡は計測時の `/home/hatch/tmp/cdp-version.json`。
+- 注意: Chrome は環境変数のプロキシを読まない。プロキシなしで外部サイトへ出すと `ERR_TUNNEL_CONNECTION_FAILED` になった。段階4では `--proxy-server` の明示指定と、認証付きプロキシへの対応（CDP の Fetch ドメインでの認証応答）を実装条件に加える。
+
+## D-004 libxml2 のビルド組み込み（2026-11-02、段階0）
+
+- システムに libxml2 の開発部品はない（pkg-config に libxml-2.0 なし、`/usr/include/libxml2` なし）。
+- lxml 6.1.3 が同梱するのと同じ libxml2 2.14.6 を公式ソース（download.gnome.org）から静的ビルドし、`/home/hatch/libxml2` に導入した（`--enable-static --disable-shared --without-python --without-lzma --without-zlib --without-iconv --without-icu --without-threads`、make -j2）。
+- Rust の `libxml` クレート 0.3.23 は、環境変数 `LIBXML2=/home/hatch/libxml2/lib/libxml2.a` を渡すと pkg-config と bindgen（libclang）を使わずに静的リンクできることを試行で確認した。生成バイナリの ldd に libxml2 の共有リンクは現れない。
+- 試行では HTML パースと XPath（`//span[@class="price"]`、`//td[text()="Cell 1"]`）が正しく動作した。
+- 決定: 互換モードの解析器と XPath はこの経路（libxml クレート＋静的 libxml2 2.14.6）を使う。本家 lxml と同じエンジン・同じ版数のため、互換モードの DOM と XPath の一致はエンジン差では崩れない。
+
+## D-005 XPath 既存クレートの試行（2026-11-02、段階0）
+
+本家の試験から抜いた代表5式（属性の数値比較、`number(translate(substring-after(...)))`、変数 `$cell_text`、`count(ancestor::*)`、不正な式 `4 ayo` のエラー）を、XML 文書に対して試した。
+
+| クレート | 版 | 結果 | 問題 |
+|---|---|---|---|
+| sxd-xpath（sxd-document と併用） | 0.4.2 | 5式すべて期待どおり | 評価対象が sxd-document の文書型に固定され、結果のノードも同型。Plan 8章のアリーナ型 DOM ではそのまま使えない |
+| xmloxide | 0.5.0 | 5式すべて期待どおり | 同上で、xmloxide 自身の `Document`/`NodeId` 木に固定される |
+| libxml2 の XPath（libxml クレート経由） | libxml2 2.14.6 | 試行2式とも正解 | 互換モード専用（D-004）。既定モードのアリーナ DOM では使えない |
+
+- 「本家の試験を全て通せる」ことは段階0では未確認である。5式の通過は必要条件であって十分条件ではない。
+- 決定: Plan 5章の既定どおり、既定モードの XPath 1.0 はアリーナ型 DOM 上に独自実装する。互換モードは libxml2 の XPath を使う（D-004）。段階1で oracle の正解データ一式（本家の parser 試験由来の全 XPath 式）に対して sxd-xpath / xmloxide をアダプタ経由で再評価し、全件通過するものがあれば Plan 5章の但し書きどおり採用に切り替えてここに追記する。
+
+## D-006 wreq の HTTP/3 対応（2026-11-02、段階0）
+
+- wreq 0.16.3 のソースを確認した。`HttpVersionPref` は Http1 / Http2 / All のみで、QUIC の実装（quinn、h3）への依存はない。TLS 設定型に ALPN の `h3` 定数はあるが、HTTP/3 の接続経路は存在しない。よって wreq は HTTP/3 に対応していない。
+- 対処（Plan 段階0の指定どおり補う案を書く）: 段階3で `--http3` 指定時のみ quinn + h3（h3-quinn）による取得経路を別実装し、失敗時は HTTP/2 へ落とす。本家の Fetcher の `http3` 引数自体は引数互換のため受け付ける。
+- この環境は UDP が通らずプロキシ経由のみのため、実サイトでの HTTP/3 確認はできない（Plan 13章どおり）。単体試験はローカルの h3 サーバで段階3に行う。
+
+## D-007 chromiumoxide と Runtime.enable（2026-11-02、段階0）
+
+- chromiumoxide 0.9.1 のソースを確認した。`FrameManager::init_commands()` がページ初期化コマンド列に `Runtime.enable` を無条件で含み、`Page::enable_runtime` のドキュメントにも「Activated by default」とある。つまり標準の Page 経路では、Runtime.enable を送らずに要素を操作することはできない。
+- 決定: `rustscrapling-browser` のステルス経路では chromiumoxide の Page / FrameManager 抽象を使わず、CDP のトランスポート（chromiumoxide_cdp の型と接続）を使って Target / Page / DOM ドメインを直接送る。Runtime は `browser_evaluate` のように明示的に必要な操作のときだけ有効化する。これは patchright が Runtime.enable を避ける方針と揃う。通常（非ステルス）の DynamicFetcher 相当の経路では Page 抽象を使ってよい。
+- 段階4の終わりに成功率で Plan 5.1 の代替案（patchright ドライバ子プロセス）へ切り替えるかどうかを判断し、ここに追記する。
+
+## D-008 段階0の試行物の置き場所（2026-11-02）
+
+- 試行プロジェクト（trial-libxml、trial-xpath-sxd、trial-xmloxide、trial-net）は再現可能性のためリポジトリ内の `stage0-trials/` に保存する。各プロジェクトは独立した `[workspace]` を持ち、本体のワークスペースには含めない。
+- ビルド時の環境は `scripts/env.sh` を source すること。
+
+## D-005 追記（2026-11-02、段階1の結果）
+
+- 段階1で CSS・XPath の両方をアリーナ DOM 上に独自実装し、oracle の正解データ88件（CSS 59 + XPath 29、エラー症例含む）と互換モードで 100% 一致した。互換モードでも libxml2 の XPath は使っていない（使うのは libxml2 の HTML パーサだけ）。D-005 の「互換モードは libxml2 の XPath を使う」は実装結果に合わせて取り消す。
+- sxd-xpath / xmloxide のアダプタ経由の再評価は、独自実装が先に全件通過したため実施しなかった。Plan 5章の但し書きは「独自実装の前に既存クレートを試す」ことが目的で、試行自体は段階0で完了している。
+
+## D-009 trial-net の実行結果（2026-11-02、段階0の追補）
+
+- chromiumoxide: Chrome for Testing 156 を起動し、CDP 経由でページのタイトルと DOM を取得できた（ローカルページ）。D-007 の方針（トランスポート層を直接使う）は実装可能と確認した。
+- wreq: プロキシ経由で example.com への CONNECT と TLS ハンドシェイク開始までは進んだが、BoringSSL の証明書検証が CERTIFICATE_VERIFY_FAILED で失敗した。この環境の出口プロキシは中間者プロキシで、システムの CA バンドル（/etc/ssl/certs/ca-certificates.crt）にはその CA が入っているが、wreq の既定の検証ストアには入っていない。
+- 対処: 段階3の HTTP クライアントは、起動時にシステム CA バンドルを読み込んで検証ストアへ追加する（環境変数で差し替え可能にする）。証明書検証の無効化は既定にしない。
+
+## D-010 serde_json の float_roundtrip（2026-11-02、段階2）
+
+- 保存した指紋 JSON の読み戻しで、`0.09523809523809523` のような小数が隣の double に化け、relocate のスコア照合がずれた。原因は serde_json の既定の浮点パース精度。`float_roundtrip` 機能（ryu ベースの正確な往復）を有効化して解決した。ワークスペースの serde_json 依存には `preserve_order` と `float_roundtrip` の両方を必須とする。
+
+## D-011 SequenceMatcher の junk 判定の解釈訂正（2026-11-02、段階2）
+
+- 当初「autojunk で popular になった要素は junk として扱う」と実装したが、CPython の find_longest_match が参照するのは利用者の isjunk 由来の `bjunk` のみで、`bpopular` は b2j から除くだけ（拡張パスは等値だけで進む）。Scrapling は isjunk=None で使うため junk は常に空集合として実装するのが正しい。difflib との3万件照合で確定した。
+
+## D-012 py_round2 の厳密整数演算化（2026-11-02、段階2）
+
+- Python の `round(x, 2)`（正確な二進値に対する half-even）を当初 `format!("{x:.2}")` 経由で再現していたが、候補ごとに文字列化するのは遅い。f64 の仮数に対する厳密な整数演算（x*100 を有理数として正確に丸める）に置き換えた。format 版との一致をランダム2万件＋境界値で単体テスト済み。結果は不変で、書式化の割当が消えた。
+
+## D-013 relocate のメモ化（2026-11-02、段階2）
+
+- relocate の支配コストは兄弟比率（候補 × 元の兄弟リストの走査）と親ステージの再計算だった。兄弟リスト単位の比率メモ化と、親ステージ構成要素（タグ比率・属性 dict_diff・親テキスト比率）の親ノード単位メモ化を入れた。加算順序と丸めは変えず、スコアはビット単位で不変（fixture の個別スコア 80.0 / 82.6 / 79.74 等で照合済み）。キャッシュは relocate 呼び出し内でのみ有効な局所状態とし、公開 API の calculate_similarity_score は無キャッシュのままにする。
+
+## D-014 storage の保存形式（2026-11-02、段階2）
+
+- 保存は本家に合わせて element_data を BLOB（JSON バイト列）で統一し、読取は BLOB / TEXT 両対応にする（経緯は COMPAT.md 5節）。本家との相互運用（双方向）は verify_stage2.py と fixture 試験で確認する。
+
+## D-015 コミットの粒度について（2026-11-02、段階2）
+
+- Plan 12章の「作業単位ごとにブランチを分ける」は、段階0=stage0-env、段階1=stage1-dom-select、段階2=stage2-adaptive のブランチ＋コミットで実施した。ただし DECISIONS.md 等の累積ドキュメントと Cargo.toml / Cargo.lock は段階をまたいで育つため、最も早い段階のコミットに含めた（内容の時系列は各ドキュメント内の日付と段階表記で追える）。

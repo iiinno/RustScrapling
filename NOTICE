@@ -1,0 +1,6 @@
+RustScrapling
+
+Portions ported from Scrapling (https://github.com/D4Vinci/Scrapling)
+Copyright (c) Scrapling contributors. Licensed under BSD 3-Clause License.
+See the Scrapling repository at the pinned commit
+95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0 for the full license text.

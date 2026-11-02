@@ -1,0 +1,15 @@
+[package]
+name = "rustscrapling-cli"
+version = "0.1.0"
+edition = "2021"
+license = "BSD-3-Clause"
+
+[[bin]]
+name = "rustscrapling"
+path = "src/main.rs"
+
+[dependencies]
+rustscrapling-dom = { path = "../rustscrapling-dom" }
+rustscrapling-select = { path = "../rustscrapling-select" }
+rustscrapling-adaptive = { path = "../rustscrapling-adaptive" }
+clap.workspace = true

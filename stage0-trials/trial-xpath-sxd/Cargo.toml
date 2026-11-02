@@ -1,0 +1,10 @@
+[package]
+name = "trial-xpath-sxd"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+sxd-document = "0.3.2"
+sxd-xpath = "0.4.2"
+
+[workspace]

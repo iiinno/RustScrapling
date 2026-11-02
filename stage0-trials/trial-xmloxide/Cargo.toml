@@ -1,0 +1,9 @@
+[package]
+name = "trial-xmloxide"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+xmloxide = "0.5.0"
+
+[workspace]

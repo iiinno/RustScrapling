@@ -1,0 +1,10 @@
+[package]
+name = "rustscrapling-dom"
+version = "0.1.0"
+edition = "2021"
+license = "BSD-3-Clause"
+
+[dependencies]
+html5ever = "0.39"
+libxml = "0.3.23"
+markup5ever = "0.39"
