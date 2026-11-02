@@ -262,21 +262,27 @@ pub(crate) fn safe_url(raw: &str, page_url: Option<&str>) -> Option<String> {
         return None;
     }
     if let Ok(parsed) = Url::parse(raw) {
-        return matches!(parsed.scheme(), "http" | "https").then(|| parsed.to_string());
+        return (matches!(parsed.scheme(), "http" | "https")
+            && parsed.username().is_empty()
+            && parsed.password().is_none())
+        .then(|| parsed.to_string());
     }
     // A colon preceding a slash/query/fragment denotes an unsupported scheme.
     let first_part = raw.split(['/', '?', '#']).next().unwrap_or_default();
     if first_part.contains(':') || raw.starts_with('\\') {
         return None;
     }
-    if let Some(base) = page_url
-        .and_then(|url| Url::parse(url).ok())
-        .filter(|b| matches!(b.scheme(), "http" | "https"))
-    {
+    if let Some(base) = page_url.and_then(|url| Url::parse(url).ok()).filter(|b| {
+        matches!(b.scheme(), "http" | "https") && b.username().is_empty() && b.password().is_none()
+    }) {
         return base
             .join(raw)
             .ok()
-            .filter(|u| matches!(u.scheme(), "http" | "https"))
+            .filter(|u| {
+                matches!(u.scheme(), "http" | "https")
+                    && u.username().is_empty()
+                    && u.password().is_none()
+            })
             .map(|u| u.to_string());
     }
     Some(raw.to_owned())

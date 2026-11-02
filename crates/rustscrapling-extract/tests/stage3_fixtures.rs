@@ -151,3 +151,43 @@ fn jsonld_graph_and_technical_markdown_fixture() {
     assert_eq!(page.paragraphs[0].index, 0);
     assert!(page.paragraphs[0].score > page.paragraphs[1].score);
 }
+
+#[test]
+fn credential_bearing_urls_are_not_emitted_in_article_or_canonical_metadata() {
+    let output = extract(
+        "<html><head><link rel='canonical' href='https://user:secret@news.example/article'></head>\
+         <body><main><article><h1>Research on authenticated URL safety</h1>\
+         <p>The visible article text is retained in safe output formats even if hyperlinks are unsafe.</p>\
+         <a href='https://alice:token@example.org/private'>read more</a>\
+         <img src='https://bob:pass@example.org/pixel.png' alt='image'>\
+         </article></main></body></html>",
+        ExtractOptions {
+            page_url: Some("https://news.example/source"),
+            query: None,
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        output.metadata.canonical_url.as_deref(),
+        Some("https://news.example/source")
+    );
+    assert!(output.text.contains("visible article text is retained"));
+    assert!(output.text.contains("read more"));
+    for content in [&output.html, &output.markdown] {
+        assert!(!content.contains("secret@"));
+        assert!(!content.contains("alice:token"));
+        assert!(!content.contains("bob:pass"));
+    }
+    // A credential-bearing base URL cannot be used to turn ordinary links into
+    // credential-bearing absolute URLs during sanitization.
+    let with_bad_base = extract(
+        "<html><body><article><h1>Long enough article heading</h1><p>Some ordinary visible paragraph content for the article extraction.</p><a href='/next'>Next</a></article></body></html>",
+        ExtractOptions {
+            page_url: Some("https://name:password@news.example/source"),
+            query: None,
+        },
+    )
+    .unwrap();
+    assert!(!with_bad_base.html.contains("password@"));
+    assert_eq!(with_bad_base.metadata.canonical_url, None);
+}
