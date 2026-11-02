@@ -1,0 +1,105 @@
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FetchTier {
+    Auto,
+    Http,
+    Browser,
+    Headed,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FetchRequest {
+    pub url: String,
+    #[serde(default = "default_method")]
+    pub method: String,
+    #[serde(default)]
+    pub headers: BTreeMap<String, String>,
+    #[serde(default)]
+    pub body: Option<Vec<u8>>,
+    #[serde(default = "default_tier")]
+    pub tier: FetchTier,
+}
+
+fn default_method() -> String {
+    "GET".into()
+}
+fn default_tier() -> FetchTier {
+    FetchTier::Auto
+}
+
+impl FetchRequest {
+    pub fn get(url: impl Into<String>) -> Self {
+        Self {
+            url: url.into(),
+            method: default_method(),
+            headers: BTreeMap::new(),
+            body: None,
+            tier: FetchTier::Auto,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FetchResult {
+    pub status: u16,
+    pub final_url: String,
+    pub headers: Vec<(String, String)>,
+    pub body: Vec<u8>,
+    pub tier: FetchTier,
+    pub protocol: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Status {
+    pub pid: u32,
+    pub address: String,
+    pub requests: u64,
+    pub upstream_requests: u64,
+    pub coalesced_requests: u64,
+    pub cache_entries: usize,
+    pub learned_sites: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "command", rename_all = "snake_case")]
+pub enum DaemonRequest {
+    Status,
+    Stop,
+    Fetch { request: FetchRequest },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", content = "data", rename_all = "snake_case")]
+pub enum DaemonResponse {
+    Status(Status),
+    Stopping,
+    Fetch(FetchResult),
+    Error(DaemonError),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonError {
+    pub kind: String,
+    pub message: String,
+    pub hint: String,
+}
+
+impl DaemonError {
+    pub fn new(kind: &str, message: impl Into<String>) -> Self {
+        Self {
+            kind: kind.into(),
+            message: message.into(),
+            hint: String::new(),
+        }
+    }
+}
+
+impl std::fmt::Display for DaemonError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: {}", self.kind, self.message)
+    }
+}
+impl std::error::Error for DaemonError {}
