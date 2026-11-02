@@ -1,11 +1,36 @@
 //! End-to-end MCP protocol test against the real server binary and pipes.
 use std::io::Write;
+use std::net::TcpListener;
 use std::process::{Command, Stdio};
 
 use serde_json::{json, Value};
 
 #[test]
 fn stdio_initialize_list_and_tool_calls() {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let url = format!("http://{}/story", listener.local_addr().unwrap());
+    let responder = std::thread::spawn(move || {
+        use std::io::Read;
+        let start = std::time::Instant::now();
+        let (mut stream, _) = loop {
+            match listener.accept() {
+                Ok(value) => break value,
+                Err(error)
+                    if error.kind() == std::io::ErrorKind::WouldBlock
+                        && start.elapsed().as_secs() < 15 =>
+                {
+                    std::thread::sleep(std::time::Duration::from_millis(10))
+                }
+                Err(error) => panic!("local HTTP accept failed: {error}"),
+            }
+        };
+        let mut buffer = [0u8; 2048];
+        let received = stream.read(&mut buffer).unwrap();
+        assert!(String::from_utf8_lossy(&buffer[..received]).contains("GET /story"));
+        let html = "<html><body><main><h1>Local MCP</h1><p>Verified through stdio and wreq.</p></main></body></html>";
+        write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{html}", html.len()).unwrap();
+    });
     let mut child = Command::new(env!("CARGO_BIN_EXE_rustscrapling-mcp"))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -20,9 +45,9 @@ fn stdio_initialize_list_and_tool_calls() {
         json!({"jsonrpc":"2.0","method":"notifications/initialized","params":{}}),
         json!({"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}),
         json!({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{
-            "name":"browser_open","arguments":{}}}),
+            "name":"browser_open","arguments":{"executable_path":"Z:\\nonexistent\\chrome.exe"}}}),
         json!({"jsonrpc":"2.0","id":4,"method":"tools/call","params":{
-            "name":"make_request","arguments":{"url":"https://example.com"}}}),
+            "name":"make_request","arguments":{"url":url}}}),
         json!({"jsonrpc":"2.0","id":5,"method":"tools/call","params":{
             "name":"list_sessions","arguments":{}}}),
         json!({"jsonrpc":"2.0","id":6,"method":"tools/call","params":{
@@ -38,6 +63,7 @@ fn stdio_initialize_list_and_tool_calls() {
         }
     }
     let output = child.wait_with_output().expect("server exits on stdin EOF");
+    responder.join().expect("local HTTP server completed");
     assert!(
         output.status.success(),
         "stderr: {}",
@@ -77,10 +103,15 @@ fn stdio_initialize_list_and_tool_calls() {
     assert!(response(3)["result"]["content"][0]["text"]
         .as_str()
         .unwrap()
-        .contains("backend_unavailable"));
-    assert_eq!(response(4)["result"]["isError"], true);
+        .contains("browser"));
+    assert_eq!(response(4)["result"]["isError"], false);
+    assert_eq!(response(4)["result"]["structuredContent"]["status"], 200);
+    assert!(response(4)["result"]["structuredContent"]["content"][0]
+        .as_str()
+        .unwrap()
+        .contains("Verified through stdio and wreq"));
     assert_eq!(response(5)["result"]["isError"], false);
-    assert_eq!(response(5)["result"]["content"][0]["text"], "[]");
+    assert_eq!(response(5)["result"]["structuredContent"], json!([]));
     assert_eq!(response(6)["result"]["isError"], true);
     assert!(response(6)["result"]["content"][0]["text"]
         .as_str()

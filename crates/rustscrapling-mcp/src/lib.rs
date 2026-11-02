@@ -1,7 +1,7 @@
-//! Stage 7 MCP server foundation. The tool contract is an AST extraction of
+//! Stage 7 MCP server. The tool contract is an AST extraction of
 //! D4Vinci/Scrapling at commit 95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0.
-//! HTTP and CDP execution are deliberately left for the integrated fetch and
-//! browser crates; tools never pretend an unavailable backend succeeded.
+//! HTTP and CDP execution reuse the integrated Rust libraries. Capabilities
+//! not exposed by those libraries report tool-visible typed errors.
 
 use std::sync::{Arc, OnceLock};
 
@@ -14,6 +14,9 @@ use rmcp::{
     ErrorData as McpError, ServerHandler,
 };
 use serde_json::{json, Map, Value};
+
+mod backend;
+pub use backend::RuntimeBackend;
 
 /// Tool definitions including the pinned descriptions and all input fields.
 pub fn tools() -> &'static [Tool] {
@@ -197,14 +200,63 @@ fn typed_error(kind: &str, message: &str, hint: &str) -> CallToolResult {
     CallToolResult::error(vec![ContentBlock::text(details.to_string())])
 }
 
-#[derive(Clone, Default)]
-pub struct RustScraplingMcp;
+#[derive(Clone)]
+pub struct RustScraplingMcp {
+    backend: std::sync::Arc<RuntimeBackend>,
+}
+
+impl Default for RustScraplingMcp {
+    fn default() -> Self {
+        Self {
+            backend: std::sync::Arc::new(RuntimeBackend::new()),
+        }
+    }
+}
+
+impl RustScraplingMcp {
+    /// Shared runtime for all requests received by a single MCP server process.
+    pub fn with_backend(backend: std::sync::Arc<RuntimeBackend>) -> Self {
+        Self { backend }
+    }
+
+    pub async fn execute_tool(
+        &self,
+        name: &str,
+        arguments: Map<String, Value>,
+    ) -> Result<CallToolResult, McpError> {
+        let Some(tool) = tools().iter().find(|tool| tool.name == name) else {
+            return Err(McpError::invalid_params(
+                format!("unknown MCP tool '{name}'"),
+                None,
+            ));
+        };
+        if let Err(reason) = validate_args(tool, &arguments) {
+            return Ok(typed_error(
+                "invalid_arguments",
+                &reason,
+                "Check tools/list inputSchema",
+            ));
+        }
+        Ok(match self.backend.call(name, arguments).await {
+            Ok(result) => result,
+            Err(error) => typed_error(&error.kind, &error.message, &error.hint),
+        })
+    }
+}
+
+/// Called by `rustscrapling mcp` and the standalone debug binary.
+pub async fn serve_stdio(server: RustScraplingMcp) -> Result<(), Box<dyn std::error::Error>> {
+    use rmcp::ServiceExt;
+    let service = server.serve(rmcp::transport::stdio()).await?;
+    service.waiting().await?;
+    Ok(())
+}
 
 impl ServerHandler for RustScraplingMcp {
     fn get_info(&self) -> ServerConfig {
         ServerConfig::new(ServerCapabilities::builder().enable_tools().build())
             .with_instructions(
-                "RustScrapling stage-7 API foundation. HTTP and browser operations return explicit backend_unavailable errors until integrated.",
+                "RustScrapling MCP: HTTP, browser fetching and sessions are available; unsupported browser actions return typed errors. Check isError before relying on results.",
             )
     }
 
@@ -225,34 +277,9 @@ impl ServerHandler for RustScraplingMcp {
         request: CallToolRequestParams,
         _context: RequestContext<RoleServer>,
     ) -> Result<CallToolResponse, McpError> {
-        let Some(tool) = self.get_tool(&request.name) else {
-            return Err(McpError::invalid_params(
-                format!("unknown MCP tool '{}'", request.name),
-                None,
-            ));
-        };
-        let arguments = request.arguments.unwrap_or_default();
-        if let Err(reason) = validate_args(&tool, &arguments) {
-            return Ok(typed_error(
-                "invalid_arguments",
-                &reason,
-                "Inspect tools/list inputSchema for required fields, types, and limits",
-            )
-            .into());
-        }
-        if request.name == "list_sessions" {
-            // No backends exist in this stage, and therefore no sessions.
-            return Ok(CallToolResult::success(vec![ContentBlock::text("[]")]).into());
-        }
-        Ok(typed_error(
-            "backend_unavailable",
-            &format!(
-                "MCP tool '{}' is registered but its HTTP/browser backend is not integrated",
-                request.name
-            ),
-            "Integrate stage 3/4/5 fetch, browser and session backends before invoking this tool",
-        )
-        .into())
+        self.execute_tool(&request.name, request.arguments.unwrap_or_default())
+            .await
+            .map(Into::into)
     }
 }
 
