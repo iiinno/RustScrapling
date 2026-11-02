@@ -31,6 +31,9 @@ pub enum Protocol {
     Http1,
     Http2,
     Http3Preferred,
+    /// Require a verified QUIC connection. Never silently use TCP fallback.
+    /// Useful for protocol tests and callers that demand HTTP/3.
+    Http3Only,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -441,12 +444,20 @@ impl HttpClient {
         // HTTP/3 failure, wreq negotiates HTTP/2 or HTTP/1.1 and the actual
         // negotiated version is always reflected in the response.
         let mut http3_attempted = false;
-        if self.options.protocol == Protocol::Http3Preferred
-            && quic::can_attempt(&self.options, &url)
+        if self.options.protocol == Protocol::Http3Only && !quic::can_attempt(&self.options, &url) {
+            return Err(HttpError::new(
+                ErrorKind::UnsupportedProtocol,
+                "HTTP/3 only requires HTTPS and a direct, non-proxied connection",
+            ));
+        }
+        if matches!(
+            self.options.protocol,
+            Protocol::Http3Preferred | Protocol::Http3Only
+        ) && quic::can_attempt(&self.options, &url)
         {
             http3_attempted = true;
             let timeout = self.options.http3_probe_timeout.min(self.options.timeout);
-            if let Ok(Ok(response)) = tokio::time::timeout(
+            let result = tokio::time::timeout(
                 timeout,
                 quic::fetch(
                     &self.options,
@@ -456,15 +467,28 @@ impl HttpClient {
                     request.body.as_deref(),
                 ),
             )
-            .await
-            {
-                if !self.options.follow_redirects || !(300..=399).contains(&response.status) {
-                    if !retry_allowed
-                        || !matches!(response.status, 408 | 429 | 500 | 502 | 503 | 504)
+            .await;
+            match result {
+                Ok(Ok(response)) => {
+                    if self.options.protocol == Protocol::Http3Only
+                        || !self.options.follow_redirects
+                        || !(300..=399).contains(&response.status)
                     {
-                        return Ok(response);
+                        if self.options.protocol == Protocol::Http3Only
+                            || !retry_allowed
+                            || !matches!(response.status, 408 | 429 | 500 | 502 | 503 | 504)
+                        {
+                            return Ok(response);
+                        }
                     }
                 }
+                Ok(Err(error)) if self.options.protocol == Protocol::Http3Only => {
+                    return Err(error);
+                }
+                Err(_) if self.options.protocol == Protocol::Http3Only => {
+                    return Err(HttpError::new(ErrorKind::Timeout, "HTTP/3 probe timed out"));
+                }
+                _ => {}
             }
         }
         let mut last_error = None;

@@ -9,13 +9,17 @@ async fn tls_rejects_untrusted_cert_and_accepts_explicit_ca_bundle() {
     let generated = rcgen::generate_simple_self_signed(vec!["localhost".into()]).unwrap();
     let file = tempfile::NamedTempFile::new().unwrap();
     std::fs::write(file.path(), generated.cert.pem()).unwrap();
-    let tls = rustls::ServerConfig::builder()
-        .with_no_client_auth()
-        .with_single_cert(
-            vec![generated.cert.der().clone()],
-            rustls::pki_types::PrivatePkcs8KeyDer::from(generated.key_pair.serialize_der()).into(),
-        )
-        .unwrap();
+    let tls = rustls::ServerConfig::builder_with_provider(Arc::new(
+        rustls::crypto::ring::default_provider(),
+    ))
+    .with_safe_default_protocol_versions()
+    .unwrap()
+    .with_no_client_auth()
+    .with_single_cert(
+        vec![generated.cert.der().clone()],
+        rustls::pki_types::PrivatePkcs8KeyDer::from(generated.key_pair.serialize_der()).into(),
+    )
+    .unwrap();
     let acceptor = tokio_rustls::TlsAcceptor::from(Arc::new(tls));
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();

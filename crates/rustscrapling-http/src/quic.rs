@@ -90,9 +90,15 @@ pub(super) async fn fetch(
         .or_else(|| addrs.first())
         .ok_or_else(|| HttpError::new(ErrorKind::Dns, "HTTP/3 DNS lookup returned no addresses"))?;
 
-    let mut tls = rustls::ClientConfig::builder()
-        .with_root_certificates(roots(options)?)
-        .with_no_client_auth();
+    // Both ring and aws-lc can be enabled transitively by the HTTP and QUIC
+    // stacks. Never rely on rustls' process-global CryptoProvider inference.
+    let mut tls = rustls::ClientConfig::builder_with_provider(Arc::new(
+        rustls::crypto::ring::default_provider(),
+    ))
+    .with_safe_default_protocol_versions()
+    .map_err(|_| HttpError::new(ErrorKind::Tls, "HTTP/3 TLS protocol configuration failed"))?
+    .with_root_certificates(roots(options)?)
+    .with_no_client_auth();
     tls.alpn_protocols = vec![b"h3".to_vec()];
     let tls = quinn::crypto::rustls::QuicClientConfig::try_from(tls)
         .map_err(|_| HttpError::new(ErrorKind::Tls, "invalid QUIC TLS configuration"))?;
