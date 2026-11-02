@@ -1,5 +1,12 @@
 # RESULTS.md: 測定と検証の結果
 
+## 2026-11-03 クローラの速度制限・robots追試
+
+- 環境: Windows 11上のWSL2 Ubuntu 24.04、rootユーザーのRust 1.99.1、Debug test、Cargo.lock固定。`cargo test -p rustscrapling-spider --locked --offline` は9件PASS。
+- 修正前は `FuturesUnordered` のfutureをバッチ構築後に初めてpollしていたため、ホスト別待機をバッチ構築中に行っても複数取得が一斉開始する場合があった。実際の取得開始前に同一ホスト専用の非同期ゲートを取得し、前回開始時刻からの間隔を保証するよう修正した。
+- 60/90msの指定間隔に対し、同じホストの取得開始時刻が離れることをテスト。別ホストの遅い`robots.txt`応答でバッチ構築が遅延したケースも含む。これはモック取得の時刻を用いた機能試験で、実サイトにおける公平性や長時間の性能値を示すものではない。
+- `robots.txt`はパスだけでなくクエリ文字列も照合するよう修正。`/search?private=true`を禁止し、`/search?private=false`を許可するモック試験を追加。既定の`obey_robots=false`は変更していない。
+
 ## 2026-11-03 統合再検証
 
 - 環境は Windows 11 上の WSL2 Ubuntu 24.04、Rust 1.99.1、libxml2 2.9.14。Debug test、Cargo.lock固定、ビルド並列数2。

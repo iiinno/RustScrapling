@@ -271,10 +271,17 @@ async fn robots_allowed(
         };
         cache.insert(host_key.clone(), policy);
     }
+    // RFC 9309 matches the request target, including any query component.
+    // Checking only url.path() can accidentally bypass a query-specific rule.
+    let mut path = url.path().to_owned();
+    if let Some(query) = url.query() {
+        path.push('?');
+        path.push_str(query);
+    }
     cache
         .get(&host_key)
         .and_then(Option::as_ref)
-        .is_some_and(|rules| robots_permitted(rules, url.path()))
+        .is_some_and(|rules| robots_permitted(rules, &path))
 }
 
 fn host_allowed(spec: &CrawlSpec, url: &Url) -> bool {
@@ -437,7 +444,9 @@ where
     let mut queued: HashSet<String> = state.queue.iter().map(|(url, _)| key(url)).collect();
     let mut queue: VecDeque<(String, usize)> = state.queue.into();
     let mut summary = CrawlSummary::default();
-    let mut site_clock = HashMap::<String, Instant>::new();
+    // Shared per-origin gates must run in the futures themselves. A timestamp
+    // computed while filling a batch can be stale before the first poll.
+    let mut site_clock = HashMap::<String, Arc<tokio::sync::Mutex<Option<Instant>>>>::new();
     let mut robot_cache = HashMap::<String, Option<Vec<RobotsRule>>>::new();
     while !queue.is_empty() && visited.len() < spec.max_pages {
         let mut batch = FuturesUnordered::new();
@@ -468,20 +477,31 @@ where
                 })?;
                 continue;
             }
-            if spec.delay_ms > 0 {
-                let host = url.host_str().unwrap_or_default().to_string();
-                let now = Instant::now();
-                let desired = site_clock
-                    .get(&host)
-                    .map(|last| *last + Duration::from_millis(spec.delay_ms))
-                    .unwrap_or(now);
-                if desired > now {
-                    tokio::time::sleep(desired - now).await;
-                }
-                site_clock.insert(host, Instant::now());
-            }
+            let host_clock = if spec.delay_ms > 0 {
+                let host = url.host_str().unwrap_or_default().to_owned();
+                Some(Arc::clone(
+                    site_clock
+                        .entry(host)
+                        .or_insert_with(|| Arc::new(tokio::sync::Mutex::new(None))),
+                ))
+            } else {
+                None
+            };
+            let delay = Duration::from_millis(spec.delay_ms);
             let backend = Arc::clone(&fetcher);
             batch.push(async move {
+                if let Some(host_clock) = host_clock {
+                    let mut last_start = host_clock.lock().await;
+                    if let Some(last) = *last_start {
+                        if let Some(next) = last.checked_add(delay) {
+                            tokio::time::sleep_until(tokio::time::Instant::from_std(next)).await;
+                        }
+                    }
+                    // Release the gate before awaiting the network response:
+                    // different requests can overlap once their start times
+                    // have been spaced apart.
+                    *last_start = Some(Instant::now());
+                }
                 let result = backend.fetch(url.as_str()).await;
                 (url.to_string(), depth, result)
             });
@@ -554,6 +574,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
 
     struct Mock;
     impl Fetcher for Mock {
@@ -597,6 +618,107 @@ mod tests {
         assert_eq!(second.visited, 2);
     }
 
+    struct TimedFetcher(Mutex<Vec<Instant>>);
+
+    impl Fetcher for TimedFetcher {
+        fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
+            Box::pin(async move {
+                self.0.lock().unwrap().push(Instant::now());
+                Ok(FetchPage {
+                    status: 200,
+                    url: url.into(),
+                    content_type: "text/plain".into(),
+                    body: String::new(),
+                })
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn per_host_delay_applies_to_fetch_starts_not_batch_construction() {
+        let fetcher = Arc::new(TimedFetcher(Mutex::new(Vec::new())));
+        let spec = CrawlSpec {
+            start_urls: vec![
+                "https://example.com/one".into(),
+                "https://example.com/two".into(),
+                "https://example.com/three".into(),
+            ],
+            concurrency: 3,
+            max_depth: 0,
+            delay_ms: 60,
+            ..CrawlSpec::default()
+        };
+        let summary = crawl(&spec, fetcher.clone(), |_| Ok(())).await.unwrap();
+        assert_eq!(summary.successful, 3);
+        let starts = fetcher.0.lock().unwrap();
+        assert_eq!(starts.len(), 3);
+        for times in starts.windows(2) {
+            assert!(
+                times[1].duration_since(times[0]) >= Duration::from_millis(40),
+                "requests to one host must not launch together"
+            );
+        }
+    }
+
+    struct SlowRobotFetcher(Mutex<Vec<(String, Instant)>>);
+
+    impl Fetcher for SlowRobotFetcher {
+        fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
+            Box::pin(async move {
+                if url.ends_with("/robots.txt") {
+                    if url.contains("other.example") {
+                        tokio::time::sleep(Duration::from_millis(180)).await;
+                    }
+                    return Ok(FetchPage {
+                        status: 200,
+                        url: url.into(),
+                        content_type: "text/plain".into(),
+                        body: "User-agent: *\nAllow: /\n".into(),
+                    });
+                }
+                self.0.lock().unwrap().push((url.into(), Instant::now()));
+                Ok(FetchPage {
+                    status: 200,
+                    url: url.into(),
+                    content_type: "text/plain".into(),
+                    body: String::new(),
+                })
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn per_host_delay_survives_slow_batch_preparation() {
+        let fetcher = Arc::new(SlowRobotFetcher(Mutex::new(Vec::new())));
+        let spec = CrawlSpec {
+            start_urls: vec![
+                "https://example.com/first".into(),
+                "https://other.example/page".into(),
+                "https://example.com/second".into(),
+            ],
+            concurrency: 3,
+            max_depth: 0,
+            obey_robots: true,
+            delay_ms: 90,
+            ..CrawlSpec::default()
+        };
+        assert_eq!(
+            crawl(&spec, fetcher.clone(), |_| Ok(()))
+                .await
+                .unwrap()
+                .successful,
+            3
+        );
+        let starts = fetcher.0.lock().unwrap();
+        let same_host: Vec<_> = starts
+            .iter()
+            .filter(|(url, _)| url.contains("example.com"))
+            .map(|(_, time)| *time)
+            .collect();
+        assert_eq!(same_host.len(), 2);
+        assert!(same_host[1].duration_since(same_host[0]) >= Duration::from_millis(65));
+    }
+
     #[test]
     fn rejects_unsafe_urls_and_dedupes_fragments() {
         assert!(CrawlSpec::from_toml("start_urls=['file:///etc/passwd']").is_err());
@@ -611,12 +733,38 @@ mod tests {
     #[test]
     fn robots_specificity_and_wildcards() {
         let policy = parse_robots(
-            "User-agent: *\nDisallow: /private\nAllow: /private/public\nDisallow: /*.secret$\n",
+            "User-agent: *\nDisallow: /private\nAllow: /private/public\nDisallow: /*.secret$\nDisallow: /search?private=true\n",
         );
         assert!(!robots_permitted(&policy, "/private/key"));
         assert!(robots_permitted(&policy, "/private/public/a"));
         assert!(!robots_permitted(&policy, "/x.secret"));
         assert!(robots_permitted(&policy, "/public"));
+        assert!(!robots_permitted(&policy, "/search?private=true"));
+        assert!(robots_permitted(&policy, "/search?private=false"));
+    }
+
+    struct RobotFetcher;
+    impl Fetcher for RobotFetcher {
+        fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
+            Box::pin(async move {
+                Ok(FetchPage {
+                    status: 200,
+                    url: url.into(),
+                    content_type: "text/plain".into(),
+                    body: "User-agent: *\nDisallow: /search?private=true\n".into(),
+                })
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn robots_rules_cover_query_parameters() {
+        let backend: Arc<dyn Fetcher> = Arc::new(RobotFetcher);
+        let mut cache = HashMap::new();
+        let blocked = Url::parse("https://example.com/search?private=true").unwrap();
+        let allowed = Url::parse("https://example.com/search?private=false").unwrap();
+        assert!(!robots_allowed(&blocked, &backend, &mut cache).await);
+        assert!(robots_allowed(&allowed, &backend, &mut cache).await);
     }
 
     #[test]
