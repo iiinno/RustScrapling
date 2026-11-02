@@ -444,13 +444,14 @@ async fn handle(
     let data = timeout(shared.config.request_timeout, read_frame(&mut socket))
         .await
         .map_err(|_| DaemonError::new("timeout", "IPC request timed out"))??;
+    let mut stop_after_reply = false;
     let response = match serde_json::from_slice::<WireRequest>(&data) {
         Ok(wire) if constant_time_eq(wire.token.as_bytes(), state.token.as_bytes()) => match wire
             .request
         {
             DaemonRequest::Status => DaemonResponse::Status(shared.status(&state.address).await),
             DaemonRequest::Stop => {
-                let _ = shutdown.send(true);
+                stop_after_reply = true;
                 DaemonResponse::Stopping
             }
             DaemonRequest::Fetch { request } => match shared.fetch(request).await {
@@ -461,12 +462,16 @@ async fn handle(
         Ok(_) => DaemonResponse::Error(DaemonError::new("unauthorized", "invalid local token")),
         Err(_) => DaemonResponse::Error(DaemonError::new("parse", "invalid IPC request")),
     };
-    match write_frame(&mut socket, &response).await {
+    let result = match write_frame(&mut socket, &response).await {
         Err(err) if err.kind == "size" => {
             write_frame(&mut socket, &DaemonResponse::Error(err)).await
         }
         result => result,
+    };
+    if stop_after_reply && result.is_ok() {
+        let _ = shutdown.send(true);
     }
+    result
 }
 
 fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
@@ -543,6 +548,16 @@ fn check_directory(path: &Path) -> Result<(), DaemonError> {
 
 #[cfg(windows)]
 fn check_directory(path: &Path) -> Result<(), DaemonError> {
+    // Do not rewrite ACLs on arbitrary existing directories (for example a
+    // user's home directory supplied accidentally via --state-file).
+    let default_dir = DaemonConfig::default().state_file;
+    let is_default = default_dir.parent().is_some_and(|parent| parent == path);
+    if !is_default && !path.join(".rustscrapling-private").is_file() {
+        return Err(DaemonError::new(
+            "permission",
+            "existing state directory is not managed by RustScrapling",
+        ));
+    }
     restrict_directory(path)
 }
 
@@ -572,6 +587,11 @@ fn restrict_directory(path: &Path) -> Result<(), DaemonError> {
             "could not restrict Windows daemon state directory ACL",
         ));
     }
+    std::fs::write(
+        path.join(".rustscrapling-private"),
+        b"rustscrapling-managed-v1\n",
+    )
+    .map_err(io_err)?;
     Ok(())
 }
 
@@ -581,6 +601,24 @@ pub struct DaemonClient {
 
 impl DaemonClient {
     pub fn from_state_file(path: impl AsRef<Path>) -> Result<Self, DaemonError> {
+        let path = path.as_ref();
+        let meta = std::fs::symlink_metadata(path).map_err(io_err)?;
+        if meta.file_type().is_symlink() || !meta.is_file() {
+            return Err(DaemonError::new(
+                "permission",
+                "daemon state must be a regular file",
+            ));
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if meta.permissions().mode() & 0o077 != 0 {
+                return Err(DaemonError::new(
+                    "permission",
+                    "daemon state file must be private (0600)",
+                ));
+            }
+        }
         let content = std::fs::read(path).map_err(io_err)?;
         let state: StateFile = serde_json::from_slice(&content).map_err(io_err)?;
         if state.version != 1 || state.token.len() != 64 {

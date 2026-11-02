@@ -6,7 +6,12 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use crate::browser_adapter::CdpBackend;
+use crate::daemon;
 use clap::{Args, ValueEnum};
+use rustscrapling_daemon::{
+    DaemonClient, FetchRequest as DaemonFetchRequest, FetchResult as DaemonFetchResult,
+    FetchTier as DaemonTier,
+};
 use rustscrapling_extract::{extract, ExtractOptions, ExtractedPage};
 use rustscrapling_fetch::{FetchOptions as FetchPolicy, FetchTier, Fetcher};
 use rustscrapling_http::{HttpClient, HttpOptions, HttpRequest, Protocol};
@@ -98,6 +103,47 @@ fn error(kind: &str, description: &str, hint: &str) -> String {
     .to_string()
 }
 
+/// Do not silently ignore transport/profile options that the daemon cannot
+/// represent in its typed request. In those cases use the direct acquisition
+/// path, preserving the request's documented semantics.
+fn daemon_compatible(options: &RequestOptions) -> bool {
+    !options.direct
+        && options.proxy.is_none()
+        && options.impersonate.is_none()
+        && options.retries == 2
+        && options.timeout == 30
+        && !options.http3
+        && !options.no_redirects
+        && options.ca_bundle.is_none()
+        && options.chrome_path.is_none()
+        && options.cdp_url.is_none()
+        && options.data.is_none()
+}
+
+async fn request_via_daemon(
+    url: &str,
+    options: &RequestOptions,
+    tier: DaemonTier,
+) -> Result<Option<DaemonFetchResult>, String> {
+    if !daemon_compatible(options) {
+        return Ok(None);
+    }
+    let state = daemon::state_file();
+    let Some(client) = DaemonClient::discover(&state)
+        .await
+        .map_err(|e| daemon::typed_error(&e))?
+    else {
+        return Ok(None);
+    };
+    let mut request = DaemonFetchRequest::get(url);
+    request.tier = tier;
+    client
+        .fetch(request)
+        .await
+        .map(Some)
+        .map_err(|e| daemon::typed_error(&e))
+}
+
 pub fn run_request(method: &str, target: &str, options: &RequestOptions) -> Result<(), String> {
     if options.timeout == 0 {
         return Err(error(
@@ -111,6 +157,19 @@ pub fn run_request(method: &str, target: &str, options: &RequestOptions) -> Resu
         .build()
         .map_err(|e| error("transport", &e.to_string(), "Check the runtime"))?;
     let response = runtime.block_on(async {
+        if method == "GET" {
+            if let Some(result) = request_via_daemon(target, options, DaemonTier::Http).await? {
+                return Ok(rustscrapling_http::HttpResponse {
+                    status: result.status,
+                    final_url: result.final_url,
+                    headers: result.headers,
+                    body: result.body,
+                    http_version: result.protocol.unwrap_or_else(|| "CDP".into()),
+                    attempts: 1,
+                    http3_attempted: false,
+                });
+            }
+        }
         let client = HttpClient::new(transport_options(options)).map_err(|err| {
             error(
                 err.kind.as_str(),
@@ -180,6 +239,27 @@ pub fn run_tier(target: &str, options: &RequestOptions, tier: FetchTier) -> Resu
         .build()
         .map_err(|e| error("transport", &e.to_string(), "Check Tokio runtime"))?;
     let response = runtime.block_on(async {
+        let ipc_tier = match tier {
+            FetchTier::Auto => DaemonTier::Auto,
+            FetchTier::Http => DaemonTier::Http,
+            FetchTier::Browser => DaemonTier::Browser,
+            FetchTier::Headed => DaemonTier::Headed,
+        };
+        if let Some(result) = request_via_daemon(target, options, ipc_tier).await? {
+            return Ok(rustscrapling_fetch::FetchResponse {
+                status: result.status,
+                final_url: result.final_url,
+                headers: result.headers,
+                body: result.body,
+                tier: match result.tier {
+                    DaemonTier::Auto => FetchTier::Auto,
+                    DaemonTier::Http => FetchTier::Http,
+                    DaemonTier::Browser => FetchTier::Browser,
+                    DaemonTier::Headed => FetchTier::Headed,
+                },
+                protocol: result.protocol,
+            });
+        }
         let client = HttpClient::new(transport_options(options))
             .map_err(|e| error(e.kind.as_str(), &e.message, "Check network options"))?;
         let mut fetcher = Fetcher::new(client, FetchPolicy::default());

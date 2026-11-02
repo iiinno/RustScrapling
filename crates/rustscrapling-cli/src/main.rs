@@ -4,6 +4,7 @@
 
 mod browser_adapter;
 mod crawler;
+mod daemon;
 mod network;
 
 use std::path::PathBuf;
@@ -61,6 +62,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Manage the authenticated local fetch daemon.
+    Daemon(daemon::DaemonArgs),
     /// HTTP GET and article extraction (no browser).
     Get {
         url: String,
@@ -412,6 +415,7 @@ fn element_ids(selections: Vec<Selection>) -> Vec<NodeId> {
 fn run() -> Result<(), String> {
     let cli = Cli::parse();
     match cli.command {
+        Command::Daemon(args) => daemon::run(args),
         Command::Get { url, options } => network::run_request("GET", &url, &options),
         Command::Auto { url, options } => {
             network::run_tier(&url, &options, rustscrapling_fetch::FetchTier::Auto)

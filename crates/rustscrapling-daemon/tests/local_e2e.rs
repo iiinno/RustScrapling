@@ -91,6 +91,11 @@ async fn localhost_authenticated_ipc_singleflight_revalidation_rate_and_shutdown
 
     let wrong_path = dir.join("wrong.json");
     std::fs::write(&wrong_path, state.replace(&token, &"a".repeat(64))).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&wrong_path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    }
     let wrong = DaemonClient::from_state_file(&wrong_path).unwrap();
     assert_eq!(wrong.status().await.unwrap_err().kind, "unauthorized");
 
