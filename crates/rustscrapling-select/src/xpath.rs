@@ -410,7 +410,7 @@ enum Axis {
     Ancestor,
     AncestorOrSelf,
     Parent,
-    SelfAxis,
+    Current,
     FollowingSibling,
     PrecedingSibling,
     Following,
@@ -685,7 +685,7 @@ impl XParser {
         // Abbreviated steps.
         if self.eat(&Tok::Dot) {
             return Ok(Step {
-                axis: Axis::SelfAxis,
+                axis: Axis::Current,
                 test: NodeTest::Node,
                 predicates: Vec::new(),
                 via_slashslash: false,
@@ -711,7 +711,7 @@ impl XParser {
                     "ancestor" => Axis::Ancestor,
                     "ancestor-or-self" => Axis::AncestorOrSelf,
                     "parent" => Axis::Parent,
-                    "self" => Axis::SelfAxis,
+                    "self" => Axis::Current,
                     "following-sibling" => Axis::FollowingSibling,
                     "preceding-sibling" => Axis::PrecedingSibling,
                     "following" => Axis::Following,
@@ -1055,13 +1055,13 @@ fn axis_nodes(dom: &Dom, base: XNode, axis: Axis) -> Vec<XNode> {
                     }
                     out
                 }
-                Axis::SelfAxis => vec![base],
+                Axis::Current => vec![base],
                 _ => Vec::new(),
             };
         }
     };
     match axis {
-        Axis::SelfAxis => vec![XNode::Node(id)],
+        Axis::Current => vec![XNode::Node(id)],
         Axis::Parent => dom
             .parent(id)
             .map(|p| vec![XNode::Node(p)])
@@ -1426,7 +1426,7 @@ fn xpath_round(x: f64) -> f64 {
 }
 
 fn normalize_space(s: &str) -> String {
-    s.split(|c| matches!(c, ' ' | '\t' | '\n' | '\r'))
+    s.split([' ', '\t', '\n', '\r'])
         .filter(|w| !w.is_empty())
         .collect::<Vec<_>>()
         .join(" ")
