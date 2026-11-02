@@ -368,10 +368,7 @@ enum Expr {
     Mul(Box<Expr>, Box<Expr>, MulOp),
     Neg(Box<Expr>),
     Union(Box<Expr>, Box<Expr>),
-    Path {
-        absolute: bool,
-        steps: Vec<Step>,
-    },
+    Path { absolute: bool, steps: Vec<Step> },
     Filter(Box<Expr>, Vec<Expr>),
     SlashPath(Box<Expr>, Vec<Step>), // FilterExpr followed by a relative path
     Variable(String),
@@ -589,21 +586,33 @@ impl XParser {
                 self.next();
                 if self.at_step_start() {
                     let steps = self.parse_relative_path(false)?;
-                    Ok(Expr::Path { absolute: true, steps })
+                    Ok(Expr::Path {
+                        absolute: true,
+                        steps,
+                    })
                 } else {
-                    Ok(Expr::Path { absolute: true, steps: Vec::new() })
+                    Ok(Expr::Path {
+                        absolute: true,
+                        steps: Vec::new(),
+                    })
                 }
             }
             Tok::SlashSlash => {
                 self.next();
                 let steps = self.parse_relative_path(true)?;
-                Ok(Expr::Path { absolute: true, steps })
+                Ok(Expr::Path {
+                    absolute: true,
+                    steps,
+                })
             }
             _ => {
                 // Either a location path (relative) or a filter expression.
                 if self.at_step_start() && !self.at_function_call() {
                     let steps = self.parse_relative_path(false)?;
-                    return Ok(Expr::Path { absolute: false, steps });
+                    return Ok(Expr::Path {
+                        absolute: false,
+                        steps,
+                    });
                 }
                 let primary = self.parse_primary()?;
                 let mut expr = primary;
@@ -636,17 +645,18 @@ impl XParser {
         // call; node tests are handled as steps instead.
         if let Tok::Name(name) = self.peek() {
             if matches!(self.peek2(), Tok::LParen) {
-                return !matches!(name.as_str(), "node" | "text" | "comment" | "processing-instruction");
+                return !matches!(
+                    name.as_str(),
+                    "node" | "text" | "comment" | "processing-instruction"
+                );
             }
         }
         false
     }
 
     fn at_step_start(&self) -> bool {
-        matches!(
-            self.peek(),
-            Tok::Dot | Tok::DotDot | Tok::At | Tok::Star
-        ) || matches!(self.peek(), Tok::Name(_))
+        matches!(self.peek(), Tok::Dot | Tok::DotDot | Tok::At | Tok::Star)
+            || matches!(self.peek(), Tok::Name(_))
     }
 
     fn parse_relative_path(&mut self, first_via_slashslash: bool) -> Result<Vec<Step>> {
@@ -716,7 +726,12 @@ impl XParser {
         }
         let test = self.parse_node_test()?;
         let predicates = self.parse_predicates()?;
-        Ok(Step { axis, test, predicates, via_slashslash: false })
+        Ok(Step {
+            axis,
+            test,
+            predicates,
+            via_slashslash: false,
+        })
     }
 
     fn parse_node_test(&mut self) -> Result<NodeTest> {
@@ -821,7 +836,12 @@ struct Ctx {
     vars: HashMap<String, Value>,
 }
 
-pub fn xpath(dom: &Dom, scope: NodeId, expr: &str, vars: &[(String, String)]) -> Result<Vec<Selection>> {
+pub fn xpath(
+    dom: &Dom,
+    scope: NodeId,
+    expr: &str,
+    vars: &[(String, String)],
+) -> Result<Vec<Selection>> {
     let toks = lex(expr)?;
     let mut parser = XParser { toks, pos: 0 };
     let ast = parser.parse_expr()?;
@@ -846,9 +866,7 @@ pub fn xpath(dom: &Dom, scope: NodeId, expr: &str, vars: &[(String, String)]) ->
                 XNode::Node(id) => {
                     let node = dom.node(*id);
                     match node.kind {
-                        NodeKind::Text | NodeKind::Comment => {
-                            Selection::Text(node.data.clone())
-                        }
+                        NodeKind::Text | NodeKind::Comment => Selection::Text(node.data.clone()),
                         _ => Selection::Element(*id),
                     }
                 }
@@ -1044,14 +1062,21 @@ fn axis_nodes(dom: &Dom, base: XNode, axis: Axis) -> Vec<XNode> {
     };
     match axis {
         Axis::SelfAxis => vec![XNode::Node(id)],
-        Axis::Parent => dom.parent(id).map(|p| vec![XNode::Node(p)]).unwrap_or_default(),
+        Axis::Parent => dom
+            .parent(id)
+            .map(|p| vec![XNode::Node(p)])
+            .unwrap_or_default(),
         Axis::Child => dom.children(id).iter().map(|&c| XNode::Node(c)).collect(),
         Axis::Descendant => {
             let mut all = dom.descendants_or_self(id);
             all.remove(0);
             all.into_iter().map(XNode::Node).collect()
         }
-        Axis::DescendantOrSelf => dom.descendants_or_self(id).into_iter().map(XNode::Node).collect(),
+        Axis::DescendantOrSelf => dom
+            .descendants_or_self(id)
+            .into_iter()
+            .map(XNode::Node)
+            .collect(),
         Axis::Ancestor => {
             // Reverse axis: nearest first.
             dom.ancestors(id).into_iter().map(XNode::Node).collect()
@@ -1074,7 +1099,11 @@ fn axis_nodes(dom: &Dom, base: XNode, axis: Axis) -> Vec<XNode> {
                 let sibs = dom.children(p);
                 let pos = sibs.iter().position(|&s| s == id).unwrap_or(0);
                 // Reverse axis: nearest first.
-                sibs.iter().take(pos).rev().map(|&s| XNode::Node(s)).collect()
+                sibs.iter()
+                    .take(pos)
+                    .rev()
+                    .map(|&s| XNode::Node(s))
+                    .collect()
             }
             None => Vec::new(),
         },
@@ -1141,7 +1170,8 @@ fn node_test_matches(dom: &Dom, n: XNode, test: &NodeTest) -> bool {
 fn values_equal(dom: &Dom, a: &Value, b: &Value) -> bool {
     match (a, b) {
         (Value::Nodes(x), Value::Nodes(y)) => x.iter().any(|nx| {
-            y.iter().any(|ny| string_value(dom, *nx) == string_value(dom, *ny))
+            y.iter()
+                .any(|ny| string_value(dom, *nx) == string_value(dom, *ny))
         }),
         (Value::Nodes(x), Value::Bool(bb)) => (!x.is_empty()) == *bb,
         (Value::Bool(bb), Value::Nodes(x)) => (!x.is_empty()) == *bb,
@@ -1232,7 +1262,10 @@ fn eval_function(dom: &Dom, name: &str, arg_exprs: &[Expr], ctx: &Ctx) -> Result
         },
         "string" => Ok(Value::Str(arg_str(0))),
         "concat" => Ok(Value::Str(
-            args.iter().map(|v| v.to_string(dom)).collect::<Vec<_>>().join(""),
+            args.iter()
+                .map(|v| v.to_string(dom))
+                .collect::<Vec<_>>()
+                .join(""),
         )),
         "starts-with" => Ok(Value::Bool(arg_str(0).starts_with(&arg_str(1)))),
         "contains" => Ok(Value::Bool(arg_str(0).contains(&arg_str(1)))),
@@ -1294,10 +1327,17 @@ fn eval_function(dom: &Dom, name: &str, arg_exprs: &[Expr], ctx: &Ctx) -> Result
             Ok(Value::Str(out))
         }
         "boolean" => Ok(Value::Bool(
-            args.into_iter().next().map(|v| v.to_bool(dom)).unwrap_or(false),
+            args.into_iter()
+                .next()
+                .map(|v| v.to_bool(dom))
+                .unwrap_or(false),
         )),
         "not" => Ok(Value::Bool(
-            !args.into_iter().next().map(|v| v.to_bool(dom)).unwrap_or(false),
+            !args
+                .into_iter()
+                .next()
+                .map(|v| v.to_bool(dom))
+                .unwrap_or(false),
         )),
         "number" => Ok(Value::Num(arg_num(0))),
         "floor" => Ok(Value::Num(arg_num(0).floor())),
@@ -1344,7 +1384,10 @@ fn eval_function(dom: &Dom, name: &str, arg_exprs: &[Expr], ctx: &Ctx) -> Result
             Ok(Value::Str(value))
         }
         "id" => {
-            let wanted: Vec<String> = arg_str(0).split_whitespace().map(|s| s.to_string()).collect();
+            let wanted: Vec<String> = arg_str(0)
+                .split_whitespace()
+                .map(|s| s.to_string())
+                .collect();
             let mut out = Vec::new();
             for el in dom.descendants_or_self(dom.root) {
                 if let Some(v) = dom.attr(el, "id") {

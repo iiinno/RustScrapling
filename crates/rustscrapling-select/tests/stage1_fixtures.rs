@@ -8,10 +8,7 @@ use rustscrapling_select::{css, xpath, Selection};
 use serde_json::Value;
 
 fn load_fixtures() -> Value {
-    let path = format!(
-        "{}/../../fixtures/stage1.json",
-        env!("CARGO_MANIFEST_DIR")
-    );
+    let path = format!("{}/../../fixtures/stage1.json", env!("CARGO_MANIFEST_DIR"));
     let raw = std::fs::read_to_string(&path).expect("fixtures/stage1.json readable");
     serde_json::from_str(&raw).expect("fixtures parse")
 }
@@ -34,7 +31,13 @@ fn describe(dom: &Dom, sel: &Selection) -> Value {
     }
 }
 
-fn check_queries(dom: &Dom, queries: &Value, kind: &str, doc_name: &str, failures: &mut Vec<String>) {
+fn check_queries(
+    dom: &Dom,
+    queries: &Value,
+    kind: &str,
+    doc_name: &str,
+    failures: &mut Vec<String>,
+) {
     for q in queries.as_array().map(|v| v.as_slice()).unwrap_or(&[]) {
         let expr = q["expr"].as_str().unwrap();
         let expected_error = q.get("error").is_some();

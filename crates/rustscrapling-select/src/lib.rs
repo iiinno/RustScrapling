@@ -4,9 +4,9 @@
 use rustscrapling_dom::{Dom, NodeId};
 
 pub mod css;
-pub mod xpath;
 pub mod generate;
 pub mod text_search;
+pub mod xpath;
 
 /// One selected item. CSS `::text` and `::attr(name)` and XPath
 /// `text()` / `@attr` results come back as plain strings, the way

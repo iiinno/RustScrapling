@@ -4,6 +4,7 @@
 
 use regex::RegexBuilder;
 use rustscrapling_dom::{Dom, NodeId};
+use std::borrow::Cow;
 
 /// Python `str.strip()` character set: Unicode whitespace plus the C0
 /// separators \x1c-\x1f that Python also treats as whitespace.
@@ -49,28 +50,45 @@ pub fn clean_text(s: &str) -> String {
 /// (semantics: the element's first text-node child contains a character
 /// other than space/tab/CR/LF, which is exactly what normalize-space
 /// tests); the stage fixtures assert it agrees with the XPath form.
-fn targets_with_text(dom: &Dom, scope: NodeId) -> Vec<NodeId> {
-    let mut out = Vec::new();
-    for id in dom.descendants_or_self(scope) {
-        if id == scope || !dom.node(id).is_element() {
-            continue;
-        }
-        let has_text = dom
-            .children(id)
-            .iter()
-            .find(|&&c| dom.node(c).kind == rustscrapling_dom::NodeKind::Text)
-            .map(|&c| {
-                dom.node(c)
-                    .data
-                    .chars()
-                    .any(|ch| !matches!(ch, ' ' | '\t' | '\n' | '\r'))
-            })
-            .unwrap_or(false);
-        if has_text {
-            out.push(id);
-        }
+fn targets_with_text(dom: &Dom, scope: NodeId) -> impl Iterator<Item = NodeId> + '_ {
+    dom.descendants_or_self(scope)
+        .into_iter()
+        .filter(move |&id| {
+            id != scope
+                && dom.node(id).is_element()
+                && dom
+                    .children(id)
+                    .iter()
+                    .find(|&&c| dom.node(c).kind == rustscrapling_dom::NodeKind::Text)
+                    .is_some_and(|&c| {
+                        dom.node(c)
+                            .data
+                            .chars()
+                            .any(|ch| !matches!(ch, ' ' | '\t' | '\n' | '\r'))
+                    })
+        })
+}
+
+/// Keep common already-clean ASCII content borrowed rather than allocating
+/// two intermediate strings per candidate. Non-ASCII and messy whitespace
+/// always take the original Python-compatible normalization path.
+fn match_text_view(raw: &str, clean: bool) -> Cow<'_, str> {
+    if !clean {
+        return Cow::Borrowed(raw);
     }
-    out
+    let bytes = raw.as_bytes();
+    let clean_ascii = raw.is_ascii()
+        && !bytes.first().is_some_and(|b| b.is_ascii_whitespace())
+        && !bytes.last().is_some_and(|b| b.is_ascii_whitespace())
+        && !bytes
+            .iter()
+            .any(|&b| matches!(b, b'\t' | b'\r' | b'\n' | 0x1c..=0x1f))
+        && !bytes.windows(2).any(|window| window == b"  ");
+    if clean_ascii {
+        Cow::Borrowed(raw)
+    } else {
+        Cow::Owned(clean_text(raw))
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -103,17 +121,22 @@ pub fn find_by_text(dom: &Dom, scope: NodeId, text: &str, opts: FindByTextOpts) 
     };
     let mut results = Vec::new();
     for node in targets_with_text(dom, scope) {
-        let mut node_text = dom.text(node).unwrap_or("").to_string();
-        if opts.clean_match {
-            node_text = clean_text(&node_text);
-        }
-        if !opts.case_sensitive {
-            node_text = node_text.to_lowercase();
-        }
-        let hit = if opts.partial {
-            node_text.contains(&query)
+        let node_text = match_text_view(dom.text(node).unwrap_or(""), opts.clean_match);
+        let hit = if opts.case_sensitive {
+            if opts.partial {
+                node_text.contains(&query)
+            } else {
+                node_text == query
+            }
+        } else if node_text.is_ascii() && query.is_ascii() && !opts.partial {
+            node_text.eq_ignore_ascii_case(&query)
         } else {
-            node_text == query
+            let lower = node_text.to_lowercase();
+            if opts.partial {
+                lower.contains(&query)
+            } else {
+                lower == query
+            }
         };
         if hit {
             results.push(node);
@@ -156,12 +179,7 @@ pub fn find_by_regex(
         .build()?;
     let mut results = Vec::new();
     for node in targets_with_text(dom, scope) {
-        let raw = dom.text(node).unwrap_or("");
-        let input = if opts.clean_match {
-            clean_text(raw)
-        } else {
-            raw.to_string()
-        };
+        let input = match_text_view(dom.text(node).unwrap_or(""), opts.clean_match);
         if re.is_match(&input) {
             results.push(node);
             if opts.first_match {
@@ -183,5 +201,16 @@ mod tests {
         assert_eq!(clean_spaces("no change"), "no change");
         // clean_spaces does not strip
         assert_eq!(clean_spaces("  x  "), " x ");
+    }
+
+    #[test]
+    fn borrowed_fast_path_preserves_python_space_behavior() {
+        assert!(matches!(
+            match_text_view("Product number 1500 name", true),
+            Cow::Borrowed(_)
+        ));
+        assert_eq!(match_text_view("  a \t b  ", true).as_ref(), "a b");
+        assert_eq!(match_text_view("\u{1c}a\u{1f}", true).as_ref(), "a");
+        assert_eq!(match_text_view(" 日本語 ", true).as_ref(), "日本語");
     }
 }

@@ -175,12 +175,7 @@ impl ElementDict {
         );
         m.insert(
             "path".into(),
-            Value::Array(
-                self.path
-                    .iter()
-                    .map(|t| Value::String(t.clone()))
-                    .collect(),
-            ),
+            Value::Array(self.path.iter().map(|t| Value::String(t.clone())).collect()),
         );
         if let Some(parent_name) = &self.parent_name {
             m.insert("parent_name".into(), Value::String(parent_name.clone()));
@@ -210,12 +205,7 @@ impl ElementDict {
         if let Some(children) = &self.children {
             m.insert(
                 "children".into(),
-                Value::Array(
-                    children
-                        .iter()
-                        .map(|t| Value::String(t.clone()))
-                        .collect(),
-                ),
+                Value::Array(children.iter().map(|t| Value::String(t.clone())).collect()),
             );
         }
         serde_json::to_string(&Value::Object(m)).expect("serialize element dict")

@@ -52,13 +52,8 @@ fn main() {
         assert_eq!(r.len(), 2000);
     });
     best_of_5("xpath //span[@class='price'] (html5)", || {
-        let r = rustscrapling_select::xpath::xpath(
-            &dom5,
-            dom5.root,
-            "//span[@class='price']",
-            &[],
-        )
-        .unwrap();
+        let r = rustscrapling_select::xpath::xpath(&dom5, dom5.root, "//span[@class='price']", &[])
+            .unwrap();
         assert_eq!(r.len(), 2000);
     });
     println!("targets: parse <= 15 ms, css <= 5 ms (Plan stage 1)");

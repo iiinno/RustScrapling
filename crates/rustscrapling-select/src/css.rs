@@ -48,7 +48,12 @@ enum PseudoClass {
     FirstOfType,
     LastOfType,
     OnlyOfType,
-    Nth { a: i64, b: i64, last: bool, of_type: bool },
+    Nth {
+        a: i64,
+        b: i64,
+        last: bool,
+        of_type: bool,
+    },
     Empty,
     Root,
     Not(Vec<ComplexSelector>),
@@ -247,16 +252,19 @@ fn matches_pseudo(dom: &Dom, el: NodeId, pseudo: &PseudoClass) -> bool {
         PseudoClass::FirstOfType => matches!(sibling_index(dom, el, true, false), Some((1, _))),
         PseudoClass::LastOfType => matches!(sibling_index(dom, el, true, true), Some((1, _))),
         PseudoClass::OnlyOfType => matches!(sibling_index(dom, el, true, false), Some((_, 1))),
-        PseudoClass::Nth { a, b, last, of_type } => match sibling_index(dom, el, *of_type, *last) {
+        PseudoClass::Nth {
+            a,
+            b,
+            last,
+            of_type,
+        } => match sibling_index(dom, el, *of_type, *last) {
             Some((idx, _)) => nth_matches(*a, *b, idx),
             None => false,
         },
-        PseudoClass::Empty => {
-            dom.children(el).iter().all(|&c| {
-                let n = dom.node(c);
-                !(n.is_element() || (n.kind == NodeKind::Text && !n.data.is_empty()))
-            })
-        }
+        PseudoClass::Empty => dom.children(el).iter().all(|&c| {
+            let n = dom.node(c);
+            !(n.is_element() || (n.kind == NodeKind::Text && !n.data.is_empty()))
+        }),
         PseudoClass::Root => dom.document_element() == Some(el),
         PseudoClass::Not(groups) => !groups.iter().any(|g| matches_complex(dom, el, g)),
         PseudoClass::Has(sels) => sels.iter().any(|(comb, g)| {
@@ -296,12 +304,16 @@ fn matches_pseudo(dom: &Dom, el: NodeId, pseudo: &PseudoClass) -> bool {
             false
         }
         PseudoClass::Enabled => {
-            matches!(dom.node(el).tag.as_str(), "button" | "input" | "select" | "textarea" | "optgroup" | "option")
-                && dom.attr(el, "disabled").is_none()
+            matches!(
+                dom.node(el).tag.as_str(),
+                "button" | "input" | "select" | "textarea" | "optgroup" | "option"
+            ) && dom.attr(el, "disabled").is_none()
         }
         PseudoClass::Disabled => {
-            matches!(dom.node(el).tag.as_str(), "button" | "input" | "select" | "textarea" | "optgroup" | "option" | "fieldset")
-                && dom.attr(el, "disabled").is_some()
+            matches!(
+                dom.node(el).tag.as_str(),
+                "button" | "input" | "select" | "textarea" | "optgroup" | "option" | "fieldset"
+            ) && dom.attr(el, "disabled").is_some()
         }
         PseudoClass::Checked => {
             dom.attr(el, "checked").is_some()
@@ -322,7 +334,10 @@ struct Parser<'a> {
 }
 
 fn parse(selector: &str) -> Result<(Vec<ComplexSelector>, Option<Pseudo>)> {
-    let mut p = Parser { src: selector.as_bytes(), pos: 0 };
+    let mut p = Parser {
+        src: selector.as_bytes(),
+        pos: 0,
+    };
     let mut groups = Vec::new();
     let mut pseudo = None;
     p.skip_ws();
@@ -359,7 +374,10 @@ impl<'a> Parser<'a> {
 
     fn skip_ws(&mut self) -> bool {
         let start = self.pos;
-        while matches!(self.peek(), Some(b' ') | Some(b'\t') | Some(b'\n') | Some(b'\r')) {
+        while matches!(
+            self.peek(),
+            Some(b' ') | Some(b'\t') | Some(b'\n') | Some(b'\r')
+        ) {
             self.pos += 1;
         }
         self.pos > start
@@ -438,27 +456,35 @@ impl<'a> Parser<'a> {
                     self.pos += 1;
                     self.skip_ws();
                     let (c, ps) = self.parse_compound()?;
-                    if ps.is_some() { pseudo = ps; }
+                    if ps.is_some() {
+                        pseudo = ps;
+                    }
                     parts.push((Combinator::Child, c));
                 }
                 Some(b'+') => {
                     self.pos += 1;
                     self.skip_ws();
                     let (c, ps) = self.parse_compound()?;
-                    if ps.is_some() { pseudo = ps; }
+                    if ps.is_some() {
+                        pseudo = ps;
+                    }
                     parts.push((Combinator::Adjacent, c));
                 }
                 Some(b'~') => {
                     self.pos += 1;
                     self.skip_ws();
                     let (c, ps) = self.parse_compound()?;
-                    if ps.is_some() { pseudo = ps; }
+                    if ps.is_some() {
+                        pseudo = ps;
+                    }
                     parts.push((Combinator::Sibling, c));
                 }
                 Some(b',') | None => break,
                 Some(_) if had_ws => {
                     let (c, ps) = self.parse_compound()?;
-                    if ps.is_some() { pseudo = ps; }
+                    if ps.is_some() {
+                        pseudo = ps;
+                    }
                     parts.push((Combinator::Descendant, c));
                 }
                 Some(c) => {
@@ -558,7 +584,11 @@ impl<'a> Parser<'a> {
         self.skip_ws();
         if self.peek() == Some(b']') {
             self.pos += 1;
-            return Ok(AttrCond { name, op: AttrOp::Exists, value: String::new() });
+            return Ok(AttrCond {
+                name,
+                op: AttrOp::Exists,
+                value: String::new(),
+            });
         }
         let op = match (self.peek(), self.src.get(self.pos + 1)) {
             (Some(b'='), _) => {
@@ -591,7 +621,10 @@ impl<'a> Parser<'a> {
         let value = self.parse_string_or_ident()?;
         self.skip_ws();
         // cssselect accepts a case-insensitivity flag `i` here.
-        if matches!(self.peek(), Some(b'i') | Some(b'I') | Some(b's') | Some(b'S')) {
+        if matches!(
+            self.peek(),
+            Some(b'i') | Some(b'I') | Some(b's') | Some(b'S')
+        ) {
             let save = self.pos;
             let _ = self.parse_ident();
             self.skip_ws();
@@ -679,7 +712,8 @@ impl<'a> Parser<'a> {
                 b')' => {
                     depth -= 1;
                     if depth == 0 {
-                        let inner = String::from_utf8_lossy(&self.src[start..self.pos]).into_owned();
+                        let inner =
+                            String::from_utf8_lossy(&self.src[start..self.pos]).into_owned();
                         self.pos += 1;
                         return Ok(inner);
                     }
@@ -771,7 +805,11 @@ fn split_top_level(s: &str) -> Vec<String> {
 }
 
 fn parse_nth(arg: &str) -> Result<(i64, i64)> {
-    let s: String = arg.chars().filter(|c| !c.is_whitespace()).collect::<String>().to_ascii_lowercase();
+    let s: String = arg
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect::<String>()
+        .to_ascii_lowercase();
     match s.as_str() {
         "odd" => return Ok((2, 1)),
         "even" => return Ok((2, 0)),
@@ -782,17 +820,23 @@ fn parse_nth(arg: &str) -> Result<(i64, i64)> {
         let a: i64 = match a_part {
             "" | "+" => 1,
             "-" => -1,
-            _ => a_part.parse().map_err(|_| SelectError::Syntax(format!("bad nth: {}", arg)))?,
+            _ => a_part
+                .parse()
+                .map_err(|_| SelectError::Syntax(format!("bad nth: {}", arg)))?,
         };
         let b_part = &s[npos + 1..];
         let b: i64 = if b_part.is_empty() {
             0
         } else {
-            b_part.parse().map_err(|_| SelectError::Syntax(format!("bad nth: {}", arg)))?
+            b_part
+                .parse()
+                .map_err(|_| SelectError::Syntax(format!("bad nth: {}", arg)))?
         };
         Ok((a, b))
     } else {
-        let b: i64 = s.parse().map_err(|_| SelectError::Syntax(format!("bad nth: {}", arg)))?;
+        let b: i64 = s
+            .parse()
+            .map_err(|_| SelectError::Syntax(format!("bad nth: {}", arg)))?;
         Ok((0, b))
     }
 }

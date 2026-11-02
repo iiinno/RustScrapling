@@ -101,7 +101,11 @@ mod tests {
     use rustscrapling_dom::html5_backend::{parse_html, Html5Options};
 
     fn find_first(dom: &Dom, selector: &str) -> NodeId {
-        match css::css(dom, dom.root, selector).unwrap().into_iter().next() {
+        match css::css(dom, dom.root, selector)
+            .unwrap()
+            .into_iter()
+            .next()
+        {
             Some(Selection::Element(id)) => id,
             other => panic!("no element for {}: {:?}", selector, other),
         }
@@ -111,22 +115,54 @@ mod tests {
     fn generation_cases_from_scrapling_tests() {
         // (html body content, target css, expected css, expected xpath)
         let cases: Vec<(&str, &str, &str, &str)> = vec![
-            ("<section><p>A</p><p>B</p></section>", "p:first-of-type",
-             "body > section > p:nth-of-type(1)", "//body/section/p[1]"),
-            ("<section><p>A</p><p>B</p></section>", "p:nth-of-type(2)",
-             "body > section > p:nth-of-type(2)", "//body/section/p[2]"),
-            ("<section><p>A</p></section><section><p>B</p></section>", "section:first-of-type > p",
-             "body > section:nth-of-type(1) > p", "//body/section[1]/p"),
-            ("<section><p>A</p></section><section><p>B</p></section>", "section:nth-of-type(2) > p",
-             "body > section:nth-of-type(2) > p", "//body/section[2]/p"),
-            ("<section><span>before</span><p>A</p><em>between</em><p>B</p></section>", "p:first-of-type",
-             "body > section > p:nth-of-type(1)", "//body/section/p[1]"),
-            ("<section><span>before</span><p>A</p><em>between</em><p>B</p></section>", "p:nth-of-type(2)",
-             "body > section > p:nth-of-type(2)", "//body/section/p[2]"),
-            ("<section><span>before</span><p>A</p><em>after</em></section>", "p",
-             "body > section > p", "//body/section/p"),
-            ("<section><p>A</p><p>B</p></section><section><p>C</p></section>", "section:first-of-type > p:first-of-type",
-             "body > section:nth-of-type(1) > p:nth-of-type(1)", "//body/section[1]/p[1]"),
+            (
+                "<section><p>A</p><p>B</p></section>",
+                "p:first-of-type",
+                "body > section > p:nth-of-type(1)",
+                "//body/section/p[1]",
+            ),
+            (
+                "<section><p>A</p><p>B</p></section>",
+                "p:nth-of-type(2)",
+                "body > section > p:nth-of-type(2)",
+                "//body/section/p[2]",
+            ),
+            (
+                "<section><p>A</p></section><section><p>B</p></section>",
+                "section:first-of-type > p",
+                "body > section:nth-of-type(1) > p",
+                "//body/section[1]/p",
+            ),
+            (
+                "<section><p>A</p></section><section><p>B</p></section>",
+                "section:nth-of-type(2) > p",
+                "body > section:nth-of-type(2) > p",
+                "//body/section[2]/p",
+            ),
+            (
+                "<section><span>before</span><p>A</p><em>between</em><p>B</p></section>",
+                "p:first-of-type",
+                "body > section > p:nth-of-type(1)",
+                "//body/section/p[1]",
+            ),
+            (
+                "<section><span>before</span><p>A</p><em>between</em><p>B</p></section>",
+                "p:nth-of-type(2)",
+                "body > section > p:nth-of-type(2)",
+                "//body/section/p[2]",
+            ),
+            (
+                "<section><span>before</span><p>A</p><em>after</em></section>",
+                "p",
+                "body > section > p",
+                "//body/section/p",
+            ),
+            (
+                "<section><p>A</p><p>B</p></section><section><p>C</p></section>",
+                "section:first-of-type > p:first-of-type",
+                "body > section:nth-of-type(1) > p:nth-of-type(1)",
+                "//body/section[1]/p[1]",
+            ),
         ];
         for (body, target_css, expected_css, expected_xpath) in cases {
             let html = format!("<html><body>{}</body></html>", body);
@@ -138,18 +174,36 @@ mod tests {
                 } else {
                     generate_css_selector(&dom, target).unwrap()
                 };
-                assert_eq!(got_css, expected_css, "css full={} case {}", full, target_css);
+                assert_eq!(
+                    got_css, expected_css,
+                    "css full={} case {}",
+                    full, target_css
+                );
                 let got_xpath = if full {
                     generate_full_xpath_selector(&dom, target).unwrap()
                 } else {
                     generate_xpath_selector(&dom, target).unwrap()
                 };
-                assert_eq!(got_xpath, expected_xpath, "xpath full={} case {}", full, target_css);
+                assert_eq!(
+                    got_xpath, expected_xpath,
+                    "xpath full={} case {}",
+                    full, target_css
+                );
                 // Round trip: the generated selector selects exactly the target.
                 let back = css::css(&dom, dom.root, &got_css).unwrap();
-                assert_eq!(back, vec![Selection::Element(target)], "css round trip {}", got_css);
+                assert_eq!(
+                    back,
+                    vec![Selection::Element(target)],
+                    "css round trip {}",
+                    got_css
+                );
                 let back = xpath::xpath(&dom, dom.root, &got_xpath, &[]).unwrap();
-                assert_eq!(back, vec![Selection::Element(target)], "xpath round trip {}", got_xpath);
+                assert_eq!(
+                    back,
+                    vec![Selection::Element(target)],
+                    "xpath round trip {}",
+                    got_xpath
+                );
             }
         }
     }
@@ -177,11 +231,20 @@ mod tests {
                 } else {
                     generate_xpath_selector(&dom, target).unwrap()
                 };
-                let mut expected_xpath = if full { "//body/*[@id='target']" } else { "//*[@id='target']" }.to_string();
+                let mut expected_xpath = if full {
+                    "//body/*[@id='target']"
+                } else {
+                    "//*[@id='target']"
+                }
+                .to_string();
                 if is_p {
                     expected_xpath += "/p[1]";
                 }
-                assert_eq!(got_xpath, expected_xpath, "xpath {} full={}", target_css, full);
+                assert_eq!(
+                    got_xpath, expected_xpath,
+                    "xpath {} full={}",
+                    target_css, full
+                );
             }
         }
     }

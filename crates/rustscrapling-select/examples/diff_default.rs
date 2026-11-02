@@ -25,10 +25,7 @@ fn describe(dom: &Dom, sel: &Selection) -> Value {
 }
 
 fn main() {
-    let path = format!(
-        "{}/../../fixtures/stage1.json",
-        env!("CARGO_MANIFEST_DIR")
-    );
+    let path = format!("{}/../../fixtures/stage1.json", env!("CARGO_MANIFEST_DIR"));
     let raw = std::fs::read_to_string(&path).unwrap();
     let fixtures: Value = serde_json::from_str(&raw).unwrap();
     let mut diffs = 0;
@@ -72,8 +69,7 @@ fn main() {
                     diffs += 1;
                     let got_desc = match &got {
                         Ok(results) => {
-                            let d: Vec<Value> =
-                                results.iter().map(|r| describe(&dom, r)).collect();
+                            let d: Vec<Value> = results.iter().map(|r| describe(&dom, r)).collect();
                             serde_json::to_string(&d).unwrap()
                         }
                         Err(e) => format!("ERROR {}", e),
@@ -90,5 +86,8 @@ fn main() {
             }
         }
     }
-    println!("{} of {} queries differ between default and compat", diffs, total);
+    println!(
+        "{} of {} queries differ between default and compat",
+        diffs, total
+    );
 }
