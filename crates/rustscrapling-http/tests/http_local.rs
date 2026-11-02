@@ -73,6 +73,28 @@ fn direct_options() -> HttpOptions {
 }
 
 #[tokio::test]
+async fn embedded_url_credentials_are_rejected_without_leaking_secret_values() {
+    let client = HttpClient::new(direct_options()).unwrap();
+    let error = client
+        .get("http://alice:very-secret@127.0.0.1:1/private")
+        .await
+        .unwrap_err();
+    assert_eq!(error.kind, ErrorKind::InvalidRequest);
+    assert!(!error.to_string().contains("very-secret"));
+    assert!(!error.to_string().contains("alice"));
+}
+
+#[test]
+fn excessive_retry_count_is_rejected_before_requests() {
+    let options = HttpOptions {
+        retries: u32::MAX,
+        ..direct_options()
+    };
+    let error = HttpClient::new(options).err().expect("must reject");
+    assert_eq!(error.kind, ErrorKind::InvalidRequest);
+}
+
+#[tokio::test]
 async fn headers_methods_binary_body_and_response_headers() {
     let requests = Arc::new(Mutex::new(Vec::<Vec<u8>>::new()));
     let captured = requests.clone();

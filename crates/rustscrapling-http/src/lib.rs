@@ -298,6 +298,12 @@ pub struct HttpClient {
 
 impl HttpClient {
     pub fn new(options: HttpOptions) -> Result<Self, HttpError> {
+        if options.retries > 10 {
+            return Err(HttpError::new(
+                ErrorKind::InvalidRequest,
+                "retries must be 0..=10",
+            ));
+        }
         if options.timeout.is_zero()
             || options.connect_timeout.is_zero()
             || options.read_timeout.is_zero()
@@ -412,6 +418,12 @@ impl HttpClient {
             return Err(HttpError::new(
                 ErrorKind::InvalidRequest,
                 "only HTTP and HTTPS URLs are accepted",
+            ));
+        }
+        if !url.username().is_empty() || url.password().is_some() {
+            return Err(HttpError::new(
+                ErrorKind::InvalidRequest,
+                "request URLs must not contain embedded credentials; use an explicit authorization header",
             ));
         }
         let method = Method::from_bytes(request.method.as_bytes())
