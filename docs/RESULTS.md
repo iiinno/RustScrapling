@@ -1,5 +1,12 @@
 # RESULTS.md: 測定と検証の結果
 
+## 2026-11-03 WSL統合追試
+
+- 機能復旧後のcargo test --workspace --lib --testsでは、Adaptive 8 unit + 6 fixture、Browser 1 unit + 1 localhost E2E、CLI 1 unit + 1 integration、Daemon 4 integration、DOM 10 unit、Extract 2 unit + 3 fixture、Fetch 3 unitまでPASSしたが、HTTP/3のローカル試験でRustls CryptoProvider自動選択例外があり、全体としてFAIL。全体合格を主張しない。
+- Git管理情報が別作業により置換されていたため、元の未コミット差分を保護して別作業コピーrustscrapling-deliveryに復旧。
+- Stage6へ6種テンプレートと4出力形式を追加。cargo test -p rustscrapling-spider はunit 6件すべてPASS。cargo test -p rustscrapling-cli --locked はunit 2件、stage2統合1件PASS。実サイト/本家比較は未実施。
+- Criterionベンチマークをappendix_a.rsに追加したが、releaseで計測するまでは新しい性能値を記録しない。
+
 ## 段階1（2026-11-02）
 
 計測条件: Muse VM（Ubuntu 24.04.5、4コア、メモリ7.7GiB）、release ビルド（`[profile.release] lto = true`、CARGO_BUILD_JOBS=2）。付録Aの合成ページ（416,497バイト、2000商品）。best-of-5、各計測の前に1回のウォームアップ。計測コード: `crates/rustscrapling-select/examples/bench_appendix.rs`。

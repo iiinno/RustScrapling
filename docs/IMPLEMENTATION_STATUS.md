@@ -10,7 +10,7 @@
 | 3 HTTP/抽出 | wreq + wreq-util、QUIC HTTP/3経路、proxy、retry、body上限、htmd、無害化、JSON-LD/OG、BM25 | Extract単体・fixture計5テストPASSとの担当報告。HTTP単体・ローカルTLS/QUICの試験を別途実施 | 本家FetcherとのURL成功率比較と本家main_content_onlyの語95%条件未実施 | 部分達成 |
 | 4 CDP browser | 低レベルCDP、DOM/Shadow DOM、ページ再利用、Cookie状態、Networkイベント、外部接続 | Windows Chromeで1 unit＋1実ブラウザE2E PASS。D-007に沿い明示evaluate以外ではRuntime.enableなしを確認 | CAPTCHA/Cloudflare solver、DoH、広告ブロック全件、認証proxy、network body記録など未完。実サイト成功率比較なし | 部分達成 |
 | 5 Auto/Daemon | HTTP→browser→headed tier、ブロック検知、24h tier学習 | libraryの自動tier/期限切れなどのテスト | 持続デーモン、共有状態/ETag/同一URLの集約、150URL×8性能とメモリ未検証 | 部分達成 |
-| 6 Crawl | TOML指定、同一URL指紋重複排除、bounded queue、並列、robots.txt、checkpoint。6種のテンプレートとNDJSON/JSON/CSV/XML出力を追加 | WSL unit 3件PASS（既存）。追加fixtureの試験は検証中 | Python Spiderの全ミドルウェア互換、クラッシュ後のexactly-once保証、AutoThrottle等未完。全テンプレートの本家比較未実施 | 部分達成 |
+| 6 Crawl | TOML指定、同一URL指紋重複排除、bounded queue、並列、robots.txt、checkpoint。6種のテンプレートとNDJSON/JSON/CSV/XML出力を追加 | WSLのcrawlerテスト6件PASS、CLIの出力形式テストPASS | Python Spiderの全ミドルウェア互換、クラッシュ後のexactly-once保証、AutoThrottle等未完。全テンプレートの本家比較未実施 | 部分達成 |
 | 7 MCP | rmcpによるサーバ実装・本家ツール互換を開発中 | 完了判定前 | 本家`tests/ai/`との説明/引数・操作互換の全試験未完 | 未検証 |
 | 8 仕上げ | ローカルHTTP CLI E2E、監査・回帰テスト、再現スクリプト | 各クレートの局所的テスト | 1時間の解析器＋セレクタファジング、24時間連続稼働、約200URL本家比較、150URL並列8で256MiB以内、全段階基準達成が未検証 | 未達 |
 
