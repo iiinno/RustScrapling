@@ -20,9 +20,16 @@ async fn state_roundtrip_and_screenshots_via_mock_cdp() {
     let cookies = Arc::new(Mutex::new(vec![
         json!({"name":"sid","value":"initial","domain":"example.test","path":"/"}),
     ]));
+    let local_storage = Arc::new(Mutex::new(vec![
+        ("token".to_owned(), "sensitive-initial".to_owned()),
+        ("name".to_owned(), "test".to_owned()),
+    ]));
+    let page_origin = Arc::new(Mutex::new("http://example.test".to_owned()));
     let captures = Arc::new(Mutex::new(Vec::<Value>::new()));
     let server_cookies = cookies.clone();
     let server_captures = captures.clone();
+    let server_local_storage = local_storage.clone();
+    let server_origin = page_origin.clone();
     let mock = tokio::spawn(async move {
         let (stream, _) = listener.accept().await.unwrap();
         let mut ws = accept_async(stream).await.unwrap();
@@ -41,7 +48,35 @@ async fn state_roundtrip_and_screenshots_via_mock_cdp() {
                     json!({"outerHTML":"<html><body><h1>Mock CDP page</h1></body></html>"})
                 }
                 "Page.getFrameTree" => {
-                    json!({"frameTree":{"frame":{"url":"http://example.test/"}}})
+                    let origin = server_origin.lock().await.clone();
+                    json!({"frameTree":{"frame":{"id":"mock-frame","url":format!("{origin}/"),"securityOrigin":origin}}})
+                }
+                "Storage.getStorageKeyForFrame" => {
+                    assert_eq!(params["frameId"], "mock-frame");
+                    json!({"storageKey":"http://example.test/"})
+                }
+                "DOMStorage.getDOMStorageItems" => {
+                    assert_eq!(message["sessionId"], "mock-session");
+                    assert_eq!(
+                        params["storageId"],
+                        json!({"storageKey":"http://example.test/","isLocalStorage":true})
+                    );
+                    json!({"entries":*server_local_storage.lock().await})
+                }
+                "DOMStorage.clear" => {
+                    assert_eq!(message["sessionId"], "mock-session");
+                    assert_eq!(params["storageId"]["storageKey"], "http://example.test/");
+                    server_local_storage.lock().await.clear();
+                    json!({})
+                }
+                "DOMStorage.setDOMStorageItem" => {
+                    assert_eq!(message["sessionId"], "mock-session");
+                    assert_eq!(params["storageId"]["storageKey"], "http://example.test/");
+                    server_local_storage.lock().await.push((
+                        params["key"].as_str().unwrap().into(),
+                        params["value"].as_str().unwrap().into(),
+                    ));
+                    json!({})
                 }
                 "Page.getLayoutMetrics" => json!({"cssContentSize":{"width":300,"height":450}}),
                 "Page.captureScreenshot" => {
@@ -133,9 +168,49 @@ async fn state_roundtrip_and_screenshots_via_mock_cdp() {
     )
     .await;
     assert_eq!(saved.is_error, Some(false), "{saved:?}");
+    assert_eq!(
+        saved.structured_content.as_ref().unwrap()["contents"],
+        "cookies_and_active_origin_local_storage"
+    );
     assert!(std::fs::read_to_string(dir.join("first.json"))
         .unwrap()
         .contains("initial"));
+    let saved_file = std::fs::read_to_string(dir.join("first.json")).unwrap();
+    assert!(saved_file.contains("sensitive-initial"));
+    assert!(saved_file.contains("http://example.test"));
+    assert_eq!(
+        serde_json::from_str::<Value>(&saved_file).unwrap()["version"],
+        2
+    );
+    *local_storage.lock().await = vec![("token".into(), "changed".into())];
+    let restored_v2 = call(
+        &handler,
+        "browser_load_state",
+        json!({"session_id":"mock","path":"first.json"}),
+    )
+    .await;
+    assert_eq!(restored_v2.is_error, Some(false), "{restored_v2:?}");
+    assert_eq!(local_storage.lock().await.len(), 2);
+    assert!(local_storage
+        .lock()
+        .await
+        .iter()
+        .any(|(key, value)| key == "token" && value == "sensitive-initial"));
+    // A different origin must fail before clearing either cookies or storage.
+    *page_origin.lock().await = "https://different.test".to_owned();
+    let denied = call(
+        &handler,
+        "browser_load_state",
+        json!({"session_id":"mock","path":"first.json"}),
+    )
+    .await;
+    assert_eq!(denied.is_error, Some(true));
+    assert!(serde_json::to_string(&denied.content)
+        .unwrap()
+        .contains("invalid_arguments"));
+    assert_eq!(local_storage.lock().await.len(), 2);
+    assert_eq!(cookies.lock().await[0]["value"], "initial");
+    *page_origin.lock().await = "http://example.test".to_owned();
     std::fs::write(
         dir.join("restore.json"),
         json!({"version":1,"cookies":[{
@@ -152,6 +227,11 @@ async fn state_roundtrip_and_screenshots_via_mock_cdp() {
     .await;
     assert_eq!(loaded.is_error, Some(false), "{loaded:?}");
     assert_eq!(cookies.lock().await[0]["value"], "restored");
+    assert_eq!(
+        local_storage.lock().await.len(),
+        2,
+        "v1 must not clear localStorage"
+    );
     let resaved = call(
         &handler,
         "browser_save_state",
@@ -162,6 +242,22 @@ async fn state_roundtrip_and_screenshots_via_mock_cdp() {
     assert!(std::fs::read_to_string(dir.join("second.json"))
         .unwrap()
         .contains("restored"));
+    std::fs::write(
+        dir.join("indexed.json"),
+        json!({"version":2,"cookies":[],"indexedDB":[]}).to_string(),
+    )
+    .unwrap();
+    let denied_indexed = call(
+        &handler,
+        "browser_load_state",
+        json!({"session_id":"mock","path":"indexed.json"}),
+    )
+    .await;
+    assert_eq!(
+        denied_indexed.is_error,
+        Some(true),
+        "unknown IndexedDB must not be silently ignored"
+    );
     let closed = call(&handler, "close_session", json!({"session_id":"mock"})).await;
     assert_eq!(closed.is_error, Some(false), "{closed:?}");
     std::env::remove_var("RUSTSCRAPLING_STATE_DIR");

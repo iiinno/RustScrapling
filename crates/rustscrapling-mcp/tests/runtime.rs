@@ -270,6 +270,13 @@ async fn browser_get_and_session_if_chrome_is_available() {
             .as_nanos()
     ));
     std::env::set_var("RUSTSCRAPLING_STATE_DIR", &dir);
+    let set_storage = call(
+        &handler,
+        "browser_evaluate",
+        json!({"session_id":"browser-test","expression":"localStorage.setItem('persisted_key', 'private-value')","isolated_context":false}),
+    )
+    .await;
+    assert_eq!(set_storage.is_error, Some(false), "{set_storage:?}");
     let saved = call(
         &handler,
         "browser_save_state",
@@ -279,11 +286,12 @@ async fn browser_get_and_session_if_chrome_is_available() {
     assert_eq!(saved.is_error, Some(false), "{saved:?}");
     assert_eq!(
         saved.structured_content.as_ref().unwrap()["contents"],
-        "cookies_only"
+        "cookies_and_active_origin_local_storage"
     );
     let content = std::fs::read_to_string(dir.join("login.json")).unwrap();
     assert!(content.contains("mcp_session"));
-    assert!(!content.contains("localStorage"));
+    assert!(content.contains("persisted_key"));
+    assert!(content.contains("private-value"));
     let duplicate = call(
         &handler,
         "browser_save_state",
@@ -298,6 +306,13 @@ async fn browser_get_and_session_if_chrome_is_available() {
     )
     .await;
     assert_eq!(changed.is_error, Some(false));
+    let changed_storage = call(
+        &handler,
+        "browser_evaluate",
+        json!({"session_id":"browser-test","expression":"localStorage.setItem('persisted_key', 'changed')","isolated_context":false}),
+    )
+    .await;
+    assert_eq!(changed_storage.is_error, Some(false));
     let loaded = call(
         &handler,
         "browser_load_state",
@@ -314,6 +329,15 @@ async fn browser_get_and_session_if_chrome_is_available() {
     assert!(serde_json::to_string(&cookie)
         .unwrap()
         .contains("mcp_session=private"));
+    let restored_storage = call(
+        &handler,
+        "browser_evaluate",
+        json!({"session_id":"browser-test","expression":"localStorage.getItem('persisted_key')","isolated_context":false}),
+    )
+    .await;
+    assert!(serde_json::to_string(&restored_storage)
+        .unwrap()
+        .contains("private-value"));
     std::fs::write(dir.join("bad.json"), "{invalid json").unwrap();
     let malformed = call(
         &handler,

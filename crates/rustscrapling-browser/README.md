@@ -55,14 +55,16 @@ Authenticated proxy challenges are not yet handled. Network capture uses the
 CDP `Network.responseReceived` and `Network.loadingFailed` events to collect
 response status, URL, headers, resource type and failures. Captured request
 bodies are not currently retained. `BrowserState` stores cookies through
-`Storage.getCookies` / `Storage.setCookies`; localStorage is intentionally not
-read automatically because its normal access would require script evaluation.
+`Storage.getCookies` / `Storage.setCookies`. `save_state_for_page` captures
+the active top-level HTTP(S) origin's localStorage via its CDP storage key,
+without Runtime or script evaluation; other origins/frames are excluded.
 The JSON files produced by `save_state_file()` may contain session secrets.
 This API creates files exclusively (existing files and symlinks are not overwritten),
 restricts serialized state and reads to 4 MiB, and saves with `0600` on Unix.
 The caller remains responsible for selecting a private directory. Restoring
-valid state replaces current browser cookies; localStorage and IndexedDB are
-not represented. `BrowserPage::screenshot()` captures the viewport or full
+version 1 state replaces current cookies only; version 2 state may also restore
+localStorage after verifying the active top-level origin. sessionStorage and
+IndexedDB are not represented. `BrowserPage::screenshot()` captures the viewport or full
 page as base64 PNG/JPEG via `Page.captureScreenshot`, bounded to 32 MP for
 full pages and 8 MiB encoded output. Neither method enables Runtime.
 

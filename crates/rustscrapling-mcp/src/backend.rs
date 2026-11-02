@@ -589,30 +589,42 @@ impl RuntimeBackend {
         let path = state_file_path(required(args, "path")?)?;
         let session = self.session(required(args, "session_id")?).await?;
         let session = session.lock().await;
-        let Engine::Browser { client, .. } = &session.engine else {
+        let Engine::Browser {
+            client,
+            page,
+            last_url,
+            ..
+        } = &session.engine
+        else {
             return Err(BackendError::new(
                 "session_type",
                 "Expected browser session",
             ));
         };
-        client.save_state_file(&path).await?;
+        if last_url.is_none() {
+            return Err(BackendError::new(
+                "no_page",
+                "Call browser_fetch before saving localStorage state",
+            ));
+        }
+        client.save_state_file_for_page(page, &path).await?;
         Ok(structured(
-            json!({"saved":true,"path":required(args,"path")?,"contents":"cookies_only","note":"localStorage and IndexedDB are not captured"}),
+            json!({"saved":true,"path":required(args,"path")?,"contents":"cookies_and_active_origin_local_storage","note":"Only the active top-level origin is saved; IndexedDB is unsupported"}),
         ))
     }
     async fn browser_load_state(&self, args: &Map<String, Value>) -> Outcome {
         let path = state_file_path(required(args, "path")?)?;
         let session = self.session(required(args, "session_id")?).await?;
         let session = session.lock().await;
-        let Engine::Browser { client, .. } = &session.engine else {
+        let Engine::Browser { client, page, .. } = &session.engine else {
             return Err(BackendError::new(
                 "session_type",
                 "Expected browser session",
             ));
         };
-        client.restore_state_file(&path).await?;
+        client.restore_state_file_for_page(page, &path).await?;
         Ok(structured(
-            json!({"loaded":true,"path":required(args,"path")?,"contents":"cookies_only","note":"localStorage and IndexedDB are unchanged; reload pages to use restored cookies"}),
+            json!({"loaded":true,"path":required(args,"path")?,"contents":"cookies_and_active_origin_local_storage","note":"v1 files restore cookies only; IndexedDB is unsupported; reload page to use restored state"}),
         ))
     }
     async fn browser_screenshot(&self, args: &Map<String, Value>) -> Outcome {
