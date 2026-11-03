@@ -84,9 +84,14 @@ async fn local_browser_navigation_reuse_external_connection_and_shadow_dom() {
         }
     });
 
-    let browser = BrowserClient::launch(LaunchOptions::new(chrome))
-        .await
-        .unwrap();
+    let mut launch = LaunchOptions::new(chrome);
+    // On locked-down CI/VPS kernels, Chrome's user-namespace sandbox may be
+    // unavailable. This opt-in is exclusively for the localhost E2E fixture;
+    // production browser sessions must retain Chrome's sandbox by default.
+    if std::env::var_os("RUSTSCRAPLING_CHROME_TEST_NO_SANDBOX").is_some() {
+        launch.extra_args.push("--no-sandbox".into());
+    }
+    let browser = BrowserClient::launch(launch).await.unwrap();
     let endpoint = browser.cdp_endpoint().to_owned();
     let first = browser
         .get(
