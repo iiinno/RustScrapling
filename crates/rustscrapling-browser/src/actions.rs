@@ -1673,7 +1673,8 @@ fn action_message(error: BrowserError) -> String {
         BrowserError::InvalidArgument(message)
         | BrowserError::Timeout(message)
         | BrowserError::Protocol(message)
-        | BrowserError::Io(message) => message,
+        | BrowserError::Io(message)
+        | BrowserError::Blocked(message) => message,
         BrowserError::Disconnected => "Target page, context or browser has been closed".into(),
     }
 }
