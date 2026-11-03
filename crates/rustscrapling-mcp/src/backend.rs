@@ -9,7 +9,8 @@ use std::{
 
 use rmcp::model::{CallToolResult, ContentBlock};
 use rustscrapling_browser::{
-    detect_block, BrowserClient, BrowserPage, LaunchOptions, NetworkRecord,
+    detect_block, BrowserAction, BrowserClient, BrowserPage, ElementState, LaunchOptions,
+    LoadState, MouseButton, NetworkRecord, PointerTarget,
 };
 use rustscrapling_extract::{extract, ExtractOptions};
 use rustscrapling_http::{HttpClient, HttpOptions, HttpRequest, HttpResponse};
@@ -629,19 +630,29 @@ impl RuntimeBackend {
         Ok(text(value.to_string()))
     }
     async fn browser_actions(&self, args: &Map<String, Value>) -> Outcome {
-        if opt_bool(args, "slowly", false)? {
-            return Err(BackendError::unsupported("slowly=true"));
-        }
-        let actions = args
+        let raw = args
             .get("actions")
             .and_then(Value::as_array)
             .ok_or_else(|| BackendError::new("invalid_arguments", "actions must be an array"))?;
-        if actions.len() > 128 {
+        if raw.is_empty() {
             return Err(BackendError::new(
                 "invalid_arguments",
-                "browser_actions supports at most 128 sequential actions",
+                "actions must contain at least one action",
             ));
         }
+        if raw.len() > 1000 {
+            return Err(BackendError::new(
+                "invalid_arguments",
+                "browser_actions supports at most 1000 sequential actions",
+            ));
+        }
+        // Upstream validates every action target before reserving the page.
+        let actions = raw
+            .iter()
+            .enumerate()
+            .map(|(offset, action)| parse_action(offset + 1, action))
+            .collect::<Result<Vec<_>, _>>()?;
+        let slowly = opt_bool(args, "slowly", false)?;
         let session = self.session(required(args, "session_id")?).await?;
         let s = session.lock().await;
         let Engine::Browser { page, last_url, .. } = &s.engine else {
@@ -653,99 +664,17 @@ impl RuntimeBackend {
         if last_url.is_none() {
             return Err(BackendError::new("no_page", "Call browser_fetch first"));
         }
-        for (index, action) in actions.iter().enumerate() {
-            let action = action.as_object().ok_or_else(|| {
-                BackendError::new(
-                    "invalid_arguments",
-                    format!("action {} must be an object", index + 1),
-                )
-            })?;
-            let action_type = action.get("type").and_then(Value::as_str).ok_or_else(|| {
-                BackendError::new(
-                    "invalid_arguments",
-                    format!("action {} has no valid type", index + 1),
-                )
-            })?;
-            let outcome: Result<(), BackendError> = async {
-                match action_type {
-                    "wait_time" => {
-                        let millis = action_duration(action, "milliseconds", None, 60_000)?;
-                        sleep(millis).await;
-                        Ok(())
-                    }
-                    "click" => {
-                        // Only CSS element targeting and one left click are
-                        // implemented. Do not pretend that coordinate clicks,
-                        // refs, right clicks, repeated clicks or delayed clicks
-                        // were honored.
-                        for key in ["x", "y"] {
-                            reject_some(action, key)?;
-                        }
-                        if action.get("button").is_some_and(|v| v != "left")
-                            || action
-                                .get("click_count")
-                                .is_some_and(|v| v.as_u64() != Some(1))
-                            || action.get("delay").is_some_and(|v| v.as_f64() != Some(0.0))
-                        {
-                            return Err(BackendError::unsupported(
-                                "click button/click_count/delay",
-                            ));
-                        }
-                        let timeout = action_duration(action, "timeout", Some(30_000), 300_000)?;
-                        let target = action_target(action)?;
-                        tokio::time::timeout(timeout, page.click_css(target))
-                            .await
-                            .map_err(|_| BackendError::new("timeout", "click timed out"))??;
-                        Ok(())
-                    }
-                    "textbox" => {
-                        let clear = opt_bool(action, "clear", true)?;
-                        let timeout = action_duration(action, "timeout", Some(30_000), 300_000)?;
-                        let target = action_target(action)?;
-                        let value =
-                            action.get("value").and_then(Value::as_str).ok_or_else(|| {
-                                BackendError::new(
-                                    "invalid_arguments",
-                                    "textbox value must be a string",
-                                )
-                            })?;
-                        tokio::time::timeout(timeout, async {
-                            if clear {
-                                page.fill_text_css(target, value).await
-                            } else {
-                                page.type_text_css(target, value).await
-                            }
-                        })
-                        .await
-                        .map_err(|_| BackendError::new("timeout", "textbox timed out"))??;
-                        Ok(())
-                    }
-                    "press_key" => {
-                        let key = action.get("key").and_then(Value::as_str).ok_or_else(|| {
-                            BackendError::new(
-                                "invalid_arguments",
-                                "press_key requires a key string",
-                            )
-                        })?;
-                        page.press_key(key).await?;
-                        Ok(())
-                    }
-                    _ => Err(BackendError::new(
-                        "unsupported_operation",
-                        format!("browser action '{action_type}' is not implemented"),
-                    )),
-                }
-            }
-            .await;
-            if let Err(mut error) = outcome {
-                error.message = format!("action {} ({action_type}): {}", index + 1, error.message);
-                return Err(error);
-            }
-        }
-        Ok(text(format!(
-            "Completed {} browser action(s)",
-            actions.len()
-        )))
+        page.run_actions(&actions, slowly).await.map_err(|error| {
+            BackendError::new(
+                if error.timed_out {
+                    "timeout"
+                } else {
+                    "action_failed"
+                },
+                error.to_string(),
+            )
+        })?;
+        Ok(text("Actions completed.".into()))
     }
     async fn browser_save_state(&self, args: &Map<String, Value>) -> Outcome {
         let path = state_file_path(required(args, "path")?)?;
@@ -1048,42 +977,193 @@ fn opt_bool(args: &Map<String, Value>, key: &str, default: bool) -> Result<bool,
     })
 }
 
-fn action_target(args: &Map<String, Value>) -> Result<&str, BackendError> {
-    args.get("target")
+/// Convert one upstream `BrowserAction` JSON object (already validated
+/// against the pinned schema) into the browser engine's action type, with
+/// the same cross-field checks and messages as upstream `_validate_actions`.
+fn parse_action(index: usize, raw: &Value) -> Result<BrowserAction, BackendError> {
+    let invalid = |message: String| BackendError::new("invalid_arguments", message);
+    let action = raw
+        .as_object()
+        .ok_or_else(|| invalid(format!("Action {index} must be an object.")))?;
+    let kind = action
+        .get("type")
         .and_then(Value::as_str)
-        .filter(|selector| !selector.trim().is_empty())
-        .ok_or_else(|| {
-            BackendError::new(
-                "unsupported_operation",
-                "only explicit nonempty CSS selector targets are supported",
-            )
-        })
-}
-
-fn action_duration(
-    args: &Map<String, Value>,
-    key: &str,
-    default: Option<u64>,
-    max_ms: u64,
-) -> Result<Duration, BackendError> {
-    let value = match args.get(key) {
-        Some(value) => value.as_f64().ok_or_else(|| {
-            BackendError::new(
-                "invalid_arguments",
-                format!("'{key}' must be a finite number"),
-            )
-        })?,
-        None => default
-            .map(|ms| ms as f64)
-            .ok_or_else(|| BackendError::new("invalid_arguments", format!("missing '{key}'")))?,
+        .ok_or_else(|| invalid(format!("Action {index} has no valid type.")))?;
+    let field = |key: &str| action.get(key).filter(|value| !value.is_null());
+    let float = |key: &str, default: f64, min: Option<f64>| -> Result<f64, BackendError> {
+        let value = match field(key) {
+            None => default,
+            Some(value) => value.as_f64().ok_or_else(|| {
+                invalid(format!(
+                    "Action {index} ({kind}): '{key}' must be a finite number."
+                ))
+            })?,
+        };
+        if !value.is_finite() || min.is_some_and(|min| value < min) {
+            return Err(invalid(format!(
+                "Action {index} ({kind}): '{key}' is out of range."
+            )));
+        }
+        Ok(value)
     };
-    if !value.is_finite() || value < 0.0 || value > max_ms as f64 {
-        return Err(BackendError::new(
-            "invalid_arguments",
-            format!("'{key}' must be a finite number from 0 to {max_ms} milliseconds"),
-        ));
-    }
-    Ok(Duration::from_secs_f64(value / 1000.0))
+    let positive = |key: &str| -> Result<u32, BackendError> {
+        match field(key) {
+            None => Ok(1),
+            Some(value) => value
+                .as_u64()
+                .filter(|count| (1..=u64::from(u32::MAX)).contains(count))
+                .map(|count| count as u32)
+                .ok_or_else(|| {
+                    invalid(format!(
+                        "Action {index} ({kind}): '{key}' must be a positive integer."
+                    ))
+                }),
+        }
+    };
+    let target = field("target").and_then(Value::as_str).map(str::to_owned);
+    let timeout_ms = float("timeout", 30_000.0, Some(0.0))?;
+    let needs_target = || {
+        target
+            .clone()
+            .ok_or_else(|| invalid(format!("Action {index} ({kind}) needs 'target'.")))
+    };
+    let pointer = || -> Result<PointerTarget, BackendError> {
+        let x = field("x");
+        let y = field("y");
+        if target.is_none() == x.is_none() || x.is_none() != y.is_none() {
+            return Err(invalid(format!(
+                "Action {index} ({kind}) needs 'target' or both 'x' and 'y', not both."
+            )));
+        }
+        Ok(match &target {
+            Some(selector) => PointerTarget::Selector(selector.clone()),
+            None => PointerTarget::Point {
+                x: float("x", 0.0, None)?,
+                y: float("y", 0.0, None)?,
+            },
+        })
+    };
+    let state = |key: &str| field(key).and_then(Value::as_str);
+    Ok(match kind {
+        "move" => BrowserAction::Move {
+            target: pointer()?,
+            timeout_ms,
+            steps: positive("steps")?,
+        },
+        "click" => BrowserAction::Click {
+            target: pointer()?,
+            timeout_ms,
+            button: match state("button").unwrap_or("left") {
+                "left" => MouseButton::Left,
+                "right" => MouseButton::Right,
+                "middle" => MouseButton::Middle,
+                other => return Err(invalid(format!("Action {index} (click): unknown button '{other}'."))),
+            },
+            click_count: positive("click_count")?,
+            delay_ms: float("delay", 0.0, Some(0.0))?,
+        },
+        "wheel" => BrowserAction::Wheel {
+            delta_x: float("delta_x", 0.0, None)?,
+            delta_y: float("delta_y", 0.0, None)?,
+        },
+        "textbox" => BrowserAction::Textbox {
+            target: needs_target()?,
+            value: field("value")
+                .and_then(Value::as_str)
+                .ok_or_else(|| invalid(format!("Action {index} (textbox): 'value' must be a string.")))?
+                .to_owned(),
+            clear: match field("clear") {
+                None => true,
+                Some(value) => value.as_bool().ok_or_else(|| {
+                    invalid(format!("Action {index} (textbox): 'clear' must be boolean."))
+                })?,
+            },
+            timeout_ms,
+        },
+        "checkbox" => BrowserAction::Checkbox {
+            target: needs_target()?,
+            checked: field("value").and_then(Value::as_bool).ok_or_else(|| {
+                invalid(format!("Action {index} (checkbox): 'value' must be boolean."))
+            })?,
+            timeout_ms,
+        },
+        "radio" => {
+            if field("value") != Some(&Value::Bool(true)) {
+                return Err(invalid(format!("Action {index} (radio): 'value' must be true.")));
+            }
+            BrowserAction::Radio {
+                target: needs_target()?,
+                timeout_ms,
+            }
+        }
+        "combobox" => BrowserAction::Combobox {
+            target: needs_target()?,
+            labels: match field("value") {
+                Some(Value::String(label)) => vec![label.clone()],
+                Some(Value::Array(labels)) => labels
+                    .iter()
+                    .map(|label| label.as_str().map(str::to_owned))
+                    .collect::<Option<Vec<_>>>()
+                    .ok_or_else(|| {
+                        invalid(format!("Action {index} (combobox): labels must be strings."))
+                    })?,
+                _ => {
+                    return Err(invalid(format!(
+                        "Action {index} (combobox): 'value' must be a label or a list of labels."
+                    )))
+                }
+            },
+            timeout_ms,
+        },
+        "press_key" => BrowserAction::PressKey {
+            key: field("key")
+                .and_then(Value::as_str)
+                .filter(|key| !key.is_empty())
+                .ok_or_else(|| invalid(format!("Action {index} (press_key): 'key' is required.")))?
+                .to_owned(),
+        },
+        "dialog" => BrowserAction::Dialog {
+            accept: field("accept").and_then(Value::as_bool).ok_or_else(|| {
+                invalid(format!("Action {index} (dialog): 'accept' must be boolean."))
+            })?,
+            prompt_text: field("prompt_text").and_then(Value::as_str).map(str::to_owned),
+        },
+        "wait_time" => BrowserAction::WaitTime {
+            milliseconds: match field("milliseconds") {
+                Some(_) => float("milliseconds", 0.0, Some(0.0))?,
+                None => {
+                    return Err(invalid(format!(
+                        "Action {index} (wait_time): 'milliseconds' is required."
+                    )))
+                }
+            },
+        },
+        "wait_element" => BrowserAction::WaitElement {
+            target: needs_target()?,
+            state: match state("state").unwrap_or("visible") {
+                "attached" => ElementState::Attached,
+                "detached" => ElementState::Detached,
+                "visible" => ElementState::Visible,
+                "hidden" => ElementState::Hidden,
+                other => return Err(invalid(format!("Action {index} (wait_element): unknown state '{other}'."))),
+            },
+            timeout_ms,
+        },
+        "wait_load" => BrowserAction::WaitLoad {
+            state: match state("state") {
+                Some("domcontentloaded") => LoadState::DomContentLoaded,
+                Some("load") => LoadState::Load,
+                Some("networkidle") => LoadState::NetworkIdle,
+                _ => {
+                    return Err(invalid(format!(
+                        "Action {index} (wait_load): 'state' must be domcontentloaded, load or networkidle."
+                    )))
+                }
+            },
+            timeout_ms,
+        },
+        other => return Err(invalid(format!("Action {index} has unknown type '{other}'."))),
+    })
 }
 
 /// Network cursors and request IDs are integers, never floating-point values.

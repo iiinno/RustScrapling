@@ -120,7 +120,10 @@ async fn state_roundtrip_and_screenshots_via_mock_cdp() {
                     *server_cookies.lock().await = params["cookies"].as_array().unwrap().clone();
                     json!({})
                 }
-                "Page.enable" | "Network.enable" | "Target.closeTarget" => json!({}),
+                "Page.enable"
+                | "Page.setLifecycleEventsEnabled"
+                | "Network.enable"
+                | "Target.closeTarget" => json!({}),
                 other => panic!("unexpected CDP command: {other}"),
             };
             ws.send(Message::Text(
@@ -161,34 +164,47 @@ async fn state_roundtrip_and_screenshots_via_mock_cdp() {
     let interacted = call(
         &handler,
         "browser_actions",
+        // Element actions run in an isolated JS world (covered by the real
+        // Chrome E2E tests). The mock covers coordinate and keyboard input.
         json!({"session_id":"mock","actions":[
-            {"type":"click","target":"#test"},
-            {"type":"textbox","target":"#test","value":"日本語","clear":false},
-            {"type":"textbox","target":"#test","value":"上書き"},
-            {"type":"press_key","key":"Enter"},
+            {"type":"click","x":40,"y":30,"click_count":2},
+            {"type":"move","x":10,"y":10,"steps":2},
+            {"type":"wheel","delta_y":120},
+            {"type":"press_key","key":"Shift+A"},
+            {"type":"dialog","accept":true},
             {"type":"wait_time","milliseconds":0}
         ]}),
     )
     .await;
     assert_eq!(interacted.is_error, Some(false), "{interacted:?}");
     let commands = input_actions.lock().await;
-    assert!(commands.iter().any(|command| {
-        command["method"] == "Input.insertText" && command["params"]["text"] == "日本語"
-    }));
-    assert_eq!(
-        commands
-            .iter()
-            .filter(|command| command["method"] == "Input.dispatchMouseEvent")
-            .count(),
-        2
-    );
+    let mouse: Vec<&Value> = commands
+        .iter()
+        .filter(|command| command["method"] == "Input.dispatchMouseEvent")
+        .map(|command| &command["params"])
+        .collect();
+    // move-to-point, two press/release pairs, two move steps, one wheel.
+    assert_eq!(mouse.len(), 1 + 4 + 2 + 1, "{mouse:?}");
+    assert_eq!(mouse[3]["clickCount"], 2);
+    assert_eq!(mouse[3]["type"], "mousePressed");
+    assert_eq!(mouse[7]["type"], "mouseWheel");
+    assert_eq!(mouse[7]["deltaY"], 120.0);
+    let keys: Vec<&Value> = commands
+        .iter()
+        .filter(|command| command["method"] == "Input.dispatchKeyEvent")
+        .map(|command| &command["params"])
+        .collect();
+    assert_eq!(keys.len(), 4);
+    assert_eq!(keys[1]["key"], "A");
+    assert_eq!(keys[1]["text"], "A");
+    assert_eq!(keys[1]["modifiers"], 8);
     drop(commands);
     for invalid in [
         json!({"type":"textbox","target":"#test","value":"bad-clear","clear":"unknown"}),
         json!({"type":"click","target":"#test","x":22}),
         json!({"type":"press_key","key":"Ctrl+L"}),
         json!({"type":"wait_time","milliseconds":-1}),
-        json!({"type":"dialog","accept":true}),
+        json!({"type":"dialog"}),
     ] {
         let result = call(
             &handler,

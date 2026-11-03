@@ -57,3 +57,32 @@ jobs:
         run: cargo +stable build -p rustscrapling-cli --locked
       - name: Localhost-only end-to-end smoke test
         run: python3 tests/e2e_local.py target/debug/rustscrapling
+
+  chrome-e2e:
+    name: Real Chrome E2E / localhost only
+    # Kept separate from the mocked workspace tests (AGENTS.md / Plan 8.4 L4).
+    # Uses the runner's preinstalled Chrome; it is not Chrome 155/156 and
+    # therefore does not by itself satisfy G-03.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_TERM_COLOR: always
+      RUSTSCRAPLING_CHROME_FOR_TESTING: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake clang libclang-dev \
+            pkg-config libxml2-dev nasm
+      - name: Install Rust stable
+        run: rustup toolchain install stable --profile minimal
+      - name: Record browser version
+        run: /usr/bin/google-chrome --version
+      - name: Opt-in real Chrome browser tests (ignored by default)
+        run: cargo +stable test -p rustscrapling-browser --tests --locked -- --ignored --test-threads=1
+      - name: MCP executor tests against real Chrome
+        run: cargo +stable test -p rustscrapling-mcp --tests --locked -- --test-threads=1

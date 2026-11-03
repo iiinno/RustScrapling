@@ -170,14 +170,22 @@ def get(url, timeout, proxy):
         self.assertEqual(rows[0]["missing_required"], ["value"])
 
     def test_executor_scan_does_not_call_schema_support_verified(self) -> None:
-        source = '''async fn browser_actions(&self) {
-            match action_type {
-                "wait_time" => { Ok(()) }
-                "click" => { Ok(()) }
-                _ => Err(BackendError::new("unsupported_operation", "x")),
-            }
+        source = '''fn parse_action(index: usize, raw: &Value) -> Result<BrowserAction, BackendError> {
+            Ok(match kind {
+                "wait_time" => BrowserAction::WaitTime { milliseconds: 1.0 },
+                "click" => BrowserAction::Click {
+                    button: match state("button") {
+                        "left" => MouseButton::Left,
+                        other => return Err(invalid(format!("unknown button '{other}'."))),
+                    },
+                },
+                other => return Err(invalid(format!("Action {index} has unknown type '{other}'."))),
+            })
         }'''
+        # Nested arms inside a variant (e.g. "left") are not action types.
         self.assertEqual(executor_action_branches(source), {"click", "wait_time"})
+        with self.assertRaises(ValueError):
+            executor_action_branches("fn other() {}")
 
 
 class PinnedSnapshotTests(unittest.TestCase):
@@ -218,7 +226,9 @@ class PinnedSnapshotTests(unittest.TestCase):
     def test_statuses_not_marked_verified_by_schema_presence(self) -> None:
         self.assertTrue(all(t["runtime_status"] == "unverified" for t in self.report["mcp"]))
         present = {a["name"] for a in self.report["actions"] if a["executor_branch_present"]}
-        self.assertEqual(present, {"wait_time", "click", "textbox", "press_key"})
+        # All 12 variants have converter arms; arm presence alone is still
+        # recorded as partial_unverified, never verified.
+        self.assertEqual(present, {a["type"] for a in self.mcp["actions"]})
         self.assertTrue(all(a["runtime_status"] != "verified" for a in self.report["actions"]))
         self.assertTrue(all(x["status"] != "verified" for x in self.report["methods"]))
 

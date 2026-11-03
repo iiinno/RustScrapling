@@ -39,7 +39,10 @@ async fn response_bodies_are_redacted_and_ids_survive_evictions() {
             let result = match method {
                 "Target.createTarget" => json!({"targetId":"mock-tab"}),
                 "Target.attachToTarget" => json!({"sessionId":"mock-network-session"}),
-                "Page.enable" | "Network.enable" | "Target.closeTarget" => json!({}),
+                "Page.enable"
+                | "Page.setLifecycleEventsEnabled"
+                | "Network.enable"
+                | "Target.closeTarget" => json!({}),
                 "Page.navigate" => {
                     navigation += 1;
                     last_url = command["params"]["url"].as_str().unwrap().to_owned();

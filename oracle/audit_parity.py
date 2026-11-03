@@ -196,16 +196,23 @@ def canonical_backend_hash(data: bytes) -> str:
 
 
 def executor_action_branches(backend: str) -> set[str]:
-    """Source-only scan: branch presence does not establish full behavior."""
-    start = backend.find("async fn browser_actions(")
+    """Source-only scan: branch presence does not establish full behavior.
+
+    The MCP backend converts each action with `parse_action` into the browser
+    engine's `BrowserAction`; a variant counts as present when that converter
+    has a dedicated arm for it.
+    """
+    start = backend.find("fn parse_action(")
     if start < 0:
-        raise ValueError("Rust backend is missing browser_actions")
+        raise ValueError("Rust backend is missing parse_action")
     after = backend[start:]
-    match = after.find("match action_type {")
-    stop = after.find("_ => Err(BackendError::new(", match)
+    match = after.find("Ok(match kind {")
+    stop = after.find("has unknown type", match)
     if match < 0 or stop < match:
-        raise ValueError("Unexpected Rust browser_actions match block")
-    return set(re.findall(r'^\s*"([a-z_]+)"\s*=>\s*\{', after[match:stop], re.MULTILINE))
+        raise ValueError("Unexpected Rust parse_action match block")
+    # Only arms producing an action (`=> BrowserAction::` or a block) count;
+    # nested matches such as `"left" => MouseButton::Left` do not.
+    return set(re.findall(r'^\s*"([a-z_]+)"\s*=>\s*(?:\{|BrowserAction::)', after[match:stop], re.MULTILINE))
 
 
 def audit(api: dict, mcp: dict, rust_catalog: list[dict], catalog_bytes: bytes, backend_bytes: bytes, rust_symbols: dict | None = None) -> dict:

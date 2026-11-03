@@ -23,7 +23,10 @@ async fn text_api_bodies_are_bounded_and_scoped_to_the_page_session() {
             let result = match method {
                 "Target.createTarget" => json!({"targetId":"test-tab"}),
                 "Target.attachToTarget" => json!({"sessionId":"page-a"}),
-                "Page.enable" | "Network.enable" | "Target.closeTarget" => json!({}),
+                "Page.enable"
+                | "Page.setLifecycleEventsEnabled"
+                | "Network.enable"
+                | "Target.closeTarget" => json!({}),
                 "Page.navigate" => json!({}),
                 "Network.getResponseBody" => {
                     assert_eq!(request["sessionId"], "page-a");

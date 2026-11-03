@@ -5,8 +5,13 @@
 //! chromiumoxide's Page/FrameManager, which unconditionally enables Runtime.
 //! Only the explicitly requested `evaluate` operation enables Runtime.
 
+mod actions;
+mod keys;
 mod transport;
 
+pub use actions::{
+    ActionError, BrowserAction, ElementState, LoadState, MouseButton, PointerTarget,
+};
 pub use transport::{BrowserError, CdpEvent};
 
 use chromiumoxide_cdp::cdp::browser_protocol::{dom, target};
@@ -406,15 +411,23 @@ impl BrowserClient {
         let attached = self.connection.send_typed(attach, None).await?;
         let session_id = attached.session_id.inner().clone();
         let events = self.connection.subscribe();
+        // For page targets the main frame id equals the target id.
+        let (monitor, monitor_guard) =
+            actions::spawn_monitor(&self.connection, session_id.clone(), id.clone());
         let page = BrowserPage {
             connection: self.connection.clone(),
+            main_frame: id.clone(),
             target_id: id,
             session_id,
             events: Mutex::new(events),
             network: Mutex::new(NetworkCapture::default()),
             network_enabled: capture_network,
+            monitor,
+            _monitor_guard: monitor_guard,
         };
         page.raw("Page.enable", json!({})).await?;
+        page.raw("Page.setLifecycleEventsEnabled", json!({"enabled": true}))
+            .await?;
         if capture_network {
             page.raw("Network.enable", json!({})).await?;
         }
@@ -790,6 +803,9 @@ impl Drop for BrowserClient {
 pub struct BrowserPage {
     connection: Arc<Connection>,
     target_id: String,
+    main_frame: String,
+    monitor: Arc<actions::PageMonitor>,
+    _monitor_guard: actions::MonitorGuard,
     session_id: String,
     events: Mutex<tokio::sync::broadcast::Receiver<CdpEvent>>,
     network: Mutex<NetworkCapture>,

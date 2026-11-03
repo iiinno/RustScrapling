@@ -22,6 +22,7 @@ async fn css_click_type_and_keys_use_page_session_without_runtime() {
                 "Target.createTarget" => json!({"targetId":"actions-tab"}),
                 "Target.attachToTarget" => json!({"sessionId":"actions-page"}),
                 "Page.enable"
+                | "Page.setLifecycleEventsEnabled"
                 | "DOM.scrollIntoViewIfNeeded"
                 | "DOM.focus"
                 | "Input.dispatchMouseEvent"

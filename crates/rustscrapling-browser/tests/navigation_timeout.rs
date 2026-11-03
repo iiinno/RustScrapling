@@ -19,7 +19,7 @@ async fn navigation_deadline_also_bounds_the_cdp_command_ack() {
             let result = match request["method"].as_str().unwrap() {
                 "Target.createTarget" => json!({"targetId":"mock-tab"}),
                 "Target.attachToTarget" => json!({"sessionId":"mock-session"}),
-                "Page.enable" => json!({}),
+                "Page.enable" | "Page.setLifecycleEventsEnabled" => json!({}),
                 "Page.navigate" => {
                     // An unresponsive browser never responds to this command.
                     // Keep the WebSocket alive so no disconnect masks timeout.
