@@ -468,6 +468,24 @@ fn cacheable(result: &FetchResult) -> bool {
 /// `.abandoned` has no live owner, so it goes immediately; a plain profile is
 /// only eligible once six hours have passed, because a live Chrome keeps
 /// rewriting its own directory and a short window would delete an active one.
+/// Remove the throwaway Chrome profiles this process created. Used on the way
+/// out, where the six-hour staleness window would be pointless because no other
+/// owner can exist for them.
+fn sweep_own_profiles() {
+    let Ok(entries) = std::fs::read_dir(std::env::temp_dir()) else {
+        return;
+    };
+    let marker = format!("rustscrapling-cdp-{}-", std::process::id());
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let Some(name) = name.to_str() else { continue };
+        if !name.starts_with(&marker) {
+            continue;
+        }
+        let _ = std::fs::remove_dir_all(entry.path());
+    }
+}
+
 pub fn sweep_stale_profiles() {
     let Ok(entries) = std::fs::read_dir(std::env::temp_dir()) else {
         return;
@@ -638,6 +656,11 @@ async fn handle(
         {
             DaemonRequest::Status => DaemonResponse::Status(shared.status(&state.address).await),
             DaemonRequest::Stop => {
+                // Sessions still open here are dropped when the process exits,
+                // after the runtime is gone, so their throwaway Chrome profiles
+                // never reach BrowserClient::shutdown. Remove this process's
+                // profiles before replying, while the paths are still valid.
+                sweep_own_profiles();
                 stop_after_reply = true;
                 DaemonResponse::Stopping
             }
