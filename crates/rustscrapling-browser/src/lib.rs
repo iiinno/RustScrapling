@@ -406,7 +406,16 @@ impl BrowserClient {
         cmd.stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null());
-        let mut child = cmd.spawn().map_err(|e| BrowserError::Io(e.to_string()))?;
+        // A spawn that never started leaves an unused profile behind; remove it
+        // before returning, or repeated failures fill the temp directory with
+        // empty rustscrapling-cdp-* directories.
+        let mut child = match cmd.spawn() {
+            Ok(child) => child,
+            Err(error) => {
+                discard_profile(&profile).await;
+                return Err(BrowserError::Io(error.to_string()));
+            }
+        };
         let endpoint = match read_debugging_endpoint(&profile, &mut child).await {
             Ok(endpoint) => endpoint,
             Err(error) => {
