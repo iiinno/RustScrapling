@@ -159,6 +159,28 @@ pub fn convert_content(
         .collect()
 }
 
+/// Serialize elements of an already parsed `dom` (outer HTML, Markdown or
+/// text) without upstream's main-content sanitizing; used by the interactive
+/// shell to show selection results the way `Selector` would print them.
+pub fn render_elements(dom: &Dom, ids: &[NodeId], format: ContentFormat) -> Vec<String> {
+    let dropped = HashSet::new();
+    ids.iter()
+        .map(|&id| {
+            let renderer = Renderer {
+                dom,
+                root: id,
+                dropped: &dropped,
+                clean_text: false,
+            };
+            match format {
+                ContentFormat::Html => renderer.html(id),
+                ContentFormat::Markdown => renderer.markdownify().convert_root(id),
+                ContentFormat::Text => renderer.text(id),
+            }
+        })
+        .collect()
+}
+
 enum Target {
     Node(NodeId),
     Text(String),

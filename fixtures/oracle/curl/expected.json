@@ -1,0 +1,264 @@
+[
+ {
+  "method": "get",
+  "url": "https://example.com/",
+  "params": {},
+  "data": null,
+  "json_data": null,
+  "headers": {},
+  "cookies": {},
+  "proxy": null,
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "post",
+  "url": "https://example.com/api?x=1",
+  "params": {},
+  "data": null,
+  "json_data": {
+   "q": 1
+  },
+  "headers": {
+   "accept": "application/json"
+  },
+  "cookies": {
+   "a": "1",
+   "b": "two",
+   "c": "3"
+  },
+  "proxy": null,
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "post",
+  "url": "https://example.com/form",
+  "params": {},
+  "data": "a=1&b=2",
+  "json_data": null,
+  "headers": {
+   "content-type": "application/x-www-form-urlencoded"
+  },
+  "cookies": {},
+  "proxy": null,
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "get",
+  "url": "https://e.test/search",
+  "params": {
+   "q": "rust lang",
+   "page": "2"
+  },
+  "data": null,
+  "json_data": null,
+  "headers": {},
+  "cookies": {},
+  "proxy": null,
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "put",
+  "url": "https://e.test/",
+  "params": {},
+  "data": null,
+  "json_data": [
+   1,
+   2
+  ],
+  "headers": {},
+  "cookies": {},
+  "proxy": null,
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "delete",
+  "url": "https://e.test/",
+  "params": {},
+  "data": null,
+  "json_data": null,
+  "headers": {},
+  "cookies": {},
+  "proxy": null,
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "patch",
+  "url": "https://e.test/",
+  "params": {},
+  "data": "x",
+  "json_data": null,
+  "headers": {},
+  "cookies": {},
+  "proxy": null,
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "get",
+  "url": "https://e.test/",
+  "params": {},
+  "data": null,
+  "json_data": null,
+  "headers": {},
+  "cookies": {},
+  "proxy": {
+   "http": "http://user:pass@proxy.local:8080",
+   "https": "http://user:pass@proxy.local:8080"
+  },
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "get",
+  "url": "https://e.test/",
+  "params": {},
+  "data": null,
+  "json_data": null,
+  "headers": {},
+  "cookies": {},
+  "proxy": {
+   "http": "http://me:pw@proxy.local:3128/",
+   "https": "http://me:pw@proxy.local:3128/"
+  },
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "get",
+  "url": "https://e.test/",
+  "params": {},
+  "data": null,
+  "json_data": null,
+  "headers": {
+   "User-Agent": "Header/2"
+  },
+  "cookies": {},
+  "proxy": null,
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "get",
+  "url": "https://e.test/",
+  "params": {},
+  "data": null,
+  "json_data": null,
+  "headers": {
+   "User-Agent": "Agent/1"
+  },
+  "cookies": {},
+  "proxy": null,
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "post",
+  "url": "https://e.test/",
+  "params": {},
+  "data": {
+   "a": "1",
+   "b": "x y"
+  },
+  "json_data": null,
+  "headers": {},
+  "cookies": {},
+  "proxy": null,
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "post",
+  "url": "https://e.test/",
+  "params": {},
+  "data": "{\"bin\":true}",
+  "json_data": null,
+  "headers": {},
+  "cookies": {},
+  "proxy": null,
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "get",
+  "url": "https://e.test/",
+  "params": {},
+  "data": null,
+  "json_data": null,
+  "headers": {
+   "X-Empty": ""
+  },
+  "cookies": {},
+  "proxy": null,
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "get",
+  "url": "https://e.test/",
+  "params": {},
+  "data": null,
+  "json_data": null,
+  "headers": {},
+  "cookies": {},
+  "proxy": null,
+  "follow_redirects": "safe"
+ },
+ {
+  "error": "AttributeError",
+  "message": "Unknown/Unsupported curl arguments: ['--http2', '-L']"
+ },
+ {
+  "error": "None",
+  "message": "parse returned None"
+ },
+ {
+  "error": "None",
+  "message": "parse returned None"
+ },
+ {
+  "method": "get",
+  "url": "https://e.test/a",
+  "params": {},
+  "data": null,
+  "json_data": null,
+  "headers": {
+   "accept": "*/*"
+  },
+  "cookies": {
+   "sid": "abc",
+   "theme": "dark"
+  },
+  "proxy": null,
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "get",
+  "url": "https://e.test/",
+  "params": {},
+  "data": null,
+  "json_data": null,
+  "headers": {},
+  "cookies": {
+   "k": "v"
+  },
+  "proxy": null,
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "get",
+  "url": "https://e.test/",
+  "params": {},
+  "data": "",
+  "json_data": null,
+  "headers": {},
+  "cookies": {},
+  "proxy": null,
+  "follow_redirects": "safe"
+ },
+ {
+  "method": "get",
+  "url": "https://e.test/",
+  "params": {},
+  "data": null,
+  "json_data": null,
+  "headers": {
+   "Accept": "a",
+   "accept": "b"
+  },
+  "cookies": {},
+  "proxy": null,
+  "follow_redirects": "safe"
+ }
+]

@@ -4,9 +4,11 @@
 
 mod browser_adapter;
 mod crawler;
+mod curl;
 mod daemon;
 mod network;
 mod sessions;
+mod shell;
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -69,6 +71,8 @@ enum Command {
     Session(sessions::SessionArgs),
     /// Serve the upstream-compatible MCP server (16 tools) over stdio.
     Mcp,
+    /// Interactive scraping console (upstream `scrapling shell`).
+    Shell(shell::ShellArgs),
     /// Search recent daemon-managed upstream requests.
     Network(sessions::NetworkArgs),
     /// HTTP GET and article extraction (no browser).
@@ -431,6 +435,7 @@ fn run() -> Result<(), String> {
             .block_on(rustscrapling_mcp::serve_stdio(rustscrapling_mcp::RustScraplingMcp::default()))
             .map_err(|error| json!({"schema_version":1,"error":{"kind":"mcp","message":error.to_string()}}).to_string()),
         Command::Network(args) => sessions::run_network(args),
+        Command::Shell(args) => shell::run(args),
         Command::Get { url, options } => network::run_request("GET", &url, &options),
         Command::Auto { url, options } => {
             network::run_tier(&url, &options, rustscrapling_fetch::FetchTier::Auto)

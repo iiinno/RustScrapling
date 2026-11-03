@@ -37,6 +37,8 @@ Plan 7.1節の表が正本。実装が進んだコマンドからここへ実装
 - `rustscrapling session open/close/list/save-state/load-state/fetch/request/tool` は、起動中のdaemonがホストするMCP実行器（`rustscrapling mcp`と同一の`RustScraplingMcp`）へ認証IPCで転送される。session（ブラウザ/HTTP）はdaemonプロセス内に実体があり、CLIプロセスを越えて利用できる。daemonが無い場合は`not_running`で失敗し、IDを捏造しない。`session tool <name> --args JSON`で16ツールすべてを呼べる。状態ファイルはMCPと同じく専用ディレクトリ内のファイル名のみ。
 - `rustscrapling mcp` は同じ16ツールのMCPサーバをstdioで提供する（本家`scrapling mcp`の既定stdio相当。streamable-http transportは未実装）。
 
+- `rustscrapling shell [-c CODE] [--chrome-path P | --cdp-url WS]`（Plan C-06）は本家 `scrapling shell` の探索ループに相当する対話コンソール。本家はIPythonでPythonを評価するが、Rust版は行指向のコマンド言語（`get/post/put/delete/fetch/load`、`page`/`response`、直近5件の`pages`と`use N`、`headers`、`css/xpath/find-text/re/similar/selector-gen`、本家Convertor互換の`text/md/html [SEL] [--full]`、`uncurl`/`curl2fetcher`、`view`、`help`、`exit`）。任意のPython式・`Fetcher`オブジェクトの直接操作は**提供しない**（設計差）。HTTPショートカットは本家既定どおり`follow_redirects="safe"`。`uncurl`は本家`CurlParser.parse`の移植で、22ケースのオラクル（`fixtures/oracle/curl/`、`oracle/curl_parser_oracle.py`）と完全一致。未対応curlフラグは本家と同じ`Unknown/Unsupported curl arguments: [...]`で失敗する。`view`は一時ファイルへ保存し、`$BROWSER`が設定されている場合のみ起動する（本家は`webbrowser.open`）。`-c`と非TTY標準入力はスクリプトとして実行し、1件でも失敗すれば終了コード1。
+
 ### MCPブラウザ通信と操作（Python v0.5との差、`1a74ab5`時点）
 
 - **CLI daemonの `network search` とMCPの `browser_network_requests` は別のデータ源**。前者は上位Fetch完了のメタデータのみ、後者は同じMCP browser sessionのCDPサブリクエスト（最新128件・session-local単調ID・body合計1MiB）と、`browser_network_request(part="response_body")`によるXHR/Fetchテキスト本文。本家の上限（1000件・20MiB・1件1MiB）とは異なる。URLとJSON機密キーは保守的に伏せるが、アプリ固有情報の完全な秘匿は保証しない。
