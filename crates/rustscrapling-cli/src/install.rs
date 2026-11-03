@@ -308,7 +308,10 @@ fn extract(archive: &[u8], destination: &Path) -> Result<u64, Failure> {
         let relative = entry.enclosed_name().ok_or_else(|| {
             fail(
                 "archive",
-                format!("unsafe path in archive: {}", entry.name()),
+                format!(
+                    "unsafe path in archive: {}",
+                    entry.name().unwrap_or_default()
+                ),
                 "Refusing to extract outside the install directory",
             )
         })?;
@@ -322,15 +325,22 @@ fn extract(archive: &[u8], destination: &Path) -> Result<u64, Failure> {
         }
         #[cfg(unix)]
         if entry.is_symlink() {
+            // Symlink targets are short paths; never trust the declared size.
             let mut link = String::new();
-            entry.read_to_string(&mut link).map_err(io)?;
+            (&mut entry)
+                .take(4096)
+                .read_to_string(&mut link)
+                .map_err(io)?;
             let resolved = target.parent().unwrap_or(destination).join(&link);
             if Path::new(&link).is_absolute()
                 || !normalize(&resolved).starts_with(normalize(destination))
             {
                 return Err(fail(
                     "archive",
-                    format!("unsafe symlink in archive: {} -> {link}", entry.name()),
+                    format!(
+                        "unsafe symlink in archive: {} -> {link}",
+                        entry.name().unwrap_or_default()
+                    ),
                     "Refusing to extract outside the install directory",
                 ));
             }

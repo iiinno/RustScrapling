@@ -58,13 +58,13 @@
 
 | 脅威 | 対策 | 回帰テスト／証跡 |
 |---|---|---|
+| 既知脆弱性のある依存 | RustSec DBで`cargo audit --deny warnings`（CI `supply-chain`ジョブ）。初回走査で`zip 2.6.1`の4件（RUSTSEC-2026-0367/0368/0369/0429、いずれも未使用の`extract()`系）とunmaintainedの`rustls-pemfile`を検出→zip 9.3.0へ更新・PEM読込を`rustls-pki-types`へ置換し0件 | CI `supply-chain` |
 | 依存のライセンス違反・不明 | `Cargo.lock`固定、CycloneDX SBOM、copyleft/ライセンス欠落でCI失敗 | `scripts/sbom.py`（CI step）、`SBOM.cdx.json` |
 | 改ざんされたブラウザ配布物 | `install`は固定SHA-256・サイズ照合、staging展開、パス走査・逸脱symlink拒否、失敗時cleanup | `cli/src/install.rs::tests::extraction_rejects_traversal_and_keeps_modes`、`cli/tests/install_command.rs::pinned_checksum_mismatch_installs_nothing` |
 | 移植コードの出典・ライセンス | NOTICE / `licenses/` に記録（Scrapling BSD-3、patchright Apache-2.0、markdownify MIT） | `NOTICE` |
 
 ## 既知の残余リスク（G-11をPASSにしない理由）
 
-- 依存脆弱性スキャン（`cargo audit`等のRustSec照合）がCI未導入。
 - 外部公開MCP HTTP transportは未実装のため、そのSSRF allowlist/認証の試験は対象外（実装時に追加必須）。
 - ネットワーク秘匿はヒューリスティック（URL query・既知キー名）であり、アプリ固有の秘密を完全には伏せない。
 - 認証付きブラウザproxyは`unsupported`（資格情報をCDP経由で扱う設計が未完）。

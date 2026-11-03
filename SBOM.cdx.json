@@ -249,23 +249,6 @@
   },
   {
    "type": "library",
-   "name": "arbitrary",
-   "version": "1.5.0",
-   "purl": "pkg:cargo/arbitrary@1.5.0",
-   "licenses": [
-    {
-     "expression": "MIT OR Apache-2.0"
-    }
-   ],
-   "properties": [
-    {
-     "name": "source",
-     "value": "registry+https://github.com/rust-lang/crates.io-index"
-    }
-   ]
-  },
-  {
-   "type": "library",
    "name": "arrayvec",
    "version": "0.7.8",
    "purl": "pkg:cargo/arrayvec@0.7.8",
@@ -1306,23 +1289,6 @@
    "name": "deranged",
    "version": "0.5.9",
    "purl": "pkg:cargo/deranged@0.5.9",
-   "licenses": [
-    {
-     "expression": "MIT OR Apache-2.0"
-    }
-   ],
-   "properties": [
-    {
-     "name": "source",
-     "value": "registry+https://github.com/rust-lang/crates.io-index"
-    }
-   ]
-  },
-  {
-   "type": "library",
-   "name": "derive_arbitrary",
-   "version": "1.5.0",
-   "purl": "pkg:cargo/derive_arbitrary@1.5.0",
    "licenses": [
     {
      "expression": "MIT OR Apache-2.0"
@@ -2901,6 +2867,23 @@
   },
   {
    "type": "library",
+   "name": "nix",
+   "version": "0.31.3",
+   "purl": "pkg:cargo/nix@0.31.3",
+   "licenses": [
+    {
+     "expression": "MIT"
+    }
+   ],
+   "properties": [
+    {
+     "name": "source",
+     "value": "registry+https://github.com/rust-lang/crates.io-index"
+    }
+   ]
+  },
+  {
+   "type": "library",
    "name": "nom",
    "version": "7.1.3",
    "purl": "pkg:cargo/nom@7.1.3",
@@ -3924,23 +3907,6 @@
    "name": "rustls-native-certs",
    "version": "0.8.5",
    "purl": "pkg:cargo/rustls-native-certs@0.8.5",
-   "licenses": [
-    {
-     "expression": "Apache-2.0 OR ISC OR MIT"
-    }
-   ],
-   "properties": [
-    {
-     "name": "source",
-     "value": "registry+https://github.com/rust-lang/crates.io-index"
-    }
-   ]
-  },
-  {
-   "type": "library",
-   "name": "rustls-pemfile",
-   "version": "2.2.0",
-   "purl": "pkg:cargo/rustls-pemfile@2.2.0",
    "licenses": [
     {
      "expression": "Apache-2.0 OR ISC OR MIT"
@@ -5451,6 +5417,23 @@
   },
   {
    "type": "library",
+   "name": "typed-path",
+   "version": "0.13.0",
+   "purl": "pkg:cargo/typed-path@0.13.0",
+   "licenses": [
+    {
+     "expression": "MIT OR Apache-2.0"
+    }
+   ],
+   "properties": [
+    {
+     "name": "source",
+     "value": "registry+https://github.com/rust-lang/crates.io-index"
+    }
+   ]
+  },
+  {
+   "type": "library",
    "name": "typenum",
    "version": "1.20.1",
    "purl": "pkg:cargo/typenum@1.20.1",
@@ -6591,8 +6574,8 @@
   {
    "type": "library",
    "name": "zip",
-   "version": "2.6.1",
-   "purl": "pkg:cargo/zip@2.6.1",
+   "version": "9.3.0",
+   "purl": "pkg:cargo/zip@9.3.0",
    "licenses": [
     {
      "expression": "MIT"

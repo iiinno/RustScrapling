@@ -42,9 +42,8 @@ fn roots(options: &HttpOptions) -> Result<rustls::RootCertStore, HttpError> {
     if let Some(path) = file {
         let bytes = std::fs::read(path)
             .map_err(|_| HttpError::new(ErrorKind::Tls, "could not read CA bundle"))?;
-        let mut cursor = std::io::Cursor::new(bytes);
         let mut found = false;
-        for cert in rustls_pemfile::certs(&mut cursor) {
+        for cert in <rustls::pki_types::CertificateDer<'static> as rustls::pki_types::pem::PemObject>::pem_slice_iter(&bytes) {
             let cert = cert.map_err(|_| HttpError::new(ErrorKind::Tls, "invalid CA bundle"))?;
             roots
                 .add(cert)
