@@ -101,3 +101,67 @@ jobs:
         run: cargo +stable test -p rustscrapling-browser --tests --locked -- --ignored --test-threads=1
       - name: MCP executor tests against real Chrome
         run: cargo +stable test -p rustscrapling-mcp --tests --locked -- --test-threads=1
+
+  chrome-matrix:
+    name: Chrome for Testing 155/156 matrix (installed by rustscrapling install)
+    # Plan G-03: same real-browser suites on pinned Chrome for Testing builds,
+    # headless and headed (Xvfb), including long-lived session reuse.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake clang libclang-dev \
+            pkg-config libxml2-dev nasm xvfb
+      - name: Install Rust stable
+        run: rustup toolchain install stable --profile minimal
+      - name: Build CLI
+        run: cargo +stable build --locked -p rustscrapling-cli
+      - name: Allow the Chrome sandbox for binaries outside /opt (Ubuntu 24.04 AppArmor)
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install Chrome for Testing 156 (pinned SHA-256) and 155 (explicit SHA-256)
+        run: |
+          target/debug/rustscrapling install --dir "$RUNNER_TEMP/cft156"
+          target/debug/rustscrapling install --dir "$RUNNER_TEMP/cft155" --version 155.0.8059.84 \
+            --sha256 cf0f049892dea22e6a6db26d47ed0d7776b7158edcbec4634086633df8bafcbc
+      - name: Real-browser suites on 155 and 156
+        run: >
+          scripts/chrome_e2e_matrix.sh
+          "$RUNNER_TEMP/cft155/chrome-155.0.8059.84-linux64/chrome-linux64/chrome"
+          "$RUNNER_TEMP/cft156/chrome-156.0.8078.80-linux64/chrome-linux64/chrome"
+
+  release-smoke:
+    name: Release binary smoke and checksums
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake clang libclang-dev \
+            pkg-config libxml2-dev nasm
+      - name: Install Rust stable
+        run: rustup toolchain install stable --profile minimal
+      - name: Build locked release binary
+        run: cargo +stable build --release --locked -p rustscrapling-cli
+      - name: Smoke test and checksums
+        run: scripts/release_smoke.sh target/release/rustscrapling target/release-smoke
+      - name: Upload binary, SHA256SUMS and manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustscrapling-linux-x86_64-${{ github.sha }}
+          path: |
+            target/release-smoke/rustscrapling
+            target/release-smoke/SHA256SUMS
+            target/release-smoke/manifest.json
+          retention-days: 14
