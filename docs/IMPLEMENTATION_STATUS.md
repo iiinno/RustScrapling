@@ -12,7 +12,7 @@
 | 5 Auto/Daemon | HTTP→browser→headed tier、ブロック検知、24h学習、認証IPC、daemon start/stop/status、同一URL取得集約、ETag/Last-Modified、レート制限。SQLiteで学習tier・条件付きGETキャッシュを復元。CLI subprocess起動・異常終了の型付きエラー強化 | VPSでdaemon `--features fetch-integration` テスト7件とCLI daemon4件（再起動後の304/学習復元、破損DB、認証・state漏えいを含む）PASS | 同条件での本家比較、24h連続試験未達 | 部分達成 |
 | 6 Crawl | TOML指定、URL指紋重複排除、bounded queue、並列、robots.txt、checkpoint、6種テンプレートと4出力形式。HTML base、ホスト別速度制限。URL発見・初期シードともドメイン除外/重複排除を先に行ってからmax_pages適用。チェックポイントはUnixの0600/0700とsymlink拒否・旧権限移行。オプトインAutoThrottleを追加し、遅延・429/503応答に基づいてホスト別の待機時間を調整 | VPS Ubuntuでcrawlerテスト17件PASS（大量外部リンク、重複seed、stateファイル権限、AutoThrottleのバックオフ/復帰、従来チェックポイント互換を含む） | Python Spiderの全ミドルウェア互換、クラッシュ後のexactly-once保証、Retry-After解釈は未完。全テンプレートの本家比較未実施 | 部分達成 |
 | 7 MCP | rmcp stdio、本家16ツール/137引数、実HTTP・ブラウザ/CDP取得、セッション・本文抽出。Cookie＋現行トップレベルoriginのlocalStorage(v2、旧v1読込可能)とCDP PNG/JPEG screenshotを実装 | tool catalog2件、stdio1件、HTTP/CDPバックエンド3件とmock CDP 1件PASS（v2保存復元、v1互換、origin不一致拒否を含む） | 実Chromeでの新機能E2E未実施。IndexedDB、他フレーム、selector/ref screenshot、ARIA、全アクション/本家互換未達 | 部分達成 |
-| 8 仕上げ | ローカルCLI E2E、監査・回帰、CI・再現スクリプト、150ページ負荷試験 | VPS Ubuntu Rust1.99.1でChrome HTTP実機2件を明示的に除外した最新の全workspaceテスト87件PASS・終了コード0。AutoThrottle追加後のspider strict Clippy PASS、旧統合版の全workspace strict Clippy PASS。VPS CLI E2E6件PASS、localhost150ページ×8は0.261秒/最大RSS24.46MiB/再開0.011秒 | VPS Chrome localhost HTTP実機E2E未達。1時間ファジング、24時間連続稼働、約200URL本家比較、実サイト成功率/速度/メモリ比較未達 | 未達 |
+| 8 仕上げ | ローカルCLI E2E、監査・回帰、CI・再現スクリプト、150ページ負荷試験 | VPS Ubuntu Rust1.99.1でChrome HTTP実機2件を明示的に除外した最新の全workspaceテスト87件PASS・終了コード0。最新全workspace・全targetのstrict Clippyとfmt check PASS。VPS CLI E2E6件PASS、localhost150ページ×8は0.261秒/最大RSS24.46MiB/再開0.011秒 | VPS Chrome localhost HTTP実機E2E未達。1時間ファジング、24時間連続稼働、約200URL本家比較、実サイト成功率/速度/メモリ比較未達 | 未達 |
 
 ## 実装と計測の扱い
 

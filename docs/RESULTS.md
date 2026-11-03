@@ -3,7 +3,7 @@
 ## 2026-11-03 AutoThrottle統合後のVPS全体回帰
 
 - コミット`e1bec53`でVPS Ubuntu 24.04・Rust1.99.1の`cargo test --workspace --lib --tests --locked --offline -- --skip local_browser_navigation_reuse_external_connection_and_shadow_dom --skip browser_get_and_session_if_chrome_is_available`を実行。**87件PASS、0件FAIL、2件filtered out、Chrome data URLの実機試験1件ignored、終了コード0**。`MemoryMax=3000M`、`MemorySwapMax=0`、`CARGO_BUILD_JOBS=2`、`nice -n 12`を使用。
-- `cargo clippy -p rustscrapling-spider --all-targets --locked --offline -- -D warnings`も**終了コード0**。この追加機能のチェックはクレート限定。従来の全workspace strict Clippy通過はAutoThrottle導入前の証跡である点を区別する。HTTPを使用するChrome実機E2Eの安定通過は依然未達。
+- `cargo clippy -p rustscrapling-spider --all-targets --locked --offline -- -D warnings`と`cargo clippy --workspace --all-targets --locked --offline -- -D warnings`はどちらも最新統合版で**終了コード0**。全workspace Clippyには約3分58秒かかったが、VPS上で`MemoryMax=2800M`、`MemorySwapMax=0`、2 jobsの上限を維持した。HTTPを使用するChrome実機E2Eの安定通過は依然未達。
 
 ## 2026-11-03 Stage6 オプトインAutoThrottle追加
 
