@@ -281,8 +281,13 @@ fn score_inner<'a>(
                     if siblings == scratch.as_slice() {
                         1.0
                     } else if let Some(c) = caches {
-                        match c.siblings.lock().unwrap().get(scratch.as_slice()) {
-                            Some(&r) => r,
+                        // Release the lock before computing or inserting: a
+                        // guard held by the `match` scrutinee would make the
+                        // insert below re-lock the same mutex and deadlock
+                        // (found by the G-09 adaptive fuzz target).
+                        let cached = c.siblings.lock().unwrap().get(scratch.as_slice()).copied();
+                        match cached {
+                            Some(r) => r,
                             None => {
                                 let r = seq_ratio(siblings, scratch);
                                 if scratch.len() <= 64 {
