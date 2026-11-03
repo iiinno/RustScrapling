@@ -920,7 +920,12 @@ impl BrowserPage {
                 "CSS selector must be 1..=2048 bytes and contain no NUL".into(),
             ));
         }
-        let root = self.raw("DOM.getDocument", json!({"depth":0})).await?;
+        // Chrome's DOM.querySelector requires a document tree whose nodes
+        // have been requested. A depth-0 snapshot can resolve no matches
+        // even while DOM.getOuterHTML contains the element.
+        let root = self
+            .raw("DOM.getDocument", json!({"depth":-1,"pierce":true}))
+            .await?;
         let root_id = root
             .pointer("/root/nodeId")
             .and_then(Value::as_u64)
