@@ -15,8 +15,9 @@ pub use actions::{
     ActionError, BrowserAction, ElementState, LoadState, MouseButton, PointerTarget,
 };
 pub use settings::{
-    merge_feature_switches, upstream_launch_args, PageSettings, DISABLED_RESOURCE_TYPES,
-    PLAYWRIGHT_HEADLESS_SWITCHES, PLAYWRIGHT_SWITCHES, UPSTREAM_LAUNCH_ARGS,
+    fingerprint_for, merge_feature_switches, upstream_launch_args, Fingerprint, PageSettings,
+    DISABLED_RESOURCE_TYPES, FINGERPRINTS, PLAYWRIGHT_HEADLESS_SWITCHES, PLAYWRIGHT_SWITCHES,
+    UPSTREAM_LAUNCH_ARGS,
 };
 pub use transport::{BrowserError, CdpEvent};
 
