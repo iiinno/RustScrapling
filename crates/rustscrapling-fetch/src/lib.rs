@@ -410,12 +410,16 @@ fn visible_text_len(body: &[u8]) -> Option<usize> {
             continue;
         }
         let byte = bytes[index];
+        // Inside <script> or <style>, a '<' is code, not a tag opener; letting it
+        // reset the state leaked the whole script body into the visible count.
+        if skipping == 2 || skipping == 3 {
+            index += 1;
+            continue;
+        }
         if byte == b'<' {
             skipping = 1;
         } else if byte == b'>' {
             skipping = 0;
-        } else if byte == b'!' && skipping == 1 {
-            // comment or doctype inside a tag: nothing visible
         } else if skipping == 0 && !byte.is_ascii_whitespace() {
             count += 1;
         }
