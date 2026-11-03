@@ -17,7 +17,7 @@ use serde_json::{json, Map, Value};
 
 mod backend;
 pub mod http_transport;
-pub use backend::RuntimeBackend;
+pub use backend::{NetworkPolicy, RuntimeBackend};
 
 /// Tool definitions: the pinned upstream server's live `tools/list` catalog
 /// (title, description, input/output JSON Schema and annotations), stored

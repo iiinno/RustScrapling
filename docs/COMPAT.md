@@ -50,6 +50,8 @@ Plan 7.1節の表が正本。実装が進んだコマンドからここへ実装
 
 - `rustscrapling mcp [--http --host H --port P --auth-token T --allowed-host H:P --no-auth --executable-path X]`は本家`scrapling mcp`と同じ起動方針（HTTPはtoken必須、`--no-auth`で明示解除、警告文も同文）。transportは`/mcp`のstreamable-HTTP（rmcp 3.8）。差分：本家FastMCPのOAuth protected-resource metadata（`/.well-known/...`）は提供しない、`serverInfo`はrmcp既定値。
 
+- 非loopbackの`mcp --http --host`では、本家と異なり内部アドレス宛の取得とper-callの`cdp_url`/`executable_path`を既定で拒否する（`blocked_by_policy`、`--allow-internal-host`/`--allow-private-network`で緩和、D-014）。
+
 ### MCPブラウザ通信と操作（Python v0.5との差、`1a74ab5`時点）
 
 - **CLI daemonの `network search` とMCPの `browser_network_requests` は別のデータ源**。前者は上位Fetch完了のメタデータのみ、後者は同じMCP browser sessionのCDPサブリクエスト（最新128件・session-local単調ID・body合計1MiB）と、`browser_network_request(part="response_body")`によるXHR/Fetchテキスト本文。本家の上限（1000件・20MiB・1件1MiB）とは異なる。URLとJSON機密キーは保守的に伏せるが、アプリ固有情報の完全な秘匿は保証しない。

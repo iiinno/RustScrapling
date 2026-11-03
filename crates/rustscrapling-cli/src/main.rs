@@ -79,6 +79,14 @@ struct McpArgs {
     /// Serve --http without authentication (not recommended).
     #[arg(long)]
     no_auth: bool,
+    /// On a non-loopback --host, also let tools fetch loopback/private
+    /// addresses (refused by default to prevent SSRF into the local network).
+    #[arg(long)]
+    allow_private_network: bool,
+    /// Internal host name or address that tools may fetch on a non-loopback
+    /// --host (repeatable).
+    #[arg(long = "allow-internal-host")]
+    allow_internal_host: Vec<String>,
 }
 
 fn run_mcp(args: McpArgs) -> Result<(), String> {
@@ -104,7 +112,18 @@ fn run_mcp(args: McpArgs) -> Result<(), String> {
                 "Retry",
             )
         })?;
-    let server = rustscrapling_mcp::RustScraplingMcp::default();
+    let exposed = args.http
+        && !matches!(
+            args.host.as_str(),
+            "127.0.0.1" | "localhost" | "::1" | "[::1]"
+        );
+    let policy = rustscrapling_mcp::NetworkPolicy {
+        block_private: exposed && !args.allow_private_network,
+        allowed_internal_hosts: args.allow_internal_host.clone(),
+    };
+    let server = rustscrapling_mcp::RustScraplingMcp::with_backend(std::sync::Arc::new(
+        rustscrapling_mcp::RuntimeBackend::with_policy(policy),
+    ));
     if !args.http {
         if token.is_some() {
             eprintln!("WARNING: The authentication token only applies to the streamable-http transport, so it's ignored with stdio.");

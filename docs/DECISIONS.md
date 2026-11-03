@@ -103,3 +103,11 @@ Plan.md の「判断済みの事項」は変えていない。ここには段階
 - 証拠：本家Convertorオラクル240/240は一致のまま（fixtureの`hidden`は`slot`のみ）。G-07評価でRust移植の混入0・保持率100%・全ページ文字数≤本家。
 - 互換影響：`hidden`属性付き要素を含むページで、MCPの`main_content_only`出力が本家より短くなる（COMPATに記録）。
 - 戻し方：`compat.rs::hidden_or_noise`の`hidden_attribute`条件を外す。
+
+## D-014 外部公開MCP HTTPでは内部宛先とper-callブラウザ起動指定を拒否（2026-11-03、後継セッション）
+
+- 問題：本家`scrapling mcp --http --host 0.0.0.0`は認証済みクライアントに任意URL取得（ローカル/社内ネットワーク、クラウドmetadata 169.254.169.254を含む）と、per-callの`executable_path`/`cdp_url`を許す。Plan 7.1は外部公開MCP/APIでの明示allowlistとloopback/private-range制御を要求する。
+- 決定：`--http`かつ非loopbackの`--host`では既定で`NetworkPolicy{block_private}`を有効化。取得URLのホストが内部アドレス（`is_internal_address`、名前解決後）なら`blocked_by_policy`。`--allow-internal-host H`（複数可）で個別許可、`--allow-private-network`で無効化。HTTPのリダイレクトは`follow_redirects=true`でも全hopを検査（safe）。per-callの`cdp_url`と`executable_path`は拒否し、サーバ既定（`--executable-path`）のブラウザのみ使う。stdio・loopback bind・CLIは従来どおり無制限。
+- 証拠：`mcp/tests/network_policy.rs`（127.0.0.1/localhost/::1/169.254.169.254/10.0.0.1拒否、許可ホストのみ通過、許可ホストから別内部名へのリダイレクト拒否、既定ポリシーは不変）。
+- 既知の限界：ブラウザ取得は初回URLのみ検査（サブリソース・JS遷移は未検査）、DNS再解決TOCTOUは未対策（THREAT_MODELに記載）。
+- 戻し方：CLIの`policy`を`NetworkPolicy::default()`にする。

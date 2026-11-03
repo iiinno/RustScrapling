@@ -166,13 +166,93 @@ enum Engine {
     },
 }
 
+/// Destination policy for servers reachable by other machines (Plan 7.1):
+/// with `block_private`, URLs whose host is or resolves to a loopback,
+/// private, link-local, CGNAT or other internal address are refused unless
+/// listed in `allowed_internal_hosts`; HTTP redirects are forced to "safe";
+/// per-call `cdp_url` and `executable_path` are refused (the server-wide
+/// browser is used). The default (stdio, CLI, loopback HTTP) allows all.
+#[derive(Clone, Debug, Default)]
+pub struct NetworkPolicy {
+    pub block_private: bool,
+    pub allowed_internal_hosts: Vec<String>,
+}
+
 #[derive(Default)]
 pub struct RuntimeBackend {
     sessions: Mutex<HashMap<String, Arc<Mutex<Session>>>>,
+    policy: NetworkPolicy,
 }
 impl RuntimeBackend {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn with_policy(policy: NetworkPolicy) -> Self {
+        Self {
+            policy,
+            ..Self::default()
+        }
+    }
+
+    fn blocked(message: impl Into<String>) -> BackendError {
+        BackendError::new("blocked_by_policy", message.into())
+    }
+
+    /// Refuse internal destinations when the policy asks for it.
+    async fn check_destination(&self, raw: &str) -> Result<(), BackendError> {
+        if !self.policy.block_private {
+            return Ok(());
+        }
+        let url = url::Url::parse(raw)
+            .map_err(|_| BackendError::new("invalid_arguments", "Invalid URL"))?;
+        let host = url
+            .host_str()
+            .ok_or_else(|| BackendError::new("invalid_arguments", "URL has no host"))?
+            .trim_start_matches('[')
+            .trim_end_matches(']')
+            .to_ascii_lowercase();
+        if self
+            .policy
+            .allowed_internal_hosts
+            .iter()
+            .any(|allowed| allowed.eq_ignore_ascii_case(&host))
+        {
+            return Ok(());
+        }
+        let port = url.port_or_known_default().unwrap_or(443);
+        let addresses: Vec<std::net::IpAddr> = match host.parse::<std::net::IpAddr>() {
+            Ok(address) => vec![address],
+            Err(_) => tokio::net::lookup_host((host.as_str(), port))
+                .await
+                .map_err(|_| BackendError::new("dns", format!("Could not resolve {host}")))?
+                .map(|socket| socket.ip())
+                .collect(),
+        };
+        if addresses.is_empty()
+            || addresses
+                .iter()
+                .any(|address| rustscrapling_http::is_internal_address(*address))
+        {
+            return Err(Self::blocked(format!(
+                "{host} is a loopback/private/internal address; this MCP server only fetches public destinations (start it with --allow-internal-host {host} or --allow-private-network to permit it)"
+            )));
+        }
+        Ok(())
+    }
+
+    fn check_browser_launch(&self, args: &Map<String, Value>) -> Result<(), BackendError> {
+        if !self.policy.block_private {
+            return Ok(());
+        }
+        for key in ["cdp_url", "executable_path"] {
+            if args.get(key).is_some_and(|value| !value.is_null()) {
+                return Err(Self::blocked(format!(
+                    "'{key}' is disabled on network-exposed MCP servers; the server-wide browser is used"
+                )));
+            }
+        }
+        Ok(())
     }
 
     pub async fn call(&self, name: &str, args: Map<String, Value>) -> Outcome {
@@ -338,6 +418,7 @@ impl RuntimeBackend {
         args: &Map<String, Value>,
         session: Option<&HttpSession>,
     ) -> Outcome {
+        self.check_destination(required(args, "url")?).await?;
         let url = url::Url::parse(required(args, "url")?)
             .map_err(|_| BackendError::new("invalid_arguments", "Invalid URL"))?;
         if !matches!(url.scheme(), "http" | "https") {
@@ -514,7 +595,8 @@ impl RuntimeBackend {
                 })?,
         };
         let (follow, safe) = match args.get("follow_redirects").unwrap_or(&json!("safe")) {
-            Value::Bool(follow) => (*follow, false),
+            // Exposed servers always validate redirect targets.
+            Value::Bool(follow) => (*follow, self.policy.block_private),
             Value::String(mode) if mode == "safe" => (true, true),
             _ => {
                 return Err(BackendError::new(
@@ -676,6 +758,7 @@ impl RuntimeBackend {
     }
 
     async fn browser_open(&self, args: &Map<String, Value>) -> Outcome {
+        self.check_browser_launch(args)?;
         let client = Self::browser_client(args).await?;
         let page = match Self::open_configured_page(&client, args).await {
             Ok(page) => page,
@@ -715,6 +798,8 @@ impl RuntimeBackend {
     }
     async fn browser_once(&self, args: &Map<String, Value>) -> Outcome {
         browser_options(args, true)?;
+        self.check_browser_launch(args)?;
+        self.check_destination(required(args, "url")?).await?;
         let client = Self::browser_client(args).await?;
         let result = async {
             let page = Self::open_configured_page(&client, args).await?;
@@ -730,6 +815,7 @@ impl RuntimeBackend {
     }
     async fn browser_fetch(&self, args: &Map<String, Value>) -> Outcome {
         browser_options(args, false)?;
+        self.check_destination(required(args, "url")?).await?;
         let session = self.session(required(args, "session_id")?).await?;
         let mut session = session.lock().await;
         let Engine::Browser {

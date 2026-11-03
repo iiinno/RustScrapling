@@ -43,6 +43,7 @@
 | 未実装機能の偽成功 | `unsupported` typed error（認証付きブラウザproxy、`additional_args`等） | `mcp/tests/browser_options.rs::browser_session_and_fetch_options_take_effect`（opt-in Chrome） |
 
 | MCP streamable-HTTPの無認証公開 | `mcp --http`はtoken（`--auth-token`/`SCRAPLING_MCP_AUTH_TOKEN`）が無ければ本家同文で起動拒否、`--no-auth`で明示解除。Bearer tokenを定数時間比較、`/mcp`以外は404 | `cli/tests/mcp_command.rs::mcp_streamable_http_requires_token_and_checks_hosts`、`mcp/src/http_transport.rs::tests` |
+| 外部公開MCP経由のSSRF（内部ネットワーク読み取り） | 非loopbackの`--host`では既定で`NetworkPolicy.block_private`：URLのホストがloopback/private/link-local/CGNAT等（名前解決後）なら`blocked_by_policy`、明示許可は`--allow-internal-host`/`--allow-private-network`。HTTPリダイレクトは常に`safe`扱い、per-callの`cdp_url`/`executable_path`は拒否（D-014、本家は無制限） | `mcp/tests/network_policy.rs::exposed_servers_refuse_internal_destinations` |
 | DNSリバインディング | loopback bind時はloopback Hostのみ受理、`--allowed-host`指定時はHostとOriginを許可リストで検査（本家`TransportSecuritySettings`相当） | 同上（`Host: evil.example`→403） |
 
 ## (e) daemon IPCとstate file
@@ -68,7 +69,7 @@
 
 ## 既知の残余リスク（G-11をPASSにしない理由）
 
-- MCP HTTP transportを外部公開した場合、認証済みクライアントは本家同様に任意URL取得（ローカルネットワーク含む）が可能。SSRF対策はtoken認証とHost/Origin許可（DNSリバインディング防御）までで、取得先のprivate-range制限は未実装（Plan 7.1の「外部公開MCP HTTP/APIでのloopback/private-range制御」は未充足）。
+- 外部公開（非loopback bind）のMCP HTTPでは内部宛先を拒否するが（D-014）、ブラウザ取得では**初回URLのみ**検査し、ページ内サブリソース・JSによる遷移・ブラウザ内リダイレクト先の内部アドレスは未検査（HTTP取得のリダイレクトは全hop検査）。DNS再解決（TOCTOU）にも未対応。
 - ネットワーク秘匿はヒューリスティック（URL query・既知キー名）であり、アプリ固有の秘密を完全には伏せない。
 - 認証付きブラウザproxyは`unsupported`（資格情報をCDP経由で扱う設計が未完）。
 - Chrome サンドボックス：root実行環境ではChromeが`--no-sandbox`無しで起動しない。テスト用ラッパーのみで付与し、本番起動では付与しない（Playwright/本家は既定で`--no-sandbox`）。
