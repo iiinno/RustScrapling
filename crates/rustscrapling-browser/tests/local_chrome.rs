@@ -55,6 +55,9 @@ async fn local_browser_navigation_reuse_external_connection_and_shadow_dom() {
             let Ok((mut stream, _)) = listener.accept().await else {
                 break;
             };
+            if std::env::var_os("RUSTSCRAPLING_TRACE_CDP_METHODS").is_some() {
+                eprintln!("local Chrome E2E fixture accepted a TCP connection");
+            }
             tokio::spawn(async move {
                 let mut bytes = vec![0u8; 8192];
                 let Ok(count) = stream.read(&mut bytes).await else {
@@ -85,6 +88,8 @@ async fn local_browser_navigation_reuse_external_connection_and_shadow_dom() {
     });
 
     let mut launch = LaunchOptions::new(chrome);
+    // Deterministic loopback E2E must not inherit the desktop's proxy policy.
+    launch.extra_args.push("--no-proxy-server".into());
     // On locked-down CI/VPS kernels, Chrome's user-namespace sandbox may be
     // unavailable. This opt-in is exclusively for the localhost E2E fixture;
     // production browser sessions must retain Chrome's sandbox by default.
