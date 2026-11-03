@@ -474,11 +474,22 @@ where
         saved
     } else {
         let seeds = templates::resolve_seeds(spec, &fetcher).await?;
+        let mut seen_seeds = HashSet::new();
         Progress {
             queue: seeds
                 .into_iter()
+                .filter_map(|raw| {
+                    let mut url = valid_url(&raw).ok()?;
+                    if !host_allowed(spec, &url) {
+                        return None;
+                    }
+                    url.set_fragment(None);
+                    let normalized = url.to_string();
+                    seen_seeds
+                        .insert(key(&normalized))
+                        .then_some((normalized, 0))
+                })
                 .take(spec.max_pages)
-                .map(|url| (url, 0))
                 .collect(),
             ..Progress::default()
         }
@@ -898,6 +909,33 @@ mod tests {
         assert_eq!(emitted.len(), 2);
         assert_eq!(emitted[0].links, vec!["https://example.com/target"]);
         assert_eq!(emitted[1].url, "https://example.com/target");
+    }
+
+    #[tokio::test]
+    async fn seed_limit_counts_unique_eligible_urls_not_duplicate_prefixes() {
+        let mut seeds = (0..200)
+            .map(|id| format!("https://example.com/first#section{id}"))
+            .collect::<Vec<_>>();
+        seeds.push("https://example.com/second".into());
+        let spec = CrawlSpec {
+            start_urls: seeds,
+            max_pages: 2,
+            max_depth: 0,
+            concurrency: 1,
+            ..CrawlSpec::default()
+        };
+        let mut urls = Vec::new();
+        let result = crawl(&spec, Arc::new(Mock), |item| {
+            urls.push(item.url.clone());
+            Ok(())
+        })
+        .await
+        .unwrap();
+        assert_eq!(result.successful, 2);
+        assert_eq!(
+            urls,
+            ["https://example.com/first", "https://example.com/second"]
+        );
     }
 
     #[test]
