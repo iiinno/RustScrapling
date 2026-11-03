@@ -142,8 +142,11 @@ impl BrowserBackend for CdpBackend {
                 let _ = page.close().await;
                 if let Some(Ok(refreshed)) = reloaded {
                     if refreshed.blocked.is_none() {
+                        let Some(status) = refreshed.status else {
+                            return Err(failed("CDP did not supply an HTTP status"));
+                        };
                         return Ok(FetchResponse {
-                            status: refreshed.status,
+                            status,
                             final_url: refreshed.final_url,
                             headers: refreshed.headers.into_iter().collect(),
                             body: refreshed.body.into_bytes(),
