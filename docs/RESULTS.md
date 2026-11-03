@@ -10,7 +10,8 @@
 | `8bd7146`（Issue #1修正） | `cargo fmt --all -- --check` / `cargo test --workspace --lib --tests --locked --no-fail-fast` / `cargo clippy --workspace --all-targets --locked -- -D warnings` | exit 0 / **127 PASS・0 FAIL・3 ignored・0 filtered** / exit 0 |
 | `8bd7146` | `RUSTSCRAPLING_CHROME_FOR_TESTING=/usr/bin/google-chrome RUSTSCRAPLING_CHROME_TEST_NO_SANDBOX=1 cargo test -p rustscrapling-browser --tests -- --ignored` | 実Chrome 3/3 PASS |
 | `8bd7146` | `cargo build -p rustscrapling-cli --locked` + `python3 tests/e2e_local.py target/debug/rustscrapling` | exit 0 / CLI E2E 6/6 PASS |
-| `8bd7146` | `python3 -m unittest discover -s tests -p 'test_m0*.py'` / `inventory_upstream.py --check` / `audit_parity.py --check` | 37 tests OK（2 skip）/ exit 0 / exit 0 |
+| `4aaaab9`（m0統合直後） | `python3 -m unittest discover -s tests -p 'test_m0*.py'` / `inventory_upstream.py --check` / `audit_parity.py --check` | 37 tests OK（2 skip）/ exit 0 / exit 0 |
+| `8bd7146` | `audit_parity.py --check`（GitHub Actions run 6でも同じ） | **FAIL（STALE PARITY_AUDIT.json）**：Spider統合で公開`pub fn`が増え、同名候補索引が古くなった。`1a74ab5`で再生成し`--check` exit 0、M0 37 tests OK |
 | `8bd7146` | live runtime schema oracle（隔離venv、mcp 2.3.0、pydantic 2.14.2） | 16/16ツール、差分**348件**（コミット済みスナップショットと`differences`完全一致）。exit 1は設計どおり |
 | `1a74ab5`（全12アクション） | 全workspaceテスト | **130 PASS・0 FAIL・4 ignored（実Chrome opt-in）** exit 0、fmt exit 0 |
 | `1a74ab5` | 実Chrome opt-in（上記env） | browser 4/4 PASS（新規 `all_actions_chrome_e2e` を含む） |
