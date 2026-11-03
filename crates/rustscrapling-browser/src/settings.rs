@@ -683,12 +683,15 @@ mod fingerprint_tests {
     }
 
     #[test]
-    fn selection_is_deterministic_and_in_range() {
+    fn selection_is_deterministic_and_wraps() {
         assert_eq!(fingerprint_for(7), fingerprint_for(7));
-        assert!(std::ptr::eq(fingerprint_for(0), &FINGERPRINTS[0]));
-        assert!(std::ptr::eq(
+        assert_eq!(fingerprint_for(0), &FINGERPRINTS[0]);
+        assert_eq!(
             fingerprint_for(FINGERPRINTS.len() as u64),
-            &FINGERPRINTS[0]
-        ));
+            &FINGERPRINTS[0],
+            "the index wraps instead of running past the table"
+        );
+        let last = fingerprint_for(FINGERPRINTS.len() as u64 - 1);
+        assert_eq!(last, &FINGERPRINTS[FINGERPRINTS.len() - 1]);
     }
 }

@@ -126,7 +126,7 @@ impl BrowserBackend for CdpBackend {
                     .await
                     .map_err(|e| failed(&format!("CDP could not open a page: {e}")))?;
                 let outcome = match page
-                    .navigate(&url, std::time::Duration::from_secs(30))
+                    .navigate(url, std::time::Duration::from_secs(30))
                     .await
                 {
                     Ok(()) => rustscrapling_browser::solve_cloudflare(&page, 30_000.0)
