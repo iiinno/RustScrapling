@@ -169,6 +169,32 @@ async fn redirects_are_optional_and_statuses_are_classified() {
 }
 
 #[tokio::test]
+async fn redirects_with_embedded_credentials_never_contact_destination() {
+    let contacted = Arc::new(AtomicUsize::new(0));
+    let seen = contacted.clone();
+    let destination = server(move |_| {
+        seen.fetch_add(1, Ordering::SeqCst);
+        reply("200 OK", b"not allowed", "")
+    })
+    .await;
+    let credential_url = destination.replacen("http://", "http://alice:secret@", 1);
+    let start = server(move |_| {
+        reply(
+            "302 Found",
+            b"",
+            &format!("Location: {credential_url}/private\r\n"),
+        )
+    })
+    .await;
+    let result = HttpClient::new(direct_options()).unwrap().get(start).await;
+    if let Ok(response) = result {
+        assert_eq!(response.status, 302);
+        assert!(!response.final_url.contains("secret"));
+    }
+    assert_eq!(contacted.load(Ordering::SeqCst), 0);
+}
+
+#[tokio::test]
 async fn retries_transient_get_but_not_post_by_default() {
     let count = Arc::new(AtomicUsize::new(0));
     let captured = count.clone();

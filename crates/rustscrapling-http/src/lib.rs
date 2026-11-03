@@ -361,7 +361,22 @@ impl HttpClient {
                 .connect_timeout(options.connect_timeout)
                 .read_timeout(options.read_timeout)
                 .redirect(if options.follow_redirects {
-                    Policy::limited(10)
+                    // Redirect targets are not trusted merely because the
+                    // original request URL was validated. In particular, do
+                    // not follow a Location containing embedded credentials.
+                    // Retain wreq's existing ten-hop loop protection.
+                    Policy::custom(|attempt| {
+                        let allowed = Url::parse(&attempt.uri.to_string()).is_ok_and(|url| {
+                            matches!(url.scheme(), "http" | "https")
+                                && url.username().is_empty()
+                                && url.password().is_none()
+                        });
+                        if allowed {
+                            Policy::limited(10).redirect(attempt)
+                        } else {
+                            attempt.stop()
+                        }
+                    })
                 } else {
                     Policy::none()
                 });
