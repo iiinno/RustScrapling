@@ -72,7 +72,7 @@ async fn real_http_and_http_session_round_trip() {
 
     let sessions = call(&handler, "list_sessions", json!({})).await;
     assert_eq!(
-        sessions.structured_content.as_ref().unwrap()[0]["session_id"],
+        sessions.structured_content.as_ref().unwrap()["result"][0]["session_id"],
         "http-test"
     );
     let ended = call(&handler, "close_session", json!({"session_id":"http-test"})).await;

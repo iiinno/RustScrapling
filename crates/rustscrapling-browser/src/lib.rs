@@ -66,6 +66,9 @@ impl Default for BrowserGetOptions {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct NetworkRecord {
     pub url: String,
+    /// HTTP method from `Network.requestWillBeSent`, when observed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub method: Option<String>,
     pub status: Option<u16>,
     pub resource_type: Option<String>,
     pub headers: BTreeMap<String, String>,
@@ -87,6 +90,8 @@ const MAX_NETWORK_TOTAL_BODY_BYTES: usize = 1024 * 1024;
 #[derive(Default)]
 struct NetworkCapture {
     records: VecDeque<NetworkRecord>,
+    /// Request methods by CDP request id, bounded like the record list.
+    methods: VecDeque<(String, String)>,
     finished: HashSet<String>,
     sensitive: HashSet<String>,
     ready: VecDeque<String>,
@@ -95,6 +100,7 @@ struct NetworkCapture {
 impl NetworkCapture {
     fn clear(&mut self) {
         self.records.clear();
+        self.methods.clear();
         self.finished.clear();
         self.sensitive.clear();
         self.ready.clear();
@@ -107,6 +113,19 @@ impl NetworkCapture {
             .and_then(Value::as_str)
             .filter(|id| !id.is_empty() && id.len() <= 128);
         match event.method.as_str() {
+            "Network.requestWillBeSent" => {
+                let method = event
+                    .params
+                    .pointer("/request/method")
+                    .and_then(Value::as_str)
+                    .filter(|method| method.len() <= 32);
+                if let (Some(id), Some(method)) = (id, method) {
+                    if self.methods.len() >= MAX_NETWORK_RECORDS * 4 {
+                        self.methods.pop_front();
+                    }
+                    self.methods.push_back((id.to_owned(), method.to_owned()));
+                }
+            }
             "Network.responseReceived" => {
                 if let Some(id) = id {
                     self.records
@@ -145,7 +164,15 @@ impl NetworkCapture {
                         self.ready.retain(|ready| ready != &old);
                     }
                 }
-                self.records.push_back(record_network(event));
+                let mut record = record_network(event);
+                record.method = id.and_then(|id| {
+                    self.methods
+                        .iter()
+                        .rev()
+                        .find(|(request, _)| request == id)
+                        .map(|(_, method)| method.clone())
+                });
+                self.records.push_back(record);
             }
             "Network.loadingFinished" => {
                 let Some(id) = id else {
@@ -204,7 +231,15 @@ impl NetworkCapture {
                         self.ready.retain(|ready| ready != &old);
                     }
                 }
-                self.records.push_back(record_network(event));
+                let mut record = record_network(event);
+                record.method = id.and_then(|id| {
+                    self.methods
+                        .iter()
+                        .rev()
+                        .find(|(request, _)| request == id)
+                        .map(|(_, method)| method.clone())
+                });
+                self.records.push_back(record);
             }
             _ => {}
         }
@@ -1473,6 +1508,7 @@ fn record_network(event: &CdpEvent) -> NetworkRecord {
         })
         .unwrap_or_default();
     NetworkRecord {
+        method: None,
         url,
         status,
         headers,

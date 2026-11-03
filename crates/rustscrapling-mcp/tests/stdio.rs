@@ -111,7 +111,10 @@ fn stdio_initialize_list_and_tool_calls() {
         .unwrap()
         .contains("Verified through stdio and wreq"));
     assert_eq!(response(5)["result"]["isError"], false);
-    assert_eq!(response(5)["result"]["structuredContent"], json!([]));
+    assert_eq!(
+        response(5)["result"]["structuredContent"],
+        json!({"result": []})
+    );
     assert_eq!(response(6)["result"]["isError"], true);
     assert!(response(6)["result"]["content"][0]["text"]
         .as_str()

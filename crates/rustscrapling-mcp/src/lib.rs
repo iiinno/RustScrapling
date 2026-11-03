@@ -18,7 +18,9 @@ use serde_json::{json, Map, Value};
 mod backend;
 pub use backend::RuntimeBackend;
 
-/// Tool definitions including the pinned descriptions and all input fields.
+/// Tool definitions: the pinned upstream server's live `tools/list` catalog
+/// (title, description, input/output JSON Schema and annotations), stored
+/// verbatim in `tools.json` and checked by `oracle/runtime_schema_oracle.py`.
 pub fn tools() -> &'static [Tool] {
     static CATALOG: OnceLock<Vec<Tool>> = OnceLock::new();
     CATALOG.get_or_init(|| {
@@ -28,56 +30,43 @@ pub fn tools() -> &'static [Tool] {
         definitions
             .into_iter()
             .map(|entry| {
+                let object = |key: &str| -> Option<Map<String, Value>> {
+                    entry.get(key).and_then(Value::as_object).cloned()
+                };
                 let name = entry["name"].as_str().expect("tool name").to_string();
                 let title = entry["title"].as_str().expect("title").to_string();
                 let description = entry["description"]
                     .as_str()
                     .expect("description")
                     .to_string();
-                let schema: Map<String, Value> = entry["inputSchema"]
-                    .as_object()
-                    .expect("input schema")
-                    .clone();
-                let category = match name.as_str() {
-                    "browser_open" | "open_request_session" | "close_session" => "session",
-                    "browser_save_state" | "browser_load_state" | "browser_actions"
-                    | "browser_evaluate" => "input",
-                    "list_sessions" | "browser_network_requests" | "browser_network_request" => {
-                        "list"
-                    }
-                    _ => "fetch",
-                };
-                let annotations = match category {
-                    "session" => {
-                        ToolAnnotations::from_raw(None, Some(false), Some(false), None, Some(true))
-                    }
-                    "input" => ToolAnnotations::from_raw(
-                        None,
-                        Some(false),
-                        Some(true),
-                        Some(false),
-                        Some(true),
-                    ),
-                    "list" => ToolAnnotations::from_raw(None, Some(true), None, None, Some(false)),
-                    _ => ToolAnnotations::from_raw(None, Some(true), None, None, Some(true)),
-                };
-                Tool::new(name, description, Arc::new(schema))
-                    .with_title(title)
-                    .with_annotations(annotations)
+                let mut tool = Tool::new(
+                    name,
+                    description,
+                    Arc::new(object("inputSchema").expect("input schema")),
+                )
+                .with_title(title);
+                if let Some(output) = object("outputSchema") {
+                    tool = tool.with_raw_output_schema(Arc::new(output));
+                }
+                if let Some(annotations) = entry.get("annotations") {
+                    let annotations: ToolAnnotations =
+                        serde_json::from_value(annotations.clone()).expect("tool annotations");
+                    tool = tool.with_annotations(annotations);
+                }
+                tool
             })
             .collect()
     })
 }
 
-/// Validate in-process before any backend receives an argument. This is kept
-/// small to avoid pulling the fetch/browser dependency trees into Stage 7.
+/// Validate in-process before any backend receives an argument. Supports
+/// the JSON Schema subset emitted by upstream's Pydantic models, including
+/// local `$ref`/`$defs`, `const`, discriminated `oneOf` and exclusive bounds.
 pub fn validate_args(tool: &Tool, arguments: &Map<String, Value>) -> Result<(), String> {
-    let fields = tool.input_schema["properties"]
-        .as_object()
-        .expect("schema properties");
-    let required = tool.input_schema["required"]
-        .as_array()
-        .expect("required array");
+    let root = Value::Object((*tool.input_schema).clone());
+    let fields = root["properties"].as_object().expect("schema properties");
+    let empty = Vec::new();
+    let required = root["required"].as_array().unwrap_or(&empty);
     for name in required {
         let name = name.as_str().expect("required name");
         if !arguments.contains_key(name) {
@@ -88,23 +77,59 @@ pub fn validate_args(tool: &Tool, arguments: &Map<String, Value>) -> Result<(), 
         let Some(schema) = fields.get(name) else {
             return Err(format!("unknown argument '{name}'"));
         };
-        if !matches_schema(value, schema) {
+        if !matches_schema(value, schema, &root) {
             return Err(format!("invalid value for argument '{name}'"));
         }
     }
     Ok(())
 }
 
-fn matches_schema(value: &Value, schema: &Value) -> bool {
+/// Validate a structured tool result against the tool's output schema.
+pub fn validate_output(tool: &Tool, value: &Value) -> bool {
+    match &tool.output_schema {
+        Some(schema) => {
+            let root = Value::Object((**schema).clone());
+            matches_schema(value, &root, &root)
+        }
+        None => true,
+    }
+}
+
+fn resolve<'a>(schema: &'a Value, root: &'a Value) -> &'a Value {
+    match schema.get("$ref").and_then(Value::as_str) {
+        Some(reference) => reference
+            .strip_prefix("#/")
+            .map(|path| format!("/{path}"))
+            .and_then(|pointer| root.pointer(&pointer))
+            .map_or(schema, |target| resolve(target, root)),
+        None => schema,
+    }
+}
+
+fn matches_schema(value: &Value, schema: &Value, root: &Value) -> bool {
+    if schema.get("$ref").is_some() {
+        let target = resolve(schema, root);
+        if std::ptr::eq(target, schema) || !matches_schema(value, target, root) {
+            return false;
+        }
+    }
+    if let Some(expected) = schema.get("const") {
+        if value != expected {
+            return false;
+        }
+    }
     if let Some(branches) = schema.get("anyOf").and_then(Value::as_array) {
-        if !branches.iter().any(|branch| matches_schema(value, branch)) {
+        if !branches
+            .iter()
+            .any(|branch| matches_schema(value, branch, root))
+        {
             return false;
         }
     }
     if let Some(branches) = schema.get("oneOf").and_then(Value::as_array) {
         if branches
             .iter()
-            .filter(|branch| matches_schema(value, branch))
+            .filter(|branch| matches_schema(value, branch, root))
             .count()
             != 1
         {
@@ -131,40 +156,58 @@ fn matches_schema(value: &Value, schema: &Value) -> bool {
             return false;
         }
     }
-    if let Some(min) = schema.get("minimum").and_then(Value::as_f64) {
-        if value.as_f64().is_some_and(|n| n < min) {
-            return false;
-        }
-    }
-    if let Some(max) = schema.get("maximum").and_then(Value::as_f64) {
-        if value.as_f64().is_some_and(|n| n > max) {
-            return false;
-        }
-    }
-    if let Some(min) = schema.get("minLength").and_then(Value::as_u64) {
-        if value
-            .as_str()
-            .is_some_and(|s| (s.chars().count() as u64) < min)
+    if let Some(number) = value.as_f64() {
+        let bound = |key: &str| schema.get(key).and_then(Value::as_f64);
+        if bound("minimum").is_some_and(|min| number < min)
+            || bound("maximum").is_some_and(|max| number > max)
+            || bound("exclusiveMinimum").is_some_and(|min| number <= min)
+            || bound("exclusiveMaximum").is_some_and(|max| number >= max)
         {
             return false;
         }
     }
-    if let Some(min) = schema.get("minItems").and_then(Value::as_u64) {
-        if value.as_array().is_some_and(|a| (a.len() as u64) < min) {
-            return false;
-        }
-    }
-    if let Some(max) = schema.get("maxItems").and_then(Value::as_u64) {
-        if value.as_array().is_some_and(|a| (a.len() as u64) > max) {
-            return false;
-        }
-    }
-    if let Some(item_schema) = schema.get("items") {
-        if value
-            .as_array()
-            .is_some_and(|a| !a.iter().all(|v| matches_schema(v, item_schema)))
+    if let Some(text) = value.as_str() {
+        let length = text.chars().count() as u64;
+        if schema
+            .get("minLength")
+            .and_then(Value::as_u64)
+            .is_some_and(|min| length < min)
+            || schema
+                .get("maxLength")
+                .and_then(Value::as_u64)
+                .is_some_and(|max| length > max)
         {
             return false;
+        }
+    }
+    if let Some(items) = value.as_array() {
+        let count = items.len() as u64;
+        if schema
+            .get("minItems")
+            .and_then(Value::as_u64)
+            .is_some_and(|min| count < min)
+            || schema
+                .get("maxItems")
+                .and_then(Value::as_u64)
+                .is_some_and(|max| count > max)
+        {
+            return false;
+        }
+        if schema.get("uniqueItems") == Some(&Value::Bool(true))
+            && items
+                .iter()
+                .enumerate()
+                .any(|(i, item)| items[..i].contains(item))
+        {
+            return false;
+        }
+        if let Some(item_schema) = schema.get("items") {
+            if !items
+                .iter()
+                .all(|item| matches_schema(item, item_schema, root))
+            {
+                return false;
+            }
         }
     }
     if let Some(obj) = value.as_object() {
@@ -176,19 +219,24 @@ fn matches_schema(value: &Value, schema: &Value) -> bool {
                 return false;
             }
         }
-        if let Some(properties) = schema.get("properties").and_then(Value::as_object) {
-            for (name, field_value) in obj {
-                if let Some(field_schema) = properties.get(name) {
-                    if !matches_schema(field_value, field_schema) {
+        let properties = schema.get("properties").and_then(Value::as_object);
+        let additional = schema.get("additionalProperties");
+        for (name, field_value) in obj {
+            match properties.and_then(|properties| properties.get(name)) {
+                Some(field_schema) => {
+                    if !matches_schema(field_value, field_schema, root) {
                         return false;
                     }
-                } else if schema.get("additionalProperties") == Some(&Value::Bool(false)) {
-                    return false;
                 }
-            }
-        } else if let Some(value_schema) = schema.get("additionalProperties") {
-            if value_schema.is_object() && !obj.values().all(|v| matches_schema(v, value_schema)) {
-                return false;
+                None => match additional {
+                    Some(Value::Bool(false)) => return false,
+                    Some(extra)
+                        if extra.is_object() && !matches_schema(field_value, extra, root) =>
+                    {
+                        return false
+                    }
+                    _ => {}
+                },
             }
         }
     }
@@ -238,7 +286,18 @@ impl RustScraplingMcp {
             ));
         }
         Ok(match self.backend.call(name, arguments).await {
-            Ok(result) => result,
+            Ok(result) => {
+                // Never hand clients structured data that contradicts the
+                // advertised outputSchema; report it as an internal error.
+                match &result.structured_content {
+                    Some(value) if !validate_output(tool, value) => typed_error(
+                        "internal",
+                        "structured result does not match the tool outputSchema",
+                        "Report this as a RustScrapling bug",
+                    ),
+                    _ => result,
+                }
+            }
             Err(error) => typed_error(&error.kind, &error.message, &error.hint),
         })
     }

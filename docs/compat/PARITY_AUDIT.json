@@ -1149,7 +1149,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-browser",
-          "line": 446,
+          "line": 481,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-browser/src/lib.rs"
         },
@@ -2610,7 +2610,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-browser",
-          "line": 446,
+          "line": 481,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-browser/src/lib.rs"
         },
@@ -2761,7 +2761,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-browser",
-          "line": 446,
+          "line": 481,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-browser/src/lib.rs"
         },
@@ -2829,7 +2829,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-browser",
-          "line": 446,
+          "line": 481,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-browser/src/lib.rs"
         },
@@ -3222,7 +3222,7 @@
         },
         {
           "crate": "rustscrapling-browser",
-          "line": 446,
+          "line": 481,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-browser/src/lib.rs"
         },
@@ -3293,7 +3293,7 @@
         },
         {
           "crate": "rustscrapling-browser",
-          "line": 446,
+          "line": 481,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-browser/src/lib.rs"
         },
@@ -3641,7 +3641,7 @@
         },
         {
           "crate": "rustscrapling-browser",
-          "line": 446,
+          "line": 481,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-browser/src/lib.rs"
         },
@@ -4077,7 +4077,7 @@
         },
         {
           "crate": "rustscrapling-browser",
-          "line": 446,
+          "line": 481,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-browser/src/lib.rs"
         },
@@ -4118,7 +4118,7 @@
         },
         {
           "crate": "rustscrapling-browser",
-          "line": 446,
+          "line": 481,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-browser/src/lib.rs"
         },
@@ -4159,7 +4159,7 @@
         },
         {
           "crate": "rustscrapling-browser",
-          "line": 446,
+          "line": 481,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-browser/src/lib.rs"
         },
@@ -4535,7 +4535,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-browser",
-          "line": 446,
+          "line": 481,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-browser/src/lib.rs"
         },
@@ -4593,7 +4593,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-browser",
-          "line": 1429,
+          "line": 1464,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-browser/src/lib.rs"
         }
@@ -5074,7 +5074,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-browser",
-          "line": 446,
+          "line": 481,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-browser/src/lib.rs"
         },
@@ -5404,8 +5404,8 @@
       "test_ids": []
     }
   ],
-  "rust_backend_sha256": "ea0c156aeffd93f957fc9c971df5abc9fd3a26667fdd4889ebae81a6b437cc9f",
-  "rust_catalog_sha256": "d61bc242461984ef7b5549b25b1afeefdd83bfe1e6d0b117da9379e1a4109d78",
+  "rust_backend_sha256": "38eddde7210d1cc4830b5f0ab7e64c2edcc4b90b0903729acdf65b2ab9e4230b",
+  "rust_catalog_sha256": "e0eebf4fc8388e22903f11a0963b0bdd09b6dd6f91f3f1b5972b1fd35fbbca3c",
   "schema_version": 1,
   "unrecognized_executor_action_branches": [],
   "upstream_sha": "95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0"

@@ -1387,6 +1387,66 @@ impl BrowserPage {
         outcome
     }
 
+    /// Playwright-style `page.evaluate(expression, arg)`: a function
+    /// expression is invoked with `arg`, other expressions are evaluated;
+    /// promises are awaited and the JSON value is returned (`undefined` →
+    /// `null`). `isolated` runs in the utility world (same DOM, separate JS
+    /// globals); otherwise in the page's main world, reached through
+    /// `DOM.resolveNode` so `Runtime.enable` is still never sent.
+    pub async fn evaluate_expression(
+        &self,
+        expression: &str,
+        arg: Option<&Value>,
+        isolated: bool,
+    ) -> Result<Value, BrowserError> {
+        const FUNCTION: &str = r#"async function(expression, arg) {
+            let source = expression.trim();
+            if (/^(async)?\s*function(\s|\()/.test(source)) source = '(' + source + ')';
+            let result = (0, eval)(source);
+            if (typeof result === 'function') result = result(arg);
+            result = await result;
+            return result === undefined ? null : result;
+        }"#;
+        let arguments =
+            json!([{"value": expression}, {"value": arg.cloned().unwrap_or(Value::Null)}]);
+        let mut params = json!({"functionDeclaration": FUNCTION, "arguments": arguments,
+            "returnByValue": true, "awaitPromise": true});
+        if isolated {
+            params["executionContextId"] = json!(self.utility_world().await?);
+        } else {
+            let document = self.raw("DOM.getDocument", json!({"depth": 0})).await?;
+            let node = document
+                .pointer("/root/nodeId")
+                .and_then(Value::as_u64)
+                .ok_or_else(|| BrowserError::Protocol("DOM root node missing".into()))?;
+            let resolved = self
+                .raw(
+                    "DOM.resolveNode",
+                    json!({"nodeId": node, "objectGroup": OBJECT_GROUP}),
+                )
+                .await?;
+            params["objectId"] = resolved
+                .pointer("/object/objectId")
+                .cloned()
+                .ok_or_else(|| BrowserError::Protocol("document object unavailable".into()))?;
+        }
+        let result = self.raw("Runtime.callFunctionOn", params).await;
+        if !isolated {
+            self.release_objects().await;
+        }
+        let result = result?;
+        if let Some(details) = result.get("exceptionDetails") {
+            return Err(BrowserError::InvalidArgument(js_error(details)));
+        }
+        let remote = result.get("result").cloned().unwrap_or(Value::Null);
+        if let Some(unserializable) = remote.get("unserializableValue").and_then(Value::as_str) {
+            return Err(BrowserError::InvalidArgument(format!(
+                "Result is not JSON-compatible: {unserializable}"
+            )));
+        }
+        Ok(remote.get("value").cloned().unwrap_or(Value::Null))
+    }
+
     /// Playwright `aria_snapshot(mode="ai")` of the page body or of the one
     /// element matching `selector` (strict). Refs (`e1`, `e2`, ...) become
     /// valid `aria-ref=<ref>` targets until the next snapshot. Content of

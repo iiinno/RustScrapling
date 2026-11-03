@@ -204,7 +204,10 @@ impl RuntimeBackend {
 
     async fn session(&self, id: &str) -> Result<Arc<Mutex<Session>>, BackendError> {
         self.sessions.lock().await.get(id).cloned().ok_or_else(|| {
-            BackendError::new("session_not_found", format!("Session '{id}' is not open"))
+            BackendError::new(
+                "session_not_found",
+                format!("Session '{id}' not found. Use list_sessions to see active sessions."),
+            )
         })
     }
     async fn add_session(
@@ -224,13 +227,14 @@ impl RuntimeBackend {
         if sessions.contains_key(&id) {
             return Err(BackendError::new(
                 "duplicate_session",
-                format!("Session '{id}' already exists"),
+                format!("Session '{id}' already exists. Use a different ID or close the existing session first."),
             ));
         }
         sessions.insert(
             id.clone(),
             Arc::new(Mutex::new(Session {
-                created_at: chrono::Utc::now().to_rfc3339(),
+                created_at: chrono::Utc::now()
+                    .to_rfc3339_opts(chrono::SecondsFormat::Micros, false),
                 settings,
                 engine,
             })),
@@ -251,15 +255,23 @@ impl RuntimeBackend {
             results.push(json!({"session_id":id,"session_type":match s.engine {Engine::Http(_) => "static", _ => "stealthy"},
                 "created_at":s.created_at,"is_alive":true,"settings":s.settings}));
         }
-        results.sort_by(|a, b| a["session_id"].as_str().cmp(&b["session_id"].as_str()));
-        Ok(structured(json!(results)))
+        // Upstream lists sessions in creation order and wraps the list as
+        // `{"result": [...]}` (its declared outputSchema).
+        results.sort_by(|a, b| {
+            (a["created_at"].as_str(), a["session_id"].as_str())
+                .cmp(&(b["created_at"].as_str(), b["session_id"].as_str()))
+        });
+        Ok(structured(json!({ "result": results })))
     }
     async fn close_session(&self, args: &Map<String, Value>) -> Outcome {
         let id = required(args, "session_id")?;
         let mut sessions = self.sessions.lock().await;
-        let entry = sessions
-            .get(id)
-            .ok_or_else(|| BackendError::new("session_not_found", "No session with this ID"))?;
+        let entry = sessions.get(id).ok_or_else(|| {
+            BackendError::new(
+                "session_not_found",
+                format!("Session '{id}' not found. Use list_sessions to see active sessions."),
+            )
+        })?;
         if Arc::strong_count(entry) > 1 {
             return Err(BackendError::new(
                 "session_busy",
@@ -277,7 +289,7 @@ impl RuntimeBackend {
             closed?;
         }
         Ok(structured(
-            json!({"session_id":id,"message":"Session closed"}),
+            json!({"session_id":id,"message":format!("Session '{id}' closed successfully.")}),
         ))
     }
 
@@ -692,10 +704,9 @@ impl RuntimeBackend {
         Ok(text(chunks.concat()))
     }
     async fn browser_evaluate(&self, args: &Map<String, Value>) -> Outcome {
-        reject_some(args, "arg")?;
-        if opt_bool(args, "isolated_context", true)? {
-            return Err(BackendError::unsupported("isolated_context=true"));
-        }
+        let expression = required(args, "expression")?;
+        let arg = args.get("arg").filter(|value| !value.is_null());
+        let isolated = opt_bool(args, "isolated_context", true)?;
         let s = self.session(required(args, "session_id")?).await?;
         let s = s.lock().await;
         let Engine::Browser { page, last_url, .. } = &s.engine else {
@@ -707,7 +718,8 @@ impl RuntimeBackend {
         if last_url.is_none() {
             return Err(BackendError::new("no_page", "Call browser_fetch first"));
         }
-        let value = page.evaluate(required(args, "expression")?).await?;
+        let value = page.evaluate_expression(expression, arg, isolated).await?;
+        // Upstream: json.dumps(..., ensure_ascii=False, separators=(",", ":")).
         Ok(text(value.to_string()))
     }
     async fn browser_actions(&self, args: &Map<String, Value>) -> Outcome {
@@ -922,12 +934,7 @@ impl RuntimeBackend {
             .iter()
             .filter(|entry| entry.id > after && matches(&entry.record))
             .take(limit)
-            .map(|entry| {
-                json!({
-                    "id":entry.id,"url":entry.record.url,"status":entry.record.status,
-                    "resource_type":entry.record.resource_type
-                })
-            })
+            .map(|entry| network_info(entry.id, &entry.record))
             .collect();
         let next = filtered
             .last()
@@ -962,28 +969,42 @@ impl RuntimeBackend {
         let record = network.get(id).ok_or_else(|| {
             BackendError::new("not_found", "Network record was evicted or does not exist")
         })?;
+        // Upstream NetworkRequestModel: {request_id, part, data, note}.
+        let (data, note) = match part {
+            "summary" => (network_info(id, record), Value::Null),
+            "response_headers" => (
+                json!(record.headers),
+                // Only allow-listed, non-credential headers are recorded.
+                json!("Headers are partial; full headers unavailable."),
+            ),
+            "response_body" => match &record.body {
+                Some(body) => (json!(body), Value::Null),
+                None => (
+                    Value::Null,
+                    json!("Body not captured (unsupported, binary, oversized, sensitive or unavailable)."),
+                ),
+            },
+            _ => unreachable!("part validated above"),
+        };
         match part {
-            "summary" => Ok(structured(
-                json!({"id":id,"url":record.url,"status":record.status,
-                    "resource_type":record.resource_type,"failed":record.failed,
-                    "mime_type":record.mime_type,"body_available":record.body.is_some()}),
+            "summary" | "response_headers" | "response_body" => Ok(structured(
+                json!({"request_id":id,"part":part,"data":data,"note":note}),
             )),
-            "response_headers" => Ok(structured(
-                json!({"id":id,"part":part,"headers":record.headers}),
-            )),
-            "response_body" => Ok(structured(json!({
-                "id":id,"part":part,"available":record.body.is_some(),
-                "body":record.body,"mime_type":record.mime_type,
-                "size_bytes":record.body.as_ref().map(String::len),
-                "note":if record.body.is_some() {
-                    "Text body captured by CDP with conservative credential redaction"
-                } else {
-                    "Body not captured (unsupported, binary, oversized, sensitive or unavailable)"
-                }
-            }))),
             _ => unreachable!("part validated above"),
         }
     }
+}
+
+/// Upstream `NetworkRequestInfo`: Playwright-style lowercase resource type
+/// and an integer status (0 when the CDP layer saw no HTTP status).
+fn network_info(id: u64, record: &NetworkRecord) -> Value {
+    json!({
+        "id": id,
+        "url": record.url,
+        "method": record.method.as_deref().unwrap_or("GET"),
+        "resource_type": record.resource_type.as_deref().unwrap_or("other").to_ascii_lowercase(),
+        "status": record.status.unwrap_or(0),
+    })
 }
 
 /// State is a credential-bearing file. MCP callers can address only a safe
@@ -1540,6 +1561,7 @@ mod network_tests {
 
     fn record(index: usize, body: Option<String>) -> NetworkRecord {
         NetworkRecord {
+            method: Some("GET".into()),
             url: format!("https://example.test/api/{index}"),
             status: Some(200),
             resource_type: Some("XHR".into()),

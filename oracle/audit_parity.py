@@ -140,12 +140,40 @@ def compare_args(source_parameters: list[dict], schema: dict) -> dict:
     }
 
 
+def inline_refs(schema, root=None, depth: int = 0):
+    """Return `schema` with local `#/$defs/...` references inlined.
+
+    Pydantic emits shared definitions under `$defs`; sibling keywords next
+    to a `$ref` (e.g. `default`) override the referenced definition.
+    """
+    root = schema if root is None else root
+    if depth > 32:
+        raise ValueError("Schema $ref nesting is too deep or cyclic")
+    if isinstance(schema, list):
+        return [inline_refs(item, root, depth + 1) for item in schema]
+    if not isinstance(schema, dict):
+        return schema
+    result = {}
+    reference = schema.get("$ref")
+    if isinstance(reference, str) and reference.startswith("#/"):
+        target = root
+        for part in reference[2:].split("/"):
+            target = target[part]
+        result.update(inline_refs(target, root, depth + 1))
+    for key, value in schema.items():
+        if key in {"$ref", "$defs"}:
+            continue
+        result[key] = inline_refs(value, root, depth + 1)
+    return result
+
+
 def action_schema(schema: dict) -> dict[str, dict]:
+    schema = inline_refs(schema)
     actions = schema.get("properties", {}).get("actions", {}).get("items", {}).get("oneOf", [])
     found = {}
     for variant in actions:
         prop = variant.get("properties", {}).get("type", {})
-        labels = prop.get("enum", [])
+        labels = prop.get("enum", [prop["const"]] if "const" in prop else [])
         if len(labels) != 1 or labels[0] in found:
             raise ValueError("Rust action has ambiguous or duplicate type discriminator")
         found[labels[0]] = variant
@@ -225,7 +253,7 @@ def audit(api: dict, mcp: dict, rust_catalog: list[dict], catalog_bytes: bytes, 
     mcp_rows = []
     for source_tool in mcp["tools"]:
         rust = tools.get(source_tool["name"])
-        args = compare_args(source_tool["parameters"], rust.get("inputSchema", {}) if rust else {})
+        args = compare_args(source_tool["parameters"], inline_refs(rust.get("inputSchema", {})) if rust else {})
         row = {
             "name": source_tool["name"], "upstream_source": source_tool["source"],
             "upstream_line": source_tool["line"], "upstream_registration_line": source_tool["registration_line"],

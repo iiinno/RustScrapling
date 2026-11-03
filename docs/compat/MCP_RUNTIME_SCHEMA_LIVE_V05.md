@@ -13,17 +13,19 @@ the fixed upstream checkout. The full, unnormalized path-by-path result is
 | Upstream tool count | 16 |
 | Rust `tools.json` tool count | 16 |
 | Missing/extra tool names | 0 / 0 |
-| Tools with differing wire catalog fields | **16** |
-| Individual strict JSON Pointer differences | **348** |
+| Tools with differing wire catalog fields | **0** (was 16 before `tools.json` adopted the live catalog) |
+| Individual strict JSON Pointer differences | **0** (was 348) |
 
-Tool `name`, top-level `title`, and top-level `description` all agree. The 348
-entries are in `inputSchema`, `outputSchema`, or `annotations`. In particular,
-the upstream SDK exposes Pydantic `$defs`, `$ref`, `const`, and auto-generated
-`title` fields while the current Rust catalog often inlines schemas. Such
-representational differences account for many entries; the raw count is **not**
-the number of incompatible tool calls. Missing output schemas and annotation
-metadata are counted separately, and potential actual constraint mismatches
-still require semantic follow-up. No Rust executor behavior is established.
+**Update (後継セッション):** the original capture found 348 structural
+differences (Pydantic `$defs`/`$ref`/`const`/`title`, missing `outputSchema`
+and annotation metadata) while names, titles and descriptions already agreed.
+`crates/rustscrapling-mcp/src/tools.json` now stores the pinned upstream live
+`tools/list` entries verbatim, the Rust validator resolves local `$ref`/`$defs`,
+`const`, discriminated `oneOf` and exclusive bounds, and every structured tool
+result is checked against the advertised `outputSchema` before it is sent. The
+re-captured report (Linux, Python 3.13.18, MCP SDK 2.3.0) is an exact match and
+the oracle exits 0. Wire-schema equality still says nothing about executor
+behaviour; that is covered by the separate runtime/E2E tests.
 
 ## Reproduce
 

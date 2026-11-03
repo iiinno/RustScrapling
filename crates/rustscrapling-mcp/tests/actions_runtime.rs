@@ -107,6 +107,7 @@ const PAGE: &str = r#"<!doctype html><html><body>
 <select id="color"><option>Red</option><option>Blue</option></select>
 <button id="go" onclick="document.title = 'clicked ' + event.detail">Go</button>
 <button id="ask" onclick="document.body.dataset.answer = prompt('name?')">Ask</button>
+<script>window.__pageVar = 'main';</script>
 </body></html>"#;
 
 #[tokio::test(flavor = "multi_thread")]
@@ -191,6 +192,40 @@ async fn browser_actions_chain_on_real_chrome_if_available() {
         "{}",
         text(&failed)
     );
+    // Playwright evaluate semantics in both worlds, without Runtime.enable.
+    for (args, expected) in [
+        (json!({"expression":"(a) => a.x * 2","arg":{"x":21}}), "42"),
+        (
+            json!({"expression":"window.__pageVar","isolated_context":false}),
+            "\"main\"",
+        ),
+        (json!({"expression":"window.__pageVar"}), "null"),
+        (
+            json!({"expression":"async () => ({b: 'é', a: [1, 2.5]})"}),
+            "{\"b\":\"é\",\"a\":[1,2.5]}",
+        ),
+        (
+            json!({"expression":"  function () { return document.title }  ","isolated_context":false}),
+            "\"clicked 2\"",
+        ),
+    ] {
+        let mut args = args.as_object().unwrap().clone();
+        args.insert("session_id".into(), json!("actions"));
+        let result = handler
+            .execute_tool("browser_evaluate", args.clone())
+            .await
+            .unwrap();
+        assert_eq!(result.is_error, Some(false), "{args:?}: {result:?}");
+        assert_eq!(text(&result), expected, "{args:?}");
+    }
+    let thrown = call(
+        &handler,
+        "browser_evaluate",
+        json!({"session_id":"actions","expression":"() => { throw new Error('boom') }"}),
+    )
+    .await;
+    assert_eq!(thrown.is_error, Some(true));
+    assert!(text(&thrown).contains("boom"), "{}", text(&thrown));
     // ARIA snapshot (default extraction), refs as action and screenshot targets.
     let snapshot = call(&handler, "browser_extract", json!({"session_id":"actions"})).await;
     assert_eq!(snapshot.is_error, Some(false), "{snapshot:?}");

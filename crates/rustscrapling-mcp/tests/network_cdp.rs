@@ -161,8 +161,10 @@ async fn response_bodies_are_redacted_and_ids_survive_evictions() {
         }),
     )
     .await;
-    assert_eq!(content(&document_body)["available"], false);
-    assert!(content(&document_body)["body"].is_null());
+    // Upstream NetworkRequestModel shape: data=null plus an availability note.
+    assert_eq!(content(&document_body)["part"], "response_body");
+    assert!(content(&document_body)["data"].is_null());
+    assert!(content(&document_body)["note"].is_string());
     let second = call(
         &mcp,
         "browser_network_requests",
@@ -191,8 +193,8 @@ async fn response_bodies_are_redacted_and_ids_survive_evictions() {
     )
     .await;
     assert_eq!(response.is_error, Some(false), "{response:?}");
-    assert_eq!(content(&response)["available"], true);
-    let body = content(&response)["body"].as_str().unwrap();
+    assert_eq!(content(&response)["request_id"], first_id);
+    let body = content(&response)["data"].as_str().unwrap();
     assert!(body.contains("visible-xhr-1"));
     assert!(body.contains("[REDACTED]"));
     assert!(!body.contains("sensitive-token"));
@@ -205,8 +207,12 @@ async fn response_bodies_are_redacted_and_ids_survive_evictions() {
         }),
     )
     .await;
-    assert_eq!(content(&summary)["url"], "http://example.test/api/1");
-    assert_eq!(content(&summary)["body_available"], true);
+    assert_eq!(
+        content(&summary)["data"]["url"],
+        "http://example.test/api/1"
+    );
+    assert_eq!(content(&summary)["data"]["resource_type"], "xhr");
+    assert_eq!(content(&summary)["data"]["id"], first_id);
     let headers = call(
         &mcp,
         "browser_network_request",

@@ -122,15 +122,20 @@ class ToolComparisonTests(unittest.TestCase):
         self.assertEqual(report["upstream_sha"], UPSTREAM_SHA)
         self.assertEqual(report["mcp_sdk_version"], "2.3.0")
         self.assertEqual(report["source_file"], "scrapling/__init__.py")
-        self.assertEqual(report["status"], "mismatch")
+        # Since the Rust catalog adopted the live upstream tools/list verbatim,
+        # the strict wire comparison is an exact match.
+        self.assertEqual(report["status"], "match")
         self.assertEqual((report["upstream_count"], report["rust_count"]), (16, 16))
         self.assertEqual(report["missing_in_rust"], [])
         self.assertEqual(report["extra_in_rust"], [])
         self.assertEqual(report["differing_tools"], len(report["differences"]))
         self.assertEqual(report["difference_count"],
                          sum(len(changes) for changes in report["differences"].values()))
-        self.assertEqual(report["difference_count"], 348)
-        self.assertEqual(len(report["rust_catalog_sha256"]), 64)
+        self.assertEqual(report["difference_count"], 0)
+        self.assertEqual(report["differences"], {})
+        catalog = (ROOT / "crates/rustscrapling-mcp/src/tools.json").read_bytes()
+        self.assertEqual(report["rust_catalog_sha256"], hashlib.sha256(catalog).hexdigest(),
+                         "regenerate the live report after changing tools.json")
 
     def test_upstream_provenance_guard_rejects_missing_checkout(self) -> None:
         fake_checkout = ROOT / "tests"  # Exists but does not have upstream source
