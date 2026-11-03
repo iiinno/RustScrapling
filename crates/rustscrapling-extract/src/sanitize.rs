@@ -258,7 +258,9 @@ fn escape_html(text: &str) -> String {
 /// original page supplied them as attributes or entity-escaped values.
 pub(crate) fn safe_url(raw: &str, page_url: Option<&str>) -> Option<String> {
     let raw = raw.trim();
-    if raw.is_empty() || raw.chars().any(|c| c.is_control()) {
+    // Browsers normalize backslashes into separators for special schemes.
+    // Do not let a seemingly relative URL turn into an authority-bearing URL.
+    if raw.is_empty() || raw.chars().any(|c| c.is_control() || c == '\\') {
         return None;
     }
     if let Ok(parsed) = Url::parse(raw) {
@@ -267,9 +269,18 @@ pub(crate) fn safe_url(raw: &str, page_url: Option<&str>) -> Option<String> {
             && parsed.password().is_none())
         .then(|| parsed.to_string());
     }
+    // A protocol-relative reference is an absolute authority URL in a browser.
+    // When there is no trusted page_url, the generic relative-reference path
+    // below would otherwise preserve embedded credentials verbatim.
+    if raw.starts_with("//") {
+        let authority = Url::parse(&format!("https:{raw}")).ok()?;
+        if !authority.username().is_empty() || authority.password().is_some() {
+            return None;
+        }
+    }
     // A colon preceding a slash/query/fragment denotes an unsupported scheme.
     let first_part = raw.split(['/', '?', '#']).next().unwrap_or_default();
-    if first_part.contains(':') || raw.starts_with('\\') {
+    if first_part.contains(':') {
         return None;
     }
     if let Some(base) = page_url.and_then(|url| Url::parse(url).ok()).filter(|b| {

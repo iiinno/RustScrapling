@@ -193,6 +193,38 @@ fn credential_bearing_urls_are_not_emitted_in_article_or_canonical_metadata() {
 }
 
 #[test]
+fn protocol_relative_credentials_and_backslash_authorities_are_rejected() {
+    let html = r##"<html><head>
+      <link rel="canonical" href="//alice:secret@news.example/story">
+      </head><body><article><h1>Safe links in the report</h1>
+      <p>This report keeps ordinary readable article content and its hyperlinks.</p>
+      <a href="//bob:password@bad.example/private">unsafe anchor</a>
+      <img src="//carol:token@bad.example/track.png" alt="unsafe image">
+      <a href="/\dave:pass@bad.example/private">ambiguous anchor</a>
+      <a href="//cdn.example/reading">ordinary external link</a>
+      </article></body></html>"##;
+    for page_url in [None, Some("https://news.example/current")] {
+        let output = extract(
+            html,
+            ExtractOptions {
+                page_url,
+                query: None,
+            },
+        )
+        .unwrap();
+        assert_eq!(output.metadata.canonical_url.as_deref(), page_url);
+        assert!(output.text.contains("ordinary readable article content"));
+        assert!(output.text.contains("unsafe anchor"));
+        assert!(output.html.contains("ordinary external link"));
+        for content in [&output.html, &output.markdown] {
+            for secret in ["alice:secret", "bob:password", "carol:token", "dave:pass"] {
+                assert!(!content.contains(secret), "credential leaked: {secret}");
+            }
+        }
+    }
+}
+
+#[test]
 fn schema_graph_resolves_author_references_and_full_type_urls() {
     let output = extract(
         r##"<html><head><script type="application/ld+json">
