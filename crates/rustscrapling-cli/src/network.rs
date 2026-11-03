@@ -472,7 +472,7 @@ fn emit_output(
                     .max()
                     .unwrap_or(0);
                 while low < high {
-                    let mid = low + (high - low + 1) / 2;
+                    let mid = low + (high - low).div_ceil(2);
                     let mut probe = document.clone();
                     shrink_contents(&mut probe, &originals, mid);
                     if format_document(&probe, options.format)?.chars().count() <= limit {

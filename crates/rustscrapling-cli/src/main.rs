@@ -378,7 +378,7 @@ fn output_results(
             let mut low = 0;
             let mut high = items.len();
             while low < high {
-                let mid = low + (high - low + 1) / 2;
+                let mid = low + (high - low).div_ceil(2);
                 if render_items(command, parser, &items[..mid], true, opts.format)
                     .chars()
                     .count()
@@ -520,7 +520,7 @@ fn run() -> Result<(), String> {
             url,
         } => {
             let parser = if compat { "compat" } else { parser.as_str() };
-            let dom = load_dom(&target, &parser)?;
+            let dom = load_dom(&target, parser)?;
             let root = dom
                 .document_element()
                 .ok_or("document has no root element")?;
@@ -608,7 +608,7 @@ fn run() -> Result<(), String> {
             output,
         } => {
             let parser = if compat { "compat" } else { parser.as_str() };
-            let dom = load_dom(&target, &parser)?;
+            let dom = load_dom(&target, parser)?;
             let root = dom
                 .document_element()
                 .ok_or("document has no root element")?;
@@ -640,7 +640,7 @@ fn run() -> Result<(), String> {
             output,
         } => {
             let parser = if compat { "compat" } else { parser.as_str() };
-            let dom = load_dom(&target, &parser)?;
+            let dom = load_dom(&target, parser)?;
             let root = dom
                 .document_element()
                 .ok_or("document has no root element")?;

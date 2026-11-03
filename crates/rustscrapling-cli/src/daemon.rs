@@ -43,9 +43,10 @@ enum Action {
 }
 
 fn config(path: Option<PathBuf>) -> DaemonConfig {
-    let mut cfg = DaemonConfig::default();
-    cfg.state_file = path.unwrap_or_else(state_file);
-    cfg
+    DaemonConfig {
+        state_file: path.unwrap_or_else(state_file),
+        ..DaemonConfig::default()
+    }
 }
 
 pub(crate) fn state_file() -> PathBuf {
