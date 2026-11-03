@@ -1,0 +1,1796 @@
+{
+  "action_count": 12,
+  "actions": [
+    {
+      "class": "_MouseMove",
+      "fields": [
+        {
+          "annotation": "_Target",
+          "default": null,
+          "line": 41,
+          "name": "target",
+          "required": false
+        },
+        {
+          "annotation": "Optional[FiniteFloat]",
+          "default": null,
+          "line": 42,
+          "name": "x",
+          "required": false
+        },
+        {
+          "annotation": "Optional[FiniteFloat]",
+          "default": null,
+          "line": 43,
+          "name": "y",
+          "required": false
+        },
+        {
+          "annotation": "Annotated[NonNegativeFiniteFloat, Field(default=30000, description='Element timeout in ms; 0 disables it.')]",
+          "default": "30000",
+          "line": 44,
+          "name": "timeout",
+          "required": false
+        },
+        {
+          "annotation": "Literal['move']",
+          "default": null,
+          "line": 50,
+          "name": "type",
+          "required": true
+        },
+        {
+          "annotation": "NotRequired[Annotated[PositiveInt, Field(default=1, description='Mousemove events for coordinates only.')]]",
+          "default": "1",
+          "line": 51,
+          "name": "steps",
+          "required": false
+        }
+      ],
+      "line": 49,
+      "source": "scrapling/core/ai/_browser_actions.py",
+      "type": "move"
+    },
+    {
+      "class": "_MouseClick",
+      "fields": [
+        {
+          "annotation": "_Target",
+          "default": null,
+          "line": 41,
+          "name": "target",
+          "required": false
+        },
+        {
+          "annotation": "Optional[FiniteFloat]",
+          "default": null,
+          "line": 42,
+          "name": "x",
+          "required": false
+        },
+        {
+          "annotation": "Optional[FiniteFloat]",
+          "default": null,
+          "line": 43,
+          "name": "y",
+          "required": false
+        },
+        {
+          "annotation": "Annotated[NonNegativeFiniteFloat, Field(default=30000, description='Element timeout in ms; 0 disables it.')]",
+          "default": "30000",
+          "line": 44,
+          "name": "timeout",
+          "required": false
+        },
+        {
+          "annotation": "Literal['click']",
+          "default": null,
+          "line": 55,
+          "name": "type",
+          "required": true
+        },
+        {
+          "annotation": "NotRequired[Annotated[MouseButton, Field(default='left')]]",
+          "default": "'left'",
+          "line": 56,
+          "name": "button",
+          "required": false
+        },
+        {
+          "annotation": "NotRequired[Annotated[PositiveInt, Field(default=1, description='2 for a double-click.')]]",
+          "default": "1",
+          "line": 57,
+          "name": "click_count",
+          "required": false
+        },
+        {
+          "annotation": "NotRequired[Annotated[NonNegativeFiniteFloat, Field(default=0, description='Milliseconds between press and release.')]]",
+          "default": "0",
+          "line": 58,
+          "name": "delay",
+          "required": false
+        }
+      ],
+      "line": 54,
+      "source": "scrapling/core/ai/_browser_actions.py",
+      "type": "click"
+    },
+    {
+      "class": "_MouseWheel",
+      "fields": [
+        {
+          "annotation": "Literal['wheel']",
+          "default": null,
+          "line": 64,
+          "name": "type",
+          "required": true
+        },
+        {
+          "annotation": "NotRequired[Annotated[FiniteFloat, Field(default=0, description='Horizontal CSS pixels; positive scrolls right.')]]",
+          "default": "0",
+          "line": 65,
+          "name": "delta_x",
+          "required": false
+        },
+        {
+          "annotation": "NotRequired[Annotated[FiniteFloat, Field(default=0, description='Vertical CSS pixels; positive scrolls down.')]]",
+          "default": "0",
+          "line": 68,
+          "name": "delta_y",
+          "required": false
+        }
+      ],
+      "line": 63,
+      "source": "scrapling/core/ai/_browser_actions.py",
+      "type": "wheel"
+    },
+    {
+      "class": "_TextFormField",
+      "fields": [
+        {
+          "annotation": "_Target",
+          "default": null,
+          "line": 110,
+          "name": "target",
+          "required": false
+        },
+        {
+          "annotation": "Annotated[_FieldTimeout, Field(default=30000)]",
+          "default": "30000",
+          "line": 111,
+          "name": "timeout",
+          "required": false
+        },
+        {
+          "annotation": "Literal['textbox']",
+          "default": null,
+          "line": 115,
+          "name": "type",
+          "required": true
+        },
+        {
+          "annotation": "str",
+          "default": null,
+          "line": 116,
+          "name": "value",
+          "required": true
+        },
+        {
+          "annotation": "NotRequired[Annotated[bool, Field(default=True, description='False types at the current caret or selection.')]]",
+          "default": "True",
+          "line": 117,
+          "name": "clear",
+          "required": false
+        }
+      ],
+      "line": 114,
+      "source": "scrapling/core/ai/_browser_actions.py",
+      "type": "textbox"
+    },
+    {
+      "class": "_CheckboxFormField",
+      "fields": [
+        {
+          "annotation": "_Target",
+          "default": null,
+          "line": 110,
+          "name": "target",
+          "required": false
+        },
+        {
+          "annotation": "Annotated[_FieldTimeout, Field(default=30000)]",
+          "default": "30000",
+          "line": 111,
+          "name": "timeout",
+          "required": false
+        },
+        {
+          "annotation": "Literal['checkbox']",
+          "default": null,
+          "line": 123,
+          "name": "type",
+          "required": true
+        },
+        {
+          "annotation": "bool",
+          "default": null,
+          "line": 124,
+          "name": "value",
+          "required": true
+        }
+      ],
+      "line": 122,
+      "source": "scrapling/core/ai/_browser_actions.py",
+      "type": "checkbox"
+    },
+    {
+      "class": "_RadioFormField",
+      "fields": [
+        {
+          "annotation": "_Target",
+          "default": null,
+          "line": 110,
+          "name": "target",
+          "required": false
+        },
+        {
+          "annotation": "Annotated[_FieldTimeout, Field(default=30000)]",
+          "default": "30000",
+          "line": 111,
+          "name": "timeout",
+          "required": false
+        },
+        {
+          "annotation": "Literal['radio']",
+          "default": null,
+          "line": 128,
+          "name": "type",
+          "required": true
+        },
+        {
+          "annotation": "Literal[True]",
+          "default": null,
+          "line": 129,
+          "name": "value",
+          "required": true
+        }
+      ],
+      "line": 127,
+      "source": "scrapling/core/ai/_browser_actions.py",
+      "type": "radio"
+    },
+    {
+      "class": "_SelectFormField",
+      "fields": [
+        {
+          "annotation": "_Target",
+          "default": null,
+          "line": 110,
+          "name": "target",
+          "required": false
+        },
+        {
+          "annotation": "Annotated[_FieldTimeout, Field(default=30000)]",
+          "default": "30000",
+          "line": 111,
+          "name": "timeout",
+          "required": false
+        },
+        {
+          "annotation": "Literal['combobox']",
+          "default": null,
+          "line": 133,
+          "name": "type",
+          "required": true
+        },
+        {
+          "annotation": "Annotated[Union[str, List[str]], Field(description='Option label(s); [] clears selection.')]",
+          "default": null,
+          "line": 134,
+          "name": "value",
+          "required": true
+        }
+      ],
+      "line": 132,
+      "source": "scrapling/core/ai/_browser_actions.py",
+      "type": "combobox"
+    },
+    {
+      "class": "_KeyPress",
+      "fields": [
+        {
+          "annotation": "Literal['press_key']",
+          "default": null,
+          "line": 97,
+          "name": "type",
+          "required": true
+        },
+        {
+          "annotation": "Annotated[NonEmptyString, Field(description='Key or shortcut at current focus, e.g. Enter or ControlOrMeta+A.')]",
+          "default": null,
+          "line": 98,
+          "name": "key",
+          "required": true
+        }
+      ],
+      "line": 96,
+      "source": "scrapling/core/ai/_browser_actions.py",
+      "type": "press_key"
+    },
+    {
+      "class": "_DialogAction",
+      "fields": [
+        {
+          "annotation": "Literal['dialog']",
+          "default": null,
+          "line": 104,
+          "name": "type",
+          "required": true
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Queue one reply before its trigger; unused replies expire at call end.')]",
+          "default": null,
+          "line": 105,
+          "name": "accept",
+          "required": true
+        },
+        {
+          "annotation": "NotRequired[Annotated[str, Field(description='Text for an accepted prompt; omitted means empty.')]]",
+          "default": null,
+          "line": 106,
+          "name": "prompt_text",
+          "required": false
+        }
+      ],
+      "line": 103,
+      "source": "scrapling/core/ai/_browser_actions.py",
+      "type": "dialog"
+    },
+    {
+      "class": "_TimeWait",
+      "fields": [
+        {
+          "annotation": "Literal['wait_time']",
+          "default": null,
+          "line": 74,
+          "name": "type",
+          "required": true
+        },
+        {
+          "annotation": "NonNegativeFiniteFloat",
+          "default": null,
+          "line": 75,
+          "name": "milliseconds",
+          "required": true
+        }
+      ],
+      "line": 73,
+      "source": "scrapling/core/ai/_browser_actions.py",
+      "type": "wait_time"
+    },
+    {
+      "class": "_ElementWait",
+      "fields": [
+        {
+          "annotation": "Annotated[NonNegativeFiniteFloat, Field(default=30000, description='Wait limit in ms; 0 disables it.')]",
+          "default": "30000",
+          "line": 79,
+          "name": "timeout",
+          "required": false
+        },
+        {
+          "annotation": "Literal['wait_element']",
+          "default": null,
+          "line": 83,
+          "name": "type",
+          "required": true
+        },
+        {
+          "annotation": "Annotated[NonEmptyString, Field(description='Playwright selector or aria-ref=<ref> for one element.')]",
+          "default": null,
+          "line": 84,
+          "name": "target",
+          "required": true
+        },
+        {
+          "annotation": "NotRequired[Annotated[SelectorWaitStates, Field(default='visible', description='Hidden includes removal.')]]",
+          "default": "'visible'",
+          "line": 85,
+          "name": "state",
+          "required": false
+        }
+      ],
+      "line": 82,
+      "source": "scrapling/core/ai/_browser_actions.py",
+      "type": "wait_element"
+    },
+    {
+      "class": "_LoadWait",
+      "fields": [
+        {
+          "annotation": "Annotated[NonNegativeFiniteFloat, Field(default=30000, description='Wait limit in ms; 0 disables it.')]",
+          "default": "30000",
+          "line": 79,
+          "name": "timeout",
+          "required": false
+        },
+        {
+          "annotation": "Literal['wait_load']",
+          "default": null,
+          "line": 89,
+          "name": "type",
+          "required": true
+        },
+        {
+          "annotation": "Annotated[Literal['domcontentloaded', 'load', 'networkidle'], Field(description='Current document readiness; networkidle waits for 500 ms without active connections.')]",
+          "default": null,
+          "line": 90,
+          "name": "state",
+          "required": true
+        }
+      ],
+      "line": 88,
+      "source": "scrapling/core/ai/_browser_actions.py",
+      "type": "wait_load"
+    }
+  ],
+  "schema_version": 1,
+  "tool_count": 16,
+  "tools": [
+    {
+      "decorators": [],
+      "doc_sha256": "cb50bf7e2598d527c0dbef7b7b102b77bcc321e8a48a03269079512edf1cbbb5",
+      "doc_summary": "Open a reusable stealthy browser session. Pass per-request options to `browser_fetch`.",
+      "id": "ScraplingMCPServer.browser_open",
+      "kind": "async",
+      "line": 266,
+      "name": "browser_open",
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='Custom ID; a random 12-character hex ID if omitted.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "session_id"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Hide the browser window.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "headless"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Use locally installed Chrome.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "real_chrome"
+        },
+        {
+          "annotation": "Annotated[str | None, Field(description='Browser timezone; uses the system timezone if omitted.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "timezone_id"
+        },
+        {
+          "annotation": "Annotated[str | None, Field(description='Browser language, Accept-Language, and formatting locale; system default if omitted.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "locale"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='User-Agent override; otherwise generated in headless mode, native in headful mode.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "useragent"
+        },
+        {
+          "annotation": "Annotated[Optional[str | Dict[str, str]], Field(description='Proxy URL, or dictionary with server and optional username/password.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "proxy"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "cdp_url"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='Absolute Chromium-compatible executable path; overrides the server default.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "executable_path"
+        },
+        {
+          "annotation": "Annotated[Sequence[SetCookieParam] | None, Field(description='Initial cookies as Playwright cookie dictionaries.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "cookies"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Add noise to canvas operations.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "hide_canvas"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Disable non-proxied WebRTC UDP to reduce IP leaks.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "block_webrtc"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Enable WebGL; disabling it can trigger bot detection.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "allow_webgl"
+        },
+        {
+          "annotation": "Annotated[Optional[Dict], Field(description='Browser context options that override Scrapling settings.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "additional_args"
+        }
+      ],
+      "registration_line": 1005,
+      "returns": "SessionCreatedModel",
+      "signature": "self, session_id: Annotated[Optional[str], Field(description='Custom ID; a random 12-character hex ID if omitted.')]=None, headless: Annotated[bool, Field(description='Hide the browser window.')]=True, real_chrome: Annotated[bool, Field(description='Use locally installed Chrome.')]=False, timezone_id: Annotated[str | None, Field(description='Browser timezone; uses the system timezone if omitted.')]=None, locale: Annotated[str | None, Field(description='Browser language, Accept-Language, and formatting locale; system default if omitted.')]=None, useragent: Annotated[Optional[str], Field(description='User-Agent override; otherwise generated in headless mode, native in headful mode.')]=None, proxy: Annotated[Optional[str | Dict[str, str]], Field(description='Proxy URL, or dictionary with server and optional username/password.')]=None, cdp_url: Annotated[Optional[str], Field(description='Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply.')]=None, executable_path: Annotated[Optional[str], Field(description='Absolute Chromium-compatible executable path; overrides the server default.')]=None, cookies: Annotated[Sequence[SetCookieParam] | None, Field(description='Initial cookies as Playwright cookie dictionaries.')]=None, hide_canvas: Annotated[bool, Field(description='Add noise to canvas operations.')]=False, block_webrtc: Annotated[bool, Field(description='Disable non-proxied WebRTC UDP to reduce IP leaks.')]=False, allow_webgl: Annotated[bool, Field(description='Enable WebGL; disabling it can trigger bot detection.')]=True, additional_args: Annotated[Optional[Dict], Field(description='Browser context options that override Scrapling settings.')]=None",
+      "source": "scrapling/core/ai/server.py",
+      "structured_output": true,
+      "tool_description": "Open a reusable stealthy browser session. Pass per-request options to `browser_fetch`.",
+      "tool_title": "Open browser"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "bc06df35e33955c90e377e7674834603a13ea62fef152e3866e9b48db9ea4e23",
+      "doc_summary": "Save browser cookies, local storage and IndexedDB as Playwright-compatible JSON. Excludes sessionStorage.",
+      "id": "ScraplingMCPServer.browser_save_state",
+      "kind": "async",
+      "line": 330,
+      "name": "browser_save_state",
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        },
+        {
+          "annotation": "Annotated[str, Field(description='ID from `browser_open`; no page fetch required.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "session_id"
+        },
+        {
+          "annotation": "Annotated[NonEmptyString, Field(description='File on the MCP server host; relative to its working directory. Overwrites the file; parent must exist.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "path"
+        }
+      ],
+      "registration_line": 1011,
+      "returns": "str",
+      "signature": "self, session_id: Annotated[str, Field(description='ID from `browser_open`; no page fetch required.')], path: Annotated[NonEmptyString, Field(description='File on the MCP server host; relative to its working directory. Overwrites the file; parent must exist.')]",
+      "source": "scrapling/core/ai/server.py",
+      "structured_output": false,
+      "tool_description": "Save browser cookies, local storage and IndexedDB as Playwright-compatible JSON. Excludes sessionStorage.",
+      "tool_title": "Save browser state"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "6c5a91cba1305d78685449b454421ade311121a19e5c5ec2640925af2df38a5b",
+      "doc_summary": "Replace browser cookies, local storage and IndexedDB from a Playwright-compatible JSON file.",
+      "id": "ScraplingMCPServer.browser_load_state",
+      "kind": "async",
+      "line": 344,
+      "name": "browser_load_state",
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        },
+        {
+          "annotation": "Annotated[str, Field(description='ID from `browser_open`; no page fetch required.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "session_id"
+        },
+        {
+          "annotation": "Annotated[NonEmptyString, Field(description='File on the MCP server host; relative to its working directory.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "path"
+        }
+      ],
+      "registration_line": 1017,
+      "returns": "str",
+      "signature": "self, session_id: Annotated[str, Field(description='ID from `browser_open`; no page fetch required.')], path: Annotated[NonEmptyString, Field(description='File on the MCP server host; relative to its working directory.')]",
+      "source": "scrapling/core/ai/server.py",
+      "structured_output": false,
+      "tool_description": "Replace browser cookies, local storage and IndexedDB from a Playwright-compatible JSON file.\n\nLeaves sessionStorage and open tabs unchanged. Fetch or reload pages to use the restored login.",
+      "tool_title": "Load browser state"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "2b5318ce2dad2f0c66454801f679b3855bc753cd052c4dd5f51126e4803828d5",
+      "doc_summary": "Open a reusable HTTP session for `session_make_request`, keeping cookies, connections, and request settings.",
+      "id": "ScraplingMCPServer.open_request_session",
+      "kind": "async",
+      "line": 357,
+      "name": "open_request_session",
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='Custom ID; a random 12-character hex ID if omitted.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "session_id"
+        },
+        {
+          "annotation": "Annotated[_MCPImpersonateType, Field(description='Browser/version to impersonate; \"chrome\" uses the latest supported Chrome profile. Lists pick randomly per attempt; None disables impersonation.')]",
+          "default": "'chrome'",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "impersonate"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='Proxy URL for all session requests, optionally including credentials.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "proxy"
+        }
+      ],
+      "registration_line": 1023,
+      "returns": "SessionCreatedModel",
+      "signature": "self, session_id: Annotated[Optional[str], Field(description='Custom ID; a random 12-character hex ID if omitted.')]=None, impersonate: Annotated[_MCPImpersonateType, Field(description='Browser/version to impersonate; \"chrome\" uses the latest supported Chrome profile. Lists pick randomly per attempt; None disables impersonation.')]='chrome', proxy: Annotated[Optional[str], Field(description='Proxy URL for all session requests, optionally including credentials.')]=None",
+      "source": "scrapling/core/ai/server.py",
+      "structured_output": true,
+      "tool_description": "Open a reusable HTTP session for `session_make_request`, keeping cookies, connections, and request settings.",
+      "tool_title": "Open HTTP session"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "a0a332bbd7b1bbaf195ce931df89330d52b12c4d52f03ccfbafbbae609f95476",
+      "doc_summary": "Close a session and free its resources.",
+      "id": "ScraplingMCPServer.close_session",
+      "kind": "async",
+      "line": 378,
+      "name": "close_session",
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        },
+        {
+          "annotation": "Annotated[str, Field(description='Session ID to close.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "session_id"
+        }
+      ],
+      "registration_line": 1029,
+      "returns": "SessionClosedModel",
+      "signature": "self, session_id: Annotated[str, Field(description='Session ID to close.')]",
+      "source": "scrapling/core/ai/server.py",
+      "structured_output": true,
+      "tool_description": "Close a session and free its resources.",
+      "tool_title": "Close session"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "e682e854901477f9bfaa330bec6d5a9f5b254dc3be73c40f319f50ad6861f9fa",
+      "doc_summary": "List registered sessions, their status, and effective settings.",
+      "id": "ScraplingMCPServer.list_sessions",
+      "kind": "async",
+      "line": 396,
+      "name": "list_sessions",
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        }
+      ],
+      "registration_line": 1035,
+      "returns": "List[SessionInfo]",
+      "signature": "self",
+      "source": "scrapling/core/ai/server.py",
+      "structured_output": true,
+      "tool_description": "List registered sessions, their status, and effective settings.",
+      "tool_title": "List sessions"
+    },
+    {
+      "decorators": [
+        "staticmethod"
+      ],
+      "doc_sha256": "7fae9d9df396b14fe3dd269a9b47ac649557154c046414312580aafcaddf7d2e",
+      "doc_summary": "Make an HTTP request without JavaScript. Suitable for low-to-mid protection.",
+      "id": "ScraplingMCPServer.make_request",
+      "kind": "async",
+      "line": 639,
+      "name": "make_request",
+      "parameters": [
+        {
+          "annotation": "Annotated[str, Field(description='URL to fetch.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "url"
+        },
+        {
+          "annotation": "Annotated[SUPPORTED_HTTP_METHODS, Field(description='HTTP method.')]",
+          "default": "'GET'",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "method"
+        },
+        {
+          "annotation": "Annotated[_MCPImpersonateType, Field(description='Browser/version to impersonate; \"chrome\" uses the latest supported Chrome profile. Lists pick randomly per attempt; None disables impersonation.')]",
+          "default": "'chrome'",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "impersonate"
+        },
+        {
+          "annotation": "Annotated[extraction_types, Field(description='Content output format.')]",
+          "default": "'markdown'",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "extraction_type"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='Select matching elements after `main_content_only` filtering.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "css_selector"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Sanitize <body> content before selection; False uses the full document.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "main_content_only"
+        },
+        {
+          "annotation": "Annotated[Optional[Dict], Field(description='Query parameters.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "params"
+        },
+        {
+          "annotation": "Annotated[Optional[Dict[str, str] | str], Field(description='Form or raw body; ignored for GET.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "data"
+        },
+        {
+          "annotation": "Annotated[Optional[Dict | List], Field(description='JSON body; ignored for GET.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "json"
+        },
+        {
+          "annotation": "Annotated[Optional[Mapping[str, Optional[str]]], Field(description='Request headers.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "headers"
+        },
+        {
+          "annotation": "Annotated[Optional[Dict[str, str]], Field(description='Request cookies.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "cookies"
+        },
+        {
+          "annotation": "Annotated[Optional[int | float], Field(description='Timeout in seconds.')]",
+          "default": "30",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "timeout"
+        },
+        {
+          "annotation": "Annotated[FollowRedirects, Field(description='\"safe\" blocks redirects to private/internal IPs; True allows all; False disables redirects.')]",
+          "default": "'safe'",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "follow_redirects"
+        },
+        {
+          "annotation": "Annotated[int, Field(description='Redirect limit; -1 means unlimited.')]",
+          "default": "30",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "max_redirects"
+        },
+        {
+          "annotation": "Annotated[Optional[int], Field(description='Maximum attempts, including the first; None or values below 1 send once.')]",
+          "default": "3",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "retries"
+        },
+        {
+          "annotation": "Annotated[Optional[int], Field(description='Seconds between retries.')]",
+          "default": "1",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "retry_delay"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='Proxy URL, optionally including credentials.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "proxy"
+        },
+        {
+          "annotation": "Annotated[Optional[Dict[str, str]], Field(description='Proxy basic auth: {\"username\": ..., \"password\": ...}.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "proxy_auth"
+        },
+        {
+          "annotation": "Annotated[Optional[Dict[str, str]], Field(description='Basic auth: {\"username\": ..., \"password\": ...}.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "auth"
+        },
+        {
+          "annotation": "Annotated[Optional[bool], Field(description='Verify TLS certificates.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "verify"
+        },
+        {
+          "annotation": "Annotated[Optional[bool], Field(description='Use HTTP/3; may conflict with browser impersonation.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "http3"
+        },
+        {
+          "annotation": "Annotated[Optional[bool], Field(description='Fill missing browser headers and use a Google referer if none was supplied.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "stealthy_headers"
+        }
+      ],
+      "registration_line": 1041,
+      "returns": "ResponseModel",
+      "signature": "url: Annotated[str, Field(description='URL to fetch.')], method: Annotated[SUPPORTED_HTTP_METHODS, Field(description='HTTP method.')]='GET', impersonate: Annotated[_MCPImpersonateType, Field(description='Browser/version to impersonate; \"chrome\" uses the latest supported Chrome profile. Lists pick randomly per attempt; None disables impersonation.')]='chrome', extraction_type: Annotated[extraction_types, Field(description='Content output format.')]='markdown', css_selector: Annotated[Optional[str], Field(description='Select matching elements after `main_content_only` filtering.')]=None, main_content_only: Annotated[bool, Field(description='Sanitize <body> content before selection; False uses the full document.')]=True, params: Annotated[Optional[Dict], Field(description='Query parameters.')]=None, data: Annotated[Optional[Dict[str, str] | str], Field(description='Form or raw body; ignored for GET.')]=None, json: Annotated[Optional[Dict | List], Field(description='JSON body; ignored for GET.')]=None, headers: Annotated[Optional[Mapping[str, Optional[str]]], Field(description='Request headers.')]=None, cookies: Annotated[Optional[Dict[str, str]], Field(description='Request cookies.')]=None, timeout: Annotated[Optional[int | float], Field(description='Timeout in seconds.')]=30, follow_redirects: Annotated[FollowRedirects, Field(description='\"safe\" blocks redirects to private/internal IPs; True allows all; False disables redirects.')]='safe', max_redirects: Annotated[int, Field(description='Redirect limit; -1 means unlimited.')]=30, retries: Annotated[Optional[int], Field(description='Maximum attempts, including the first; None or values below 1 send once.')]=3, retry_delay: Annotated[Optional[int], Field(description='Seconds between retries.')]=1, proxy: Annotated[Optional[str], Field(description='Proxy URL, optionally including credentials.')]=None, proxy_auth: Annotated[Optional[Dict[str, str]], Field(description='Proxy basic auth: {\"username\": ..., \"password\": ...}.')]=None, auth: Annotated[Optional[Dict[str, str]], Field(description='Basic auth: {\"username\": ..., \"password\": ...}.')]=None, verify: Annotated[Optional[bool], Field(description='Verify TLS certificates.')]=True, http3: Annotated[Optional[bool], Field(description='Use HTTP/3; may conflict with browser impersonation.')]=False, stealthy_headers: Annotated[Optional[bool], Field(description='Fill missing browser headers and use a Google referer if none was supplied.')]=True",
+      "source": "scrapling/core/ai/server.py",
+      "structured_output": true,
+      "tool_description": "Make an HTTP request without JavaScript. Suitable for low-to-mid protection.",
+      "tool_title": "Send HTTP request"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "acc74e893d0c287f6cadd9ad217aa6fe1167f7f2c54eba4179c9da0687244f53",
+      "doc_summary": "Fetch a page with a stealth browser and JavaScript rendering.",
+      "id": "ScraplingMCPServer.browser_fetch_once",
+      "kind": "async",
+      "line": 716,
+      "name": "browser_fetch_once",
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        },
+        {
+          "annotation": "Annotated[str, Field(description='URL to fetch.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "url"
+        },
+        {
+          "annotation": "Annotated[extraction_types, Field(description='Content output format.')]",
+          "default": "'markdown'",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "extraction_type"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='Select matching elements after `main_content_only` filtering.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "css_selector"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Sanitize <body> content before selection; False uses the full document.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "main_content_only"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Hide the browser window.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "headless"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Set a Google referer, overriding any supplied referer.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "google_search"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Use locally installed Chrome.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "real_chrome"
+        },
+        {
+          "annotation": "Annotated[int | float, Field(description='Extra milliseconds after the page is ready, before returning.')]",
+          "default": "0",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "wait"
+        },
+        {
+          "annotation": "Annotated[Optional[str | Dict[str, str]], Field(description='Proxy URL, or dictionary with server and optional username/password.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "proxy"
+        },
+        {
+          "annotation": "Annotated[str | None, Field(description='Browser timezone; uses the system timezone if omitted.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "timezone_id"
+        },
+        {
+          "annotation": "Annotated[str | None, Field(description='Browser language, Accept-Language, and formatting locale; system default if omitted.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "locale"
+        },
+        {
+          "annotation": "Annotated[Optional[Dict[str, str]], Field(description='Additional request headers.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "extra_headers"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='User-Agent override; otherwise generated in headless mode, native in headful mode.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "useragent"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Add noise to canvas operations.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "hide_canvas"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "cdp_url"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='Absolute Chromium-compatible executable path; overrides the server default.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "executable_path"
+        },
+        {
+          "annotation": "Annotated[int | float, Field(description='Navigation and page-operation timeout in milliseconds.')]",
+          "default": "30000",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "timeout"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Block font, image, media, beacon, object, imageset, texttrack, websocket, csp_report, and stylesheet requests.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "disable_resources"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='Wait for the first CSS match; continue if the wait fails.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "wait_selector"
+        },
+        {
+          "annotation": "Annotated[Sequence[SetCookieParam] | None, Field(description='Initial cookies as Playwright cookie dictionaries.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "cookies"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Try to wait for 500 ms without network activity; continue if the wait fails.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "network_idle"
+        },
+        {
+          "annotation": "Annotated[SelectorWaitStates, Field(description='Target state of `wait_selector`.')]",
+          "default": "'attached'",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "wait_selector_state"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Disable non-proxied WebRTC UDP to reduce IP leaks.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "block_webrtc"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Enable WebGL; disabling it can trigger bot detection.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "allow_webgl"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Attempt to solve Cloudflare Turnstile/interstitial challenges before returning.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "solve_cloudflare"
+        },
+        {
+          "annotation": "Annotated[Optional[Dict], Field(description='Browser context options that override Scrapling settings.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "additional_args"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Include open Shadow DOM content.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "pierce_shadow"
+        }
+      ],
+      "registration_line": 1048,
+      "returns": "ResponseModel",
+      "signature": "self, url: Annotated[str, Field(description='URL to fetch.')], extraction_type: Annotated[extraction_types, Field(description='Content output format.')]='markdown', css_selector: Annotated[Optional[str], Field(description='Select matching elements after `main_content_only` filtering.')]=None, main_content_only: Annotated[bool, Field(description='Sanitize <body> content before selection; False uses the full document.')]=True, headless: Annotated[bool, Field(description='Hide the browser window.')]=True, google_search: Annotated[bool, Field(description='Set a Google referer, overriding any supplied referer.')]=True, real_chrome: Annotated[bool, Field(description='Use locally installed Chrome.')]=False, wait: Annotated[int | float, Field(description='Extra milliseconds after the page is ready, before returning.')]=0, proxy: Annotated[Optional[str | Dict[str, str]], Field(description='Proxy URL, or dictionary with server and optional username/password.')]=None, timezone_id: Annotated[str | None, Field(description='Browser timezone; uses the system timezone if omitted.')]=None, locale: Annotated[str | None, Field(description='Browser language, Accept-Language, and formatting locale; system default if omitted.')]=None, extra_headers: Annotated[Optional[Dict[str, str]], Field(description='Additional request headers.')]=None, useragent: Annotated[Optional[str], Field(description='User-Agent override; otherwise generated in headless mode, native in headful mode.')]=None, hide_canvas: Annotated[bool, Field(description='Add noise to canvas operations.')]=False, cdp_url: Annotated[Optional[str], Field(description='Connect to an existing Chromium browser over CDP in a new context; launch settings do not apply.')]=None, executable_path: Annotated[Optional[str], Field(description='Absolute Chromium-compatible executable path; overrides the server default.')]=None, timeout: Annotated[int | float, Field(description='Navigation and page-operation timeout in milliseconds.')]=30000, disable_resources: Annotated[bool, Field(description='Block font, image, media, beacon, object, imageset, texttrack, websocket, csp_report, and stylesheet requests.')]=False, wait_selector: Annotated[Optional[str], Field(description='Wait for the first CSS match; continue if the wait fails.')]=None, cookies: Annotated[Sequence[SetCookieParam] | None, Field(description='Initial cookies as Playwright cookie dictionaries.')]=None, network_idle: Annotated[bool, Field(description='Try to wait for 500 ms without network activity; continue if the wait fails.')]=False, wait_selector_state: Annotated[SelectorWaitStates, Field(description='Target state of `wait_selector`.')]='attached', block_webrtc: Annotated[bool, Field(description='Disable non-proxied WebRTC UDP to reduce IP leaks.')]=False, allow_webgl: Annotated[bool, Field(description='Enable WebGL; disabling it can trigger bot detection.')]=True, solve_cloudflare: Annotated[bool, Field(description='Attempt to solve Cloudflare Turnstile/interstitial challenges before returning.')]=False, additional_args: Annotated[Optional[Dict], Field(description='Browser context options that override Scrapling settings.')]=None, pierce_shadow: Annotated[bool, Field(description='Include open Shadow DOM content.')]=False",
+      "source": "scrapling/core/ai/server.py",
+      "structured_output": true,
+      "tool_description": "Fetch a page with a stealth browser and JavaScript rendering.",
+      "tool_title": "Fetch page in browser"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "e6ffac58c6f644eff5b1aaf657338cad2c62b95097d8dd24a06055204de3f766",
+      "doc_summary": "Fetch a URL in an open stealthy browser session. Options apply only to this request.",
+      "id": "ScraplingMCPServer.browser_fetch",
+      "kind": "async",
+      "line": 824,
+      "name": "browser_fetch",
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        },
+        {
+          "annotation": "Annotated[str, Field(description='URL to fetch.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "url"
+        },
+        {
+          "annotation": "Annotated[str, Field(description='ID from `browser_open`.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "session_id"
+        },
+        {
+          "annotation": "Annotated[SessionExtractionType, Field(description='Content output format; snapshots include element bounding boxes.')]",
+          "default": "'markdown'",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "extraction_type"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='Select after `main_content_only` filtering; snapshots require exactly one match.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "css_selector"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Sanitize <body> before selection; False uses the full document. Ignored for snapshots.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "main_content_only"
+        },
+        {
+          "annotation": "Annotated[int | float, Field(description='Extra milliseconds after the page is ready, before returning.')]",
+          "default": "0",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "wait"
+        },
+        {
+          "annotation": "Annotated[int | float, Field(description='Navigation and page-operation timeout in milliseconds.')]",
+          "default": "30000",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "timeout"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Set a Google referer, overriding any supplied referer.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "google_search"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Try to wait for 500 ms without network activity; continue if the wait fails.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "network_idle"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Wait for DOMContentLoaded.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "load_dom"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Block font, image, media, beacon, object, imageset, texttrack, websocket, csp_report, and stylesheet requests.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "disable_resources"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='Wait for the first CSS match; continue if the wait fails.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "wait_selector"
+        },
+        {
+          "annotation": "Annotated[SelectorWaitStates, Field(description='Target state of `wait_selector`.')]",
+          "default": "'attached'",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "wait_selector_state"
+        },
+        {
+          "annotation": "Annotated[Optional[Dict[str, str]], Field(description='Additional request headers.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "extra_headers"
+        },
+        {
+          "annotation": "Annotated[Optional[Set[str]], Field(description='Block requests to these domains and their subdomains.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "blocked_domains"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Attempt to solve Cloudflare Turnstile/interstitial challenges.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "solve_cloudflare"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Include open Shadow DOM content; ignored for snapshots.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "pierce_shadow"
+        }
+      ],
+      "registration_line": 1056,
+      "returns": "ResponseModel",
+      "signature": "self, url: Annotated[str, Field(description='URL to fetch.')], session_id: Annotated[str, Field(description='ID from `browser_open`.')], extraction_type: Annotated[SessionExtractionType, Field(description='Content output format; snapshots include element bounding boxes.')]='markdown', css_selector: Annotated[Optional[str], Field(description='Select after `main_content_only` filtering; snapshots require exactly one match.')]=None, main_content_only: Annotated[bool, Field(description='Sanitize <body> before selection; False uses the full document. Ignored for snapshots.')]=True, wait: Annotated[int | float, Field(description='Extra milliseconds after the page is ready, before returning.')]=0, timeout: Annotated[int | float, Field(description='Navigation and page-operation timeout in milliseconds.')]=30000, google_search: Annotated[bool, Field(description='Set a Google referer, overriding any supplied referer.')]=True, network_idle: Annotated[bool, Field(description='Try to wait for 500 ms without network activity; continue if the wait fails.')]=False, load_dom: Annotated[bool, Field(description='Wait for DOMContentLoaded.')]=True, disable_resources: Annotated[bool, Field(description='Block font, image, media, beacon, object, imageset, texttrack, websocket, csp_report, and stylesheet requests.')]=False, wait_selector: Annotated[Optional[str], Field(description='Wait for the first CSS match; continue if the wait fails.')]=None, wait_selector_state: Annotated[SelectorWaitStates, Field(description='Target state of `wait_selector`.')]='attached', extra_headers: Annotated[Optional[Dict[str, str]], Field(description='Additional request headers.')]=None, blocked_domains: Annotated[Optional[Set[str]], Field(description='Block requests to these domains and their subdomains.')]=None, solve_cloudflare: Annotated[bool, Field(description='Attempt to solve Cloudflare Turnstile/interstitial challenges.')]=False, pierce_shadow: Annotated[bool, Field(description='Include open Shadow DOM content; ignored for snapshots.')]=False",
+      "source": "scrapling/core/ai/server.py",
+      "structured_output": true,
+      "tool_description": "Fetch a URL in an open stealthy browser session. Options apply only to this request.",
+      "tool_title": "Fetch in browser session"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "590020532567fc9bed996082ec2d0e41ec54ab39be2d4dccf357a80d53a4a97e",
+      "doc_summary": "Make an HTTP request using the session's cookies, connections, impersonation, and proxy. Options apply to this request.",
+      "id": "ScraplingMCPServer.session_make_request",
+      "kind": "async",
+      "line": 900,
+      "name": "session_make_request",
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        },
+        {
+          "annotation": "Annotated[str, Field(description='URL to fetch.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "url"
+        },
+        {
+          "annotation": "Annotated[str, Field(description='HTTP session ID from `open_request_session`.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "session_id"
+        },
+        {
+          "annotation": "Annotated[SUPPORTED_HTTP_METHODS, Field(description='HTTP method.')]",
+          "default": "'GET'",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "method"
+        },
+        {
+          "annotation": "Annotated[extraction_types, Field(description='Content output format.')]",
+          "default": "'markdown'",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "extraction_type"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='Select matching elements after `main_content_only` filtering.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "css_selector"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Sanitize <body> content before selection; False uses the full document.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "main_content_only"
+        },
+        {
+          "annotation": "Annotated[Optional[Dict], Field(description='Query parameters.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "params"
+        },
+        {
+          "annotation": "Annotated[Optional[Dict[str, str] | str], Field(description='Form or raw body; ignored for GET.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "data"
+        },
+        {
+          "annotation": "Annotated[Optional[Dict | List], Field(description='JSON body; ignored for GET.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "json"
+        },
+        {
+          "annotation": "Annotated[Optional[Mapping[str, Optional[str]]], Field(description='Request headers.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "headers"
+        },
+        {
+          "annotation": "Annotated[Optional[Dict[str, str]], Field(description='Request cookies.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "cookies"
+        },
+        {
+          "annotation": "Annotated[Optional[int | float], Field(description='Timeout in seconds.')]",
+          "default": "30",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "timeout"
+        },
+        {
+          "annotation": "Annotated[FollowRedirects, Field(description='\"safe\" blocks redirects to private/internal IPs; True allows all; False disables redirects.')]",
+          "default": "'safe'",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "follow_redirects"
+        },
+        {
+          "annotation": "Annotated[int, Field(description='Redirect limit; -1 means unlimited.')]",
+          "default": "30",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "max_redirects"
+        },
+        {
+          "annotation": "Annotated[Optional[int], Field(description='Maximum attempts, including the first; None or values below 1 send once.')]",
+          "default": "3",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "retries"
+        },
+        {
+          "annotation": "Annotated[Optional[int], Field(description='Seconds between retries.')]",
+          "default": "1",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "retry_delay"
+        },
+        {
+          "annotation": "Annotated[Optional[Dict[str, str]], Field(description='Basic auth: {\"username\": ..., \"password\": ...}.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "auth"
+        },
+        {
+          "annotation": "Annotated[Optional[bool], Field(description='Verify TLS certificates.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "verify"
+        },
+        {
+          "annotation": "Annotated[Optional[bool], Field(description='Use HTTP/3; may conflict with browser impersonation.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "http3"
+        },
+        {
+          "annotation": "Annotated[Optional[bool], Field(description='Fill missing browser headers and use a Google referer if none was supplied.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "stealthy_headers"
+        }
+      ],
+      "registration_line": 1063,
+      "returns": "ResponseModel",
+      "signature": "self, url: Annotated[str, Field(description='URL to fetch.')], session_id: Annotated[str, Field(description='HTTP session ID from `open_request_session`.')], method: Annotated[SUPPORTED_HTTP_METHODS, Field(description='HTTP method.')]='GET', extraction_type: Annotated[extraction_types, Field(description='Content output format.')]='markdown', css_selector: Annotated[Optional[str], Field(description='Select matching elements after `main_content_only` filtering.')]=None, main_content_only: Annotated[bool, Field(description='Sanitize <body> content before selection; False uses the full document.')]=True, params: Annotated[Optional[Dict], Field(description='Query parameters.')]=None, data: Annotated[Optional[Dict[str, str] | str], Field(description='Form or raw body; ignored for GET.')]=None, json: Annotated[Optional[Dict | List], Field(description='JSON body; ignored for GET.')]=None, headers: Annotated[Optional[Mapping[str, Optional[str]]], Field(description='Request headers.')]=None, cookies: Annotated[Optional[Dict[str, str]], Field(description='Request cookies.')]=None, timeout: Annotated[Optional[int | float], Field(description='Timeout in seconds.')]=30, follow_redirects: Annotated[FollowRedirects, Field(description='\"safe\" blocks redirects to private/internal IPs; True allows all; False disables redirects.')]='safe', max_redirects: Annotated[int, Field(description='Redirect limit; -1 means unlimited.')]=30, retries: Annotated[Optional[int], Field(description='Maximum attempts, including the first; None or values below 1 send once.')]=3, retry_delay: Annotated[Optional[int], Field(description='Seconds between retries.')]=1, auth: Annotated[Optional[Dict[str, str]], Field(description='Basic auth: {\"username\": ..., \"password\": ...}.')]=None, verify: Annotated[Optional[bool], Field(description='Verify TLS certificates.')]=True, http3: Annotated[Optional[bool], Field(description='Use HTTP/3; may conflict with browser impersonation.')]=False, stealthy_headers: Annotated[Optional[bool], Field(description='Fill missing browser headers and use a Google referer if none was supplied.')]=True",
+      "source": "scrapling/core/ai/server.py",
+      "structured_output": true,
+      "tool_description": "Make an HTTP request using the session's cookies, connections, impersonation, and proxy. Options apply to this request.",
+      "tool_title": "Send HTTP request in HTTP session"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "7258ae883b529bfb176cb77f6789b88d82a3fc596de2c2cd88e1528ddae5e4f6",
+      "doc_summary": "Read the current page or one element as snapshot, HTML, Markdown, or text without navigating.",
+      "id": "ScraplingMCPServer.browser_extract",
+      "kind": "async",
+      "line": 449,
+      "name": "browser_extract",
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        },
+        {
+          "annotation": "Annotated[str, Field(description='ID from `browser_open`; call `browser_fetch` first.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "session_id"
+        },
+        {
+          "annotation": "Annotated[SessionExtractionType, Field(description='Output format; defaults to an AI ARIA snapshot.')]",
+          "default": "'snapshot'",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "extraction_type"
+        },
+        {
+          "annotation": "Annotated[Optional[NonEmptyString], Field(description='Playwright selector or aria-ref=<ref> matching one element; omitted reads the page.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "target"
+        },
+        {
+          "annotation": "Annotated[Optional[int], Field(description='Snapshot depth before search; unlimited if omitted. Ignored for other formats.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "depth"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Include viewport bounding boxes in snapshots; ignored for other formats.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "boxes"
+        },
+        {
+          "annotation": "Annotated[Optional[NonEmptyString], Field(description='Snapshot-only Python regex; case-sensitive unless (?i). No matches returns empty text.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "search"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Clean body/target content for AI; ignored for snapshots.')]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "main_content_only"
+        }
+      ],
+      "registration_line": 1070,
+      "returns": "str",
+      "signature": "self, session_id: Annotated[str, Field(description='ID from `browser_open`; call `browser_fetch` first.')], extraction_type: Annotated[SessionExtractionType, Field(description='Output format; defaults to an AI ARIA snapshot.')]='snapshot', target: Annotated[Optional[NonEmptyString], Field(description='Playwright selector or aria-ref=<ref> matching one element; omitted reads the page.')]=None, depth: Annotated[Optional[int], Field(description='Snapshot depth before search; unlimited if omitted. Ignored for other formats.')]=None, boxes: Annotated[bool, Field(description='Include viewport bounding boxes in snapshots; ignored for other formats.')]=True, search: Annotated[Optional[NonEmptyString], Field(description='Snapshot-only Python regex; case-sensitive unless (?i). No matches returns empty text.')]=None, main_content_only: Annotated[bool, Field(description='Clean body/target content for AI; ignored for snapshots.')]=True",
+      "source": "scrapling/core/ai/server.py",
+      "structured_output": false,
+      "tool_description": "Read the current page or one element as snapshot, HTML, Markdown, or text without navigating.\nReturn plain text; snapshot search keeps refs, ancestor paths and three lines of nearby context.",
+      "tool_title": "Extract page content"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "7b77bf9a0e52f3f0a27f7302338fa41d97ffd3c605db1d59242b89784847a99e",
+      "doc_summary": "Run mouse, field, key, dialog, and wait actions in order; return plain text without a snapshot.",
+      "id": "ScraplingMCPServer.browser_actions",
+      "kind": "async",
+      "line": 535,
+      "name": "browser_actions",
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        },
+        {
+          "annotation": "Annotated[str, Field(description='ID from `browser_open`; call `browser_fetch` first.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "session_id"
+        },
+        {
+          "annotation": "Annotated[List[BrowserAction], Field(min_length=1, description='Ordered actions; fields need target; mouse needs target or viewport (x, y).')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "actions"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Fresh random delays: 50-150 ms per character, 100-300 ms between all actions, including waits.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "slowly"
+        }
+      ],
+      "registration_line": 1077,
+      "returns": "str",
+      "signature": "self, session_id: Annotated[str, Field(description='ID from `browser_open`; call `browser_fetch` first.')], actions: Annotated[List[BrowserAction], Field(min_length=1, description='Ordered actions; fields need target; mouse needs target or viewport (x, y).')], slowly: Annotated[bool, Field(description='Fresh random delays: 50-150 ms per character, 100-300 ms between all actions, including waits.')]=False",
+      "source": "scrapling/core/ai/server.py",
+      "structured_output": false,
+      "tool_description": "Run mouse, field, key, dialog, and wait actions in order; return plain text without a snapshot.\nStop on the first error, identifying its action; partial effects remain. No retries.\nElement mouse targets auto-wait and scroll into view; coordinates and wheel do not wait for navigation or scrolling.\nCancelled/timed-out clicks attempt button release. Load waits observe the current document, not future navigation.",
+      "tool_title": "Browser actions"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "16ff01304d21e0feacc49601dcdeb1b6f46c7151fd925fb230ad44883605d312",
+      "doc_summary": "Run JavaScript on the current page, await promises, and return JSON text without a snapshot.",
+      "id": "ScraplingMCPServer.browser_evaluate",
+      "kind": "async",
+      "line": 560,
+      "name": "browser_evaluate",
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        },
+        {
+          "annotation": "Annotated[str, Field(description='ID from `browser_open`; call `browser_fetch` first.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "session_id"
+        },
+        {
+          "annotation": "Annotated[NonEmptyString, Field(description='JavaScript expression or function to invoke.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "expression"
+        },
+        {
+          "annotation": "Annotated[Optional[Dict[str, Any]], Field(description='JSON object passed to the function; use properties for scalar or array values.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "arg"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description=\"False accesses the page's own JS variables; True uses a separate context with the same DOM.\")]",
+          "default": "True",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "isolated_context"
+        }
+      ],
+      "registration_line": 1084,
+      "returns": "str",
+      "signature": "self, session_id: Annotated[str, Field(description='ID from `browser_open`; call `browser_fetch` first.')], expression: Annotated[NonEmptyString, Field(description='JavaScript expression or function to invoke.')], arg: Annotated[Optional[Dict[str, Any]], Field(description='JSON object passed to the function; use properties for scalar or array values.')]=None, isolated_context: Annotated[bool, Field(description=\"False accesses the page's own JS variables; True uses a separate context with the same DOM.\")]=True",
+      "source": "scrapling/core/ai/server.py",
+      "structured_output": false,
+      "tool_description": "Run JavaScript on the current page, await promises, and return JSON text without a snapshot.\nReturn JSON-compatible values; null/undefined become null. Script effects are not undone on failure.\nCancellation stops waiting, but may not stop the script.",
+      "tool_title": "Run JavaScript"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "032e653587c085fab7a08374cfc1a12833a4ef3a8e927f99d8c2ba25f022d8db",
+      "doc_summary": "List completed requests across page changes, with IDs and pagination. Recording starts when the browser session opens.",
+      "id": "ScraplingMCPServer.browser_network_requests",
+      "kind": "async",
+      "line": 409,
+      "name": "browser_network_requests",
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        },
+        {
+          "annotation": "Annotated[str, Field(description='Browser session ID.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "session_id"
+        },
+        {
+          "annotation": "Annotated[Optional[str], Field(description='Filter URLs by regular expression.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "url_pattern"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Include successful non-API requests too.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "include_static"
+        },
+        {
+          "annotation": "Annotated[int, Field(ge=0, description='Return requests with a higher ID; use next_cursor for more.')]",
+          "default": "0",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "after_id"
+        },
+        {
+          "annotation": "Annotated[int, Field(ge=1, le=200, description='Maximum requests to return.')]",
+          "default": "50",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "limit"
+        }
+      ],
+      "registration_line": 1091,
+      "returns": "NetworkRequestsModel",
+      "signature": "self, session_id: Annotated[str, Field(description='Browser session ID.')], url_pattern: Annotated[Optional[str], Field(description='Filter URLs by regular expression.')]=None, include_static: Annotated[bool, Field(description='Include successful non-API requests too.')]=False, after_id: Annotated[int, Field(ge=0, description='Return requests with a higher ID; use next_cursor for more.')]=0, limit: Annotated[int, Field(ge=1, le=200, description='Maximum requests to return.')]=50",
+      "source": "scrapling/core/ai/server.py",
+      "structured_output": null,
+      "tool_description": "List completed requests across page changes, with IDs and pagination. Recording starts when the browser session opens.",
+      "tool_title": "List network requests"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "f0731246450a4da3505991481cb64d7495fa2955277bd240f73fa7595537e7d2",
+      "doc_summary": "Read a complete saved request part without resending it, with structured data and availability notes.",
+      "id": "ScraplingMCPServer.browser_network_request",
+      "kind": "async",
+      "line": 432,
+      "name": "browser_network_request",
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        },
+        {
+          "annotation": "Annotated[str, Field(description='Browser session ID.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "session_id"
+        },
+        {
+          "annotation": "Annotated[int, Field(ge=1, description='ID from `browser_network_requests`.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "request_id"
+        },
+        {
+          "annotation": "Annotated[NetworkPart, Field(description='Request summary, headers, or text body; incomplete headers are marked.')]",
+          "default": "'summary'",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "part"
+        }
+      ],
+      "registration_line": 1096,
+      "returns": "NetworkRequestModel",
+      "signature": "self, session_id: Annotated[str, Field(description='Browser session ID.')], request_id: Annotated[int, Field(ge=1, description='ID from `browser_network_requests`.')], part: Annotated[NetworkPart, Field(description='Request summary, headers, or text body; incomplete headers are marked.')]='summary'",
+      "source": "scrapling/core/ai/server.py",
+      "structured_output": null,
+      "tool_description": "Read a complete saved request part without resending it, with structured data and availability notes.",
+      "tool_title": "Read network request"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "72c5ecd21e2a1165254f2ce009918524ced1019ea374b4e3f40fc817cc946e72",
+      "doc_summary": "Capture the current page or one element without navigating; return the image and current URL.",
+      "id": "ScraplingMCPServer.browser_screenshot",
+      "kind": "async",
+      "line": 586,
+      "name": "browser_screenshot",
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        },
+        {
+          "annotation": "Annotated[str, Field(description='ID from `browser_open`; call `browser_fetch` first.')]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "session_id"
+        },
+        {
+          "annotation": "Annotated[ScreenshotType, Field(description='Image format.')]",
+          "default": "'png'",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "image_type"
+        },
+        {
+          "annotation": "Annotated[bool, Field(description='Capture the full scrollable page; incompatible with selector/ref.')]",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "full_page"
+        },
+        {
+          "annotation": "Annotated[Optional[Annotated[int, Field(ge=0, le=100)]], Field(description='JPEG quality, 0-100; invalid for PNG.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "quality"
+        },
+        {
+          "annotation": "Annotated[NonNegativeFiniteFloat, Field(description='Capture limit in milliseconds; 0 disables it.')]",
+          "default": "30000",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "timeout"
+        },
+        {
+          "annotation": "Annotated[Optional[NonEmptyString], Field(description='Playwright selector matching one element; omit when using ref.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "selector"
+        },
+        {
+          "annotation": "Annotated[Optional[NonEmptyString], Field(description='Current snapshot element reference; omit both targets for page capture.')]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "ref"
+        }
+      ],
+      "registration_line": 1102,
+      "returns": "List[ImageContent | TextContent]",
+      "signature": "self, session_id: Annotated[str, Field(description='ID from `browser_open`; call `browser_fetch` first.')], image_type: Annotated[ScreenshotType, Field(description='Image format.')]='png', full_page: Annotated[bool, Field(description='Capture the full scrollable page; incompatible with selector/ref.')]=False, quality: Annotated[Optional[Annotated[int, Field(ge=0, le=100)]], Field(description='JPEG quality, 0-100; invalid for PNG.')]=None, timeout: Annotated[NonNegativeFiniteFloat, Field(description='Capture limit in milliseconds; 0 disables it.')]=30000, selector: Annotated[Optional[NonEmptyString], Field(description='Playwright selector matching one element; omit when using ref.')]=None, ref: Annotated[Optional[NonEmptyString], Field(description='Current snapshot element reference; omit both targets for page capture.')]=None",
+      "source": "scrapling/core/ai/server.py",
+      "structured_output": false,
+      "tool_description": "Capture the current page or one element without navigating; return the image and current URL.\nElement capture waits and scrolls into view. Use browser_actions for other waits before capture.",
+      "tool_title": "Take browser session screenshot"
+    }
+  ],
+  "upstream_sha": "95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0"
+}

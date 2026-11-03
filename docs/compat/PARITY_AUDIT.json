@@ -1,0 +1,2249 @@
+{
+  "actions": [
+    {
+      "default_diffs": [],
+      "executor_branch_present": false,
+      "extra_fields": [],
+      "extra_required": [],
+      "line": 49,
+      "missing_fields": [],
+      "missing_required": [],
+      "name": "move",
+      "runtime_status": "unsupported_operation",
+      "schema_present": true,
+      "upstream_source": "scrapling/core/ai/_browser_actions.py"
+    },
+    {
+      "default_diffs": [],
+      "executor_branch_present": true,
+      "extra_fields": [],
+      "extra_required": [],
+      "line": 54,
+      "missing_fields": [],
+      "missing_required": [],
+      "name": "click",
+      "runtime_status": "partial_unverified",
+      "schema_present": true,
+      "upstream_source": "scrapling/core/ai/_browser_actions.py"
+    },
+    {
+      "default_diffs": [],
+      "executor_branch_present": false,
+      "extra_fields": [],
+      "extra_required": [],
+      "line": 63,
+      "missing_fields": [],
+      "missing_required": [],
+      "name": "wheel",
+      "runtime_status": "unsupported_operation",
+      "schema_present": true,
+      "upstream_source": "scrapling/core/ai/_browser_actions.py"
+    },
+    {
+      "default_diffs": [],
+      "executor_branch_present": true,
+      "extra_fields": [],
+      "extra_required": [],
+      "line": 114,
+      "missing_fields": [],
+      "missing_required": [],
+      "name": "textbox",
+      "runtime_status": "partial_unverified",
+      "schema_present": true,
+      "upstream_source": "scrapling/core/ai/_browser_actions.py"
+    },
+    {
+      "default_diffs": [],
+      "executor_branch_present": false,
+      "extra_fields": [],
+      "extra_required": [],
+      "line": 122,
+      "missing_fields": [],
+      "missing_required": [],
+      "name": "checkbox",
+      "runtime_status": "unsupported_operation",
+      "schema_present": true,
+      "upstream_source": "scrapling/core/ai/_browser_actions.py"
+    },
+    {
+      "default_diffs": [],
+      "executor_branch_present": false,
+      "extra_fields": [],
+      "extra_required": [],
+      "line": 127,
+      "missing_fields": [],
+      "missing_required": [],
+      "name": "radio",
+      "runtime_status": "unsupported_operation",
+      "schema_present": true,
+      "upstream_source": "scrapling/core/ai/_browser_actions.py"
+    },
+    {
+      "default_diffs": [],
+      "executor_branch_present": false,
+      "extra_fields": [],
+      "extra_required": [],
+      "line": 132,
+      "missing_fields": [],
+      "missing_required": [],
+      "name": "combobox",
+      "runtime_status": "unsupported_operation",
+      "schema_present": true,
+      "upstream_source": "scrapling/core/ai/_browser_actions.py"
+    },
+    {
+      "default_diffs": [],
+      "executor_branch_present": true,
+      "extra_fields": [],
+      "extra_required": [],
+      "line": 96,
+      "missing_fields": [],
+      "missing_required": [],
+      "name": "press_key",
+      "runtime_status": "partial_unverified",
+      "schema_present": true,
+      "upstream_source": "scrapling/core/ai/_browser_actions.py"
+    },
+    {
+      "default_diffs": [],
+      "executor_branch_present": false,
+      "extra_fields": [],
+      "extra_required": [],
+      "line": 103,
+      "missing_fields": [],
+      "missing_required": [],
+      "name": "dialog",
+      "runtime_status": "unsupported_operation",
+      "schema_present": true,
+      "upstream_source": "scrapling/core/ai/_browser_actions.py"
+    },
+    {
+      "default_diffs": [],
+      "executor_branch_present": true,
+      "extra_fields": [],
+      "extra_required": [],
+      "line": 73,
+      "missing_fields": [],
+      "missing_required": [],
+      "name": "wait_time",
+      "runtime_status": "partial_unverified",
+      "schema_present": true,
+      "upstream_source": "scrapling/core/ai/_browser_actions.py"
+    },
+    {
+      "default_diffs": [],
+      "executor_branch_present": false,
+      "extra_fields": [],
+      "extra_required": [],
+      "line": 82,
+      "missing_fields": [],
+      "missing_required": [],
+      "name": "wait_element",
+      "runtime_status": "unsupported_operation",
+      "schema_present": true,
+      "upstream_source": "scrapling/core/ai/_browser_actions.py"
+    },
+    {
+      "default_diffs": [],
+      "executor_branch_present": false,
+      "extra_fields": [],
+      "extra_required": [],
+      "line": 88,
+      "missing_fields": [],
+      "missing_required": [],
+      "name": "wait_load",
+      "runtime_status": "unsupported_operation",
+      "schema_present": true,
+      "upstream_source": "scrapling/core/ai/_browser_actions.py"
+    }
+  ],
+  "cli": [
+    {
+      "expanded_decorator_factories": [],
+      "id": "CLI.install",
+      "inherited_options_unresolved": [],
+      "line": 120,
+      "source": "scrapling/cli.py",
+      "static_options_count": 1,
+      "status": "unverified"
+    },
+    {
+      "expanded_decorator_factories": [],
+      "id": "CLI.mcp",
+      "inherited_options_unresolved": [],
+      "line": 189,
+      "source": "scrapling/cli.py",
+      "static_options_count": 7,
+      "status": "unverified"
+    },
+    {
+      "expanded_decorator_factories": [],
+      "id": "CLI.shell",
+      "inherited_options_unresolved": [],
+      "line": 219,
+      "source": "scrapling/cli.py",
+      "static_options_count": 2,
+      "status": "unverified"
+    },
+    {
+      "expanded_decorator_factories": [],
+      "id": "CLI.extract",
+      "inherited_options_unresolved": [],
+      "line": 229,
+      "source": "scrapling/cli.py",
+      "static_options_count": 0,
+      "status": "unverified"
+    },
+    {
+      "expanded_decorator_factories": [
+        "_common_http_options"
+      ],
+      "id": "CLI.get",
+      "inherited_options_unresolved": [],
+      "line": 403,
+      "source": "scrapling/cli.py",
+      "static_options_count": 13,
+      "status": "unverified"
+    },
+    {
+      "expanded_decorator_factories": [
+        "_data_options",
+        "_common_http_options"
+      ],
+      "id": "CLI.post",
+      "inherited_options_unresolved": [],
+      "line": 439,
+      "source": "scrapling/cli.py",
+      "static_options_count": 15,
+      "status": "unverified"
+    },
+    {
+      "expanded_decorator_factories": [
+        "_data_options",
+        "_common_http_options"
+      ],
+      "id": "CLI.put",
+      "inherited_options_unresolved": [],
+      "line": 478,
+      "source": "scrapling/cli.py",
+      "static_options_count": 15,
+      "status": "unverified"
+    },
+    {
+      "expanded_decorator_factories": [
+        "_common_http_options"
+      ],
+      "id": "CLI.delete",
+      "inherited_options_unresolved": [],
+      "line": 516,
+      "source": "scrapling/cli.py",
+      "static_options_count": 13,
+      "status": "unverified"
+    },
+    {
+      "expanded_decorator_factories": [
+        "_common_browser_options"
+      ],
+      "id": "CLI.fetch",
+      "inherited_options_unresolved": [],
+      "line": 609,
+      "source": "scrapling/cli.py",
+      "static_options_count": 22,
+      "status": "unverified"
+    },
+    {
+      "expanded_decorator_factories": [],
+      "id": "CLI.main",
+      "inherited_options_unresolved": [],
+      "line": 666,
+      "source": "scrapling/cli.py",
+      "static_options_count": 1,
+      "status": "unverified"
+    }
+  ],
+  "extra_rust_browser_actions": [],
+  "extra_rust_mcp_tools": [],
+  "limitations": [
+    "Audit compares source-level MCP arguments and schemas, not actual Pydantic runtime schema, description serialization or executor semantics.",
+    "Public method inventory covers the explicit 27 classes, not yet every exported module-level function or inherited method.",
+    "Known Click decorator factories are expanded statically; Click runtime/schema validation remains necessary.",
+    "All runtime statuses deliberately remain unverified until evidence links to passing tests."
+  ],
+  "mcp": [
+    {
+      "default_diffs": [],
+      "description_matches": true,
+      "extra_rust": [],
+      "missing_rust": [],
+      "name": "browser_open",
+      "runtime_status": "unverified",
+      "rust_args": 14,
+      "rust_catalog_present": true,
+      "title_matches": true,
+      "upstream_args": 14,
+      "upstream_line": 266,
+      "upstream_registration_line": 1005,
+      "upstream_source": "scrapling/core/ai/server.py"
+    },
+    {
+      "default_diffs": [],
+      "description_matches": true,
+      "extra_rust": [],
+      "missing_rust": [],
+      "name": "browser_save_state",
+      "runtime_status": "unverified",
+      "rust_args": 2,
+      "rust_catalog_present": true,
+      "title_matches": true,
+      "upstream_args": 2,
+      "upstream_line": 330,
+      "upstream_registration_line": 1011,
+      "upstream_source": "scrapling/core/ai/server.py"
+    },
+    {
+      "default_diffs": [],
+      "description_matches": true,
+      "extra_rust": [],
+      "missing_rust": [],
+      "name": "browser_load_state",
+      "runtime_status": "unverified",
+      "rust_args": 2,
+      "rust_catalog_present": true,
+      "title_matches": true,
+      "upstream_args": 2,
+      "upstream_line": 344,
+      "upstream_registration_line": 1017,
+      "upstream_source": "scrapling/core/ai/server.py"
+    },
+    {
+      "default_diffs": [],
+      "description_matches": true,
+      "extra_rust": [],
+      "missing_rust": [],
+      "name": "open_request_session",
+      "runtime_status": "unverified",
+      "rust_args": 3,
+      "rust_catalog_present": true,
+      "title_matches": true,
+      "upstream_args": 3,
+      "upstream_line": 357,
+      "upstream_registration_line": 1023,
+      "upstream_source": "scrapling/core/ai/server.py"
+    },
+    {
+      "default_diffs": [],
+      "description_matches": true,
+      "extra_rust": [],
+      "missing_rust": [],
+      "name": "close_session",
+      "runtime_status": "unverified",
+      "rust_args": 1,
+      "rust_catalog_present": true,
+      "title_matches": true,
+      "upstream_args": 1,
+      "upstream_line": 378,
+      "upstream_registration_line": 1029,
+      "upstream_source": "scrapling/core/ai/server.py"
+    },
+    {
+      "default_diffs": [],
+      "description_matches": true,
+      "extra_rust": [],
+      "missing_rust": [],
+      "name": "list_sessions",
+      "runtime_status": "unverified",
+      "rust_args": 0,
+      "rust_catalog_present": true,
+      "title_matches": true,
+      "upstream_args": 0,
+      "upstream_line": 396,
+      "upstream_registration_line": 1035,
+      "upstream_source": "scrapling/core/ai/server.py"
+    },
+    {
+      "default_diffs": [],
+      "description_matches": true,
+      "extra_rust": [],
+      "missing_rust": [],
+      "name": "make_request",
+      "runtime_status": "unverified",
+      "rust_args": 22,
+      "rust_catalog_present": true,
+      "title_matches": true,
+      "upstream_args": 22,
+      "upstream_line": 639,
+      "upstream_registration_line": 1041,
+      "upstream_source": "scrapling/core/ai/server.py"
+    },
+    {
+      "default_diffs": [],
+      "description_matches": true,
+      "extra_rust": [],
+      "missing_rust": [],
+      "name": "browser_fetch_once",
+      "runtime_status": "unverified",
+      "rust_args": 27,
+      "rust_catalog_present": true,
+      "title_matches": true,
+      "upstream_args": 27,
+      "upstream_line": 716,
+      "upstream_registration_line": 1048,
+      "upstream_source": "scrapling/core/ai/server.py"
+    },
+    {
+      "default_diffs": [],
+      "description_matches": true,
+      "extra_rust": [],
+      "missing_rust": [],
+      "name": "browser_fetch",
+      "runtime_status": "unverified",
+      "rust_args": 17,
+      "rust_catalog_present": true,
+      "title_matches": true,
+      "upstream_args": 17,
+      "upstream_line": 824,
+      "upstream_registration_line": 1056,
+      "upstream_source": "scrapling/core/ai/server.py"
+    },
+    {
+      "default_diffs": [],
+      "description_matches": true,
+      "extra_rust": [],
+      "missing_rust": [],
+      "name": "session_make_request",
+      "runtime_status": "unverified",
+      "rust_args": 20,
+      "rust_catalog_present": true,
+      "title_matches": true,
+      "upstream_args": 20,
+      "upstream_line": 900,
+      "upstream_registration_line": 1063,
+      "upstream_source": "scrapling/core/ai/server.py"
+    },
+    {
+      "default_diffs": [],
+      "description_matches": true,
+      "extra_rust": [],
+      "missing_rust": [],
+      "name": "browser_extract",
+      "runtime_status": "unverified",
+      "rust_args": 7,
+      "rust_catalog_present": true,
+      "title_matches": true,
+      "upstream_args": 7,
+      "upstream_line": 449,
+      "upstream_registration_line": 1070,
+      "upstream_source": "scrapling/core/ai/server.py"
+    },
+    {
+      "default_diffs": [],
+      "description_matches": true,
+      "extra_rust": [],
+      "missing_rust": [],
+      "name": "browser_actions",
+      "runtime_status": "unverified",
+      "rust_args": 3,
+      "rust_catalog_present": true,
+      "title_matches": true,
+      "upstream_args": 3,
+      "upstream_line": 535,
+      "upstream_registration_line": 1077,
+      "upstream_source": "scrapling/core/ai/server.py"
+    },
+    {
+      "default_diffs": [],
+      "description_matches": true,
+      "extra_rust": [],
+      "missing_rust": [],
+      "name": "browser_evaluate",
+      "runtime_status": "unverified",
+      "rust_args": 4,
+      "rust_catalog_present": true,
+      "title_matches": true,
+      "upstream_args": 4,
+      "upstream_line": 560,
+      "upstream_registration_line": 1084,
+      "upstream_source": "scrapling/core/ai/server.py"
+    },
+    {
+      "default_diffs": [],
+      "description_matches": true,
+      "extra_rust": [],
+      "missing_rust": [],
+      "name": "browser_network_requests",
+      "runtime_status": "unverified",
+      "rust_args": 5,
+      "rust_catalog_present": true,
+      "title_matches": true,
+      "upstream_args": 5,
+      "upstream_line": 409,
+      "upstream_registration_line": 1091,
+      "upstream_source": "scrapling/core/ai/server.py"
+    },
+    {
+      "default_diffs": [],
+      "description_matches": true,
+      "extra_rust": [],
+      "missing_rust": [],
+      "name": "browser_network_request",
+      "runtime_status": "unverified",
+      "rust_args": 3,
+      "rust_catalog_present": true,
+      "title_matches": true,
+      "upstream_args": 3,
+      "upstream_line": 432,
+      "upstream_registration_line": 1096,
+      "upstream_source": "scrapling/core/ai/server.py"
+    },
+    {
+      "default_diffs": [],
+      "description_matches": true,
+      "extra_rust": [],
+      "missing_rust": [],
+      "name": "browser_screenshot",
+      "runtime_status": "unverified",
+      "rust_args": 7,
+      "rust_catalog_present": true,
+      "title_matches": true,
+      "upstream_args": 7,
+      "upstream_line": 586,
+      "upstream_registration_line": 1102,
+      "upstream_source": "scrapling/core/ai/server.py"
+    }
+  ],
+  "methods": [
+    {
+      "id": "TextHandler.__getitem__",
+      "line": 34,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.split",
+      "line": 38,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.strip",
+      "line": 41,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.lstrip",
+      "line": 44,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.rstrip",
+      "line": 47,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.capitalize",
+      "line": 50,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.casefold",
+      "line": 53,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.center",
+      "line": 56,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.expandtabs",
+      "line": 59,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.format",
+      "line": 62,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.format_map",
+      "line": 65,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.join",
+      "line": 68,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.ljust",
+      "line": 71,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.rjust",
+      "line": 74,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.swapcase",
+      "line": 77,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.title",
+      "line": 80,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.translate",
+      "line": 83,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.zfill",
+      "line": 86,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.replace",
+      "line": 89,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.upper",
+      "line": 92,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.lower",
+      "line": 95,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.sort",
+      "line": 100,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.clean",
+      "line": 104,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.get",
+      "line": 112,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.getall",
+      "line": 115,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.json",
+      "line": 121,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.re@overload:128",
+      "line": 128,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.re@overload:139",
+      "line": 139,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.re",
+      "line": 148,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandler.re_first",
+      "line": 184,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandlers.__getitem__@overload:218",
+      "line": 218,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandlers.__getitem__@overload:222",
+      "line": 222,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandlers.__getitem__",
+      "line": 225,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandlers.re",
+      "line": 231,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandlers.re_first",
+      "line": 249,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandlers.get",
+      "line": 272,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "TextHandlers.extract",
+      "line": 278,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "AttributesHandler.__init__",
+      "line": 292,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "AttributesHandler.get",
+      "line": 307,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "AttributesHandler.search_values",
+      "line": 311,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "AttributesHandler.json_string",
+      "line": 325,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "AttributesHandler.__getitem__",
+      "line": 329,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "AttributesHandler.__iter__",
+      "line": 332,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "AttributesHandler.__len__",
+      "line": 335,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "AttributesHandler.__contains__",
+      "line": 344,
+      "rust_crate_candidate": "rustscrapling-dom",
+      "rust_entrypoint": null,
+      "source": "scrapling/core/custom_types.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "StealthySession.__init__",
+      "line": 39,
+      "rust_crate_candidate": "rustscrapling-browser",
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/_browsers/_stealth.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "StealthySession.start",
+      "line": 83,
+      "rust_crate_candidate": "rustscrapling-browser",
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/_browsers/_stealth.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "StealthySession.fetch",
+      "line": 231,
+      "rust_crate_candidate": "rustscrapling-browser",
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/_browsers/_stealth.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "AsyncStealthySession.__init__",
+      "line": 356,
+      "rust_crate_candidate": "rustscrapling-browser",
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/_browsers/_stealth.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "AsyncStealthySession.start",
+      "line": 401,
+      "rust_crate_candidate": "rustscrapling-browser",
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/_browsers/_stealth.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "AsyncStealthySession.fetch",
+      "line": 553,
+      "rust_crate_candidate": "rustscrapling-browser",
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/_browsers/_stealth.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "FetcherSession.__init__",
+      "line": 678,
+      "rust_crate_candidate": "rustscrapling-http",
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/static.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Response.__init__",
+      "line": 44,
+      "rust_crate_candidate": "rustscrapling-fetch",
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/toolbelt/custom.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Response.body",
+      "line": 88,
+      "rust_crate_candidate": "rustscrapling-fetch",
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/toolbelt/custom.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Response.markdown",
+      "line": 92,
+      "rust_crate_candidate": "rustscrapling-fetch",
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/toolbelt/custom.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Response.follow",
+      "line": 108,
+      "rust_crate_candidate": "rustscrapling-fetch",
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/toolbelt/custom.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "BaseFetcher.__init__",
+      "line": 193,
+      "rust_crate_candidate": "rustscrapling-fetch",
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/toolbelt/custom.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "BaseFetcher.display_config",
+      "line": 206,
+      "rust_crate_candidate": "rustscrapling-fetch",
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/toolbelt/custom.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "BaseFetcher.configure",
+      "line": 217,
+      "rust_crate_candidate": "rustscrapling-fetch",
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/toolbelt/custom.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Fetcher.get",
+      "line": 32,
+      "rust_crate_candidate": "rustscrapling-http",
+      "rust_entrypoint": null,
+      "source": "scrapling/fetchers/requests.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Fetcher.post",
+      "line": 36,
+      "rust_crate_candidate": "rustscrapling-http",
+      "rust_entrypoint": null,
+      "source": "scrapling/fetchers/requests.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Fetcher.put",
+      "line": 40,
+      "rust_crate_candidate": "rustscrapling-http",
+      "rust_entrypoint": null,
+      "source": "scrapling/fetchers/requests.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Fetcher.delete",
+      "line": 44,
+      "rust_crate_candidate": "rustscrapling-http",
+      "rust_entrypoint": null,
+      "source": "scrapling/fetchers/requests.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "AsyncFetcher.get",
+      "line": 52,
+      "rust_crate_candidate": "rustscrapling-http",
+      "rust_entrypoint": null,
+      "source": "scrapling/fetchers/requests.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "AsyncFetcher.post",
+      "line": 56,
+      "rust_crate_candidate": "rustscrapling-http",
+      "rust_entrypoint": null,
+      "source": "scrapling/fetchers/requests.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "AsyncFetcher.put",
+      "line": 60,
+      "rust_crate_candidate": "rustscrapling-http",
+      "rust_entrypoint": null,
+      "source": "scrapling/fetchers/requests.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "AsyncFetcher.delete",
+      "line": 64,
+      "rust_crate_candidate": "rustscrapling-http",
+      "rust_entrypoint": null,
+      "source": "scrapling/fetchers/requests.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "StealthyFetcher.fetch",
+      "line": 14,
+      "rust_crate_candidate": "rustscrapling-browser",
+      "rust_entrypoint": null,
+      "source": "scrapling/fetchers/stealth_chrome.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "StealthyFetcher.async_fetch",
+      "line": 67,
+      "rust_crate_candidate": "rustscrapling-browser",
+      "rust_entrypoint": null,
+      "source": "scrapling/fetchers/stealth_chrome.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.__init__",
+      "line": 92,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.__getitem__",
+      "line": 191,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.__contains__",
+      "line": 196,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.tag",
+      "line": 265,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.text",
+      "line": 274,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.get_all_text",
+      "line": 284,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.urljoin",
+      "line": 334,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.attrib",
+      "line": 339,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.html_content",
+      "line": 348,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.body",
+      "line": 358,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.prettify",
+      "line": 364,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.has_class",
+      "line": 379,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.parent",
+      "line": 389,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.below_elements",
+      "line": 395,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.children",
+      "line": 403,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.siblings",
+      "line": 414,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.iterancestors",
+      "line": 420,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.find_ancestor",
+      "line": 427,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.path",
+      "line": 438,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.next",
+      "line": 444,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.previous",
+      "line": 456,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.get",
+      "line": 467,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.getall",
+      "line": 476,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.relocate@overload:513",
+      "line": 513,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.relocate@overload:518",
+      "line": 518,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.relocate",
+      "line": 522,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.css",
+      "line": 571,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.xpath",
+      "line": 631,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.find_all",
+      "line": 701,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.find",
+      "line": 799,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.save",
+      "line": 888,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.retrieve",
+      "line": 909,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.json",
+      "line": 924,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.re",
+      "line": 940,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.re_first",
+      "line": 956,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.find_similar",
+      "line": 1022,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.find_by_text@overload:1084",
+      "line": 1084,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.find_by_text@overload:1094",
+      "line": 1094,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.find_by_text",
+      "line": 1103,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.find_by_regex@overload:1152",
+      "line": 1152,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.find_by_regex@overload:1161",
+      "line": 1161,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selector.find_by_regex",
+      "line": 1169,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selectors.__getitem__@overload:1217",
+      "line": 1217,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selectors.__getitem__@overload:1221",
+      "line": 1221,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selectors.__getitem__",
+      "line": 1224,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selectors.xpath",
+      "line": 1231,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selectors.css",
+      "line": 1262,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selectors.re",
+      "line": 1290,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selectors.re_first",
+      "line": 1308,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selectors.search",
+      "line": 1330,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selectors.filter",
+      "line": 1340,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selectors.get@overload:1348",
+      "line": 1348,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selectors.get@overload:1351",
+      "line": 1351,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selectors.get",
+      "line": 1353,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selectors.getall",
+      "line": 1361,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selectors.first",
+      "line": 1369,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selectors.last",
+      "line": 1374,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Selectors.length",
+      "line": 1379,
+      "rust_crate_candidate": "rustscrapling-select",
+      "rust_entrypoint": null,
+      "source": "scrapling/parser.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "CrawlerEngine.__init__",
+      "line": 32,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/engine.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "CrawlerEngine.request_pause",
+      "line": 280,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/engine.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "CrawlerEngine.crawl",
+      "line": 356,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/engine.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "CrawlerEngine.items",
+      "line": 456,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/engine.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "LinkExtractor.__init__",
+      "line": 194,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/links.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "LinkExtractor.extract",
+      "line": 226,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/links.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "LinkExtractor.matches",
+      "line": 272,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/links.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Request.__init__",
+      "line": 34,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/request.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Request.copy",
+      "line": 55,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/request.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Request.domain",
+      "line": 69,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/request.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Request.update_fingerprint",
+      "line": 72,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/request.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "CrawlResult.completed",
+      "line": 207,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/result.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "CrawlResult.__len__",
+      "line": 211,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/result.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "CrawlResult.__iter__",
+      "line": 214,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/result.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Scheduler.__init__",
+      "line": 21,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/scheduler.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Scheduler.enqueue",
+      "line": 41,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/scheduler.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Scheduler.dequeue",
+      "line": 58,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/scheduler.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Scheduler.complete",
+      "line": 64,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/scheduler.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Scheduler.__len__",
+      "line": 74,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/scheduler.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Scheduler.is_empty",
+      "line": 78,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/scheduler.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Scheduler.snapshot",
+      "line": 81,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/scheduler.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Scheduler.restore",
+      "line": 87,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/scheduler.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "SessionManager.__init__",
+      "line": 15,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/session.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "SessionManager.add",
+      "line": 22,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/session.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "SessionManager.remove",
+      "line": 43,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/session.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "SessionManager.pop",
+      "line": 50,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/session.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "SessionManager.default_session_id",
+      "line": 68,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/session.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "SessionManager.session_ids",
+      "line": 74,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/session.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "SessionManager.get",
+      "line": 77,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/session.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "SessionManager.start",
+      "line": 83,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/session.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "SessionManager.close",
+      "line": 94,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/session.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "SessionManager.fetch",
+      "line": 103,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/session.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "SessionManager.__contains__",
+      "line": 146,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/session.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "SessionManager.__len__",
+      "line": 150,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/session.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Spider.__init__",
+      "line": 106,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/spider.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Spider.start_requests",
+      "line": 155,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/spider.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Spider.parse",
+      "line": 173,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/spider.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Spider.on_start",
+      "line": 178,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/spider.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Spider.on_close",
+      "line": 188,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/spider.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Spider.on_error",
+      "line": 192,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/spider.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Spider.on_scraped_item",
+      "line": 200,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/spider.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Spider.is_blocked",
+      "line": 204,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/spider.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Spider.retry_blocked_request",
+      "line": 210,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/spider.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Spider.configure_sessions",
+      "line": 218,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/spider.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Spider.pause",
+      "line": 232,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/spider.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Spider.start",
+      "line": 278,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/spider.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Spider.stream",
+      "line": 304,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/spider.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "Spider.stats",
+      "line": 326,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/spider.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "CrawlSpider.rules",
+      "line": 63,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/crawler.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "CrawlSpider.parse",
+      "line": 67,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/crawler.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "XMLFeedSpider.parse",
+      "line": 48,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/feed.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "XMLFeedSpider.parse_node",
+      "line": 67,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/feed.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "CSVFeedSpider.parse",
+      "line": 120,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/feed.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "CSVFeedSpider.parse_row",
+      "line": 136,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/feed.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "ShopifySpider.__init__",
+      "line": 39,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/shopify.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "ShopifySpider.start_requests",
+      "line": 47,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/shopify.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "ShopifySpider.parse",
+      "line": 54,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/shopify.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "ShopifySpider.parse_collection",
+      "line": 96,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/shopify.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "ContentSpider.__init__",
+      "line": 51,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/site_to_markdown.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "ContentSpider.rules",
+      "line": 60,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/site_to_markdown.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "ContentSpider.parse",
+      "line": 64,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/site_to_markdown.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "ContentSpider.on_scraped_item",
+      "line": 78,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/site_to_markdown.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "SitemapSpider.rules",
+      "line": 61,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/sitemap.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "SitemapSpider.start_requests",
+      "line": 65,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/sitemap.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "id": "SitemapSpider.parse",
+      "line": 73,
+      "rust_crate_candidate": "rustscrapling-spider",
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/templates/sitemap.py",
+      "status": "unverified",
+      "test_ids": []
+    }
+  ],
+  "rust_backend_sha256": "cd62211da50b9ef074fa781972d293de04f46202f014dd3a254ee904f00ce3b9",
+  "rust_catalog_sha256": "e3c39cbc8c3861b15846b93a8e13e375c3d408d16b33c7bc8279d45c39946b4b",
+  "schema_version": 1,
+  "unrecognized_executor_action_branches": [],
+  "upstream_sha": "95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0"
+}
