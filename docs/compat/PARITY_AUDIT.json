@@ -1054,7 +1054,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-adaptive",
-          "line": 432,
+          "line": 437,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-adaptive/src/scoring.rs"
         }
@@ -1355,7 +1355,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-adaptive",
-          "line": 332,
+          "line": 337,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-adaptive/src/scoring.rs"
         }
@@ -1374,7 +1374,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-adaptive",
-          "line": 332,
+          "line": 337,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-adaptive/src/scoring.rs"
         }
@@ -1393,7 +1393,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-adaptive",
-          "line": 332,
+          "line": 337,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-adaptive/src/scoring.rs"
         }
@@ -3136,7 +3136,7 @@
         },
         {
           "crate": "rustscrapling-spider",
-          "line": 362,
+          "line": 410,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-spider/src/lib.rs"
         }
@@ -3494,7 +3494,7 @@
         },
         {
           "crate": "rustscrapling-spider",
-          "line": 362,
+          "line": 410,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-spider/src/lib.rs"
         }
@@ -3686,7 +3686,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-adaptive",
-          "line": 332,
+          "line": 337,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-adaptive/src/scoring.rs"
         }
@@ -3703,7 +3703,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-adaptive",
-          "line": 332,
+          "line": 337,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-adaptive/src/scoring.rs"
         }
@@ -3720,7 +3720,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-adaptive",
-          "line": 332,
+          "line": 337,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-adaptive/src/scoring.rs"
         }
@@ -3848,7 +3848,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-adaptive",
-          "line": 432,
+          "line": 437,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-adaptive/src/scoring.rs"
         }
@@ -4254,7 +4254,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-spider",
-          "line": 1131,
+          "line": 1264,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-spider/src/lib.rs"
         }

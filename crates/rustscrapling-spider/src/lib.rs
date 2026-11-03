@@ -301,6 +301,13 @@ pub struct CrawlItem {
     pub links: Vec<String>,
     pub error: Option<String>,
     pub body: Option<String>,
+    /// Name of the parser callback requested by the originating
+    /// [`SpiderRequest`] (upstream `Request.callback`); `None` means `parse`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub callback: Option<String>,
+    /// Metadata carried from the originating request (upstream `meta`).
+    #[serde(default, skip_serializing_if = "serde_json::Map::is_empty")]
+    pub meta: serde_json::Map<String, serde_json::Value>,
 }
 
 /// A follow-up URL yielded from a custom spider parser. Relative URLs are
@@ -316,6 +323,18 @@ pub struct SpiderRequest {
     pub body: Option<Vec<u8>>,
     #[serde(default, skip_serializing_if = "is_zero_priority")]
     pub priority: i32,
+    /// Parser callback name for the response (upstream `callback`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub callback: Option<String>,
+    /// Arbitrary JSON metadata handed to the response (upstream `meta`).
+    #[serde(default, skip_serializing_if = "serde_json::Map::is_empty")]
+    pub meta: serde_json::Map<String, serde_json::Value>,
+    /// Bypass duplicate filtering (upstream `dont_filter`).
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub dont_filter: bool,
+    /// Request cookies sent as a `Cookie` header (upstream `cookies`).
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub cookies: BTreeMap<String, String>,
 }
 
 impl std::fmt::Debug for SpiderRequest {
@@ -326,6 +345,10 @@ impl std::fmt::Debug for SpiderRequest {
             .field("header_names", &self.headers.keys().collect::<Vec<_>>())
             .field("body_bytes", &self.body.as_ref().map(Vec::len))
             .field("priority", &self.priority)
+            .field("callback", &self.callback)
+            .field("meta_keys", &self.meta.keys().collect::<Vec<_>>())
+            .field("dont_filter", &self.dont_filter)
+            .field("cookie_names", &self.cookies.keys().collect::<Vec<_>>())
             .finish()
     }
 }
@@ -346,7 +369,32 @@ impl SpiderRequest {
             headers: BTreeMap::new(),
             body: None,
             priority: 0,
+            callback: None,
+            meta: serde_json::Map::new(),
+            dont_filter: false,
+            cookies: BTreeMap::new(),
         }
+    }
+
+    /// Parser callback to run for the response.
+    pub fn callback(mut self, name: impl Into<String>) -> Self {
+        self.callback = Some(name.into());
+        self
+    }
+
+    pub fn meta(mut self, key: impl Into<String>, value: serde_json::Value) -> Self {
+        self.meta.insert(key.into(), value);
+        self
+    }
+
+    pub fn dont_filter(mut self, dont_filter: bool) -> Self {
+        self.dont_filter = dont_filter;
+        self
+    }
+
+    pub fn cookie(mut self, name: impl Into<String>, value: impl Into<String>) -> Self {
+        self.cookies.insert(name.into(), value.into());
+        self
     }
 
     pub fn method(mut self, method: impl Into<String>) -> Self {
@@ -371,7 +419,53 @@ impl SpiderRequest {
 
     /// The priority is a scheduler hint; it cannot change HTTP identity.
     fn is_plain_get_transport(&self) -> bool {
-        self.method == "GET" && self.headers.is_empty() && self.body.is_none()
+        self.method == "GET"
+            && self.headers.is_empty()
+            && self.body.is_none()
+            && self.cookies.is_empty()
+    }
+
+    /// Whether the request carries anything beyond the legacy
+    /// `[url, depth]` checkpoint shape.
+    fn is_legacy_shape(&self) -> bool {
+        self.is_plain_get_transport()
+            && self.priority == 0
+            && self.callback.is_none()
+            && self.meta.is_empty()
+            && !self.dont_filter
+    }
+
+    /// Fold `cookies` into a `Cookie` header for the transport layer.
+    fn with_cookie_header(mut self) -> Result<Self, SpiderFetchError> {
+        if self.cookies.is_empty() {
+            return Ok(self);
+        }
+        let mut pairs = Vec::new();
+        for (name, value) in &self.cookies {
+            if name.is_empty()
+                || name.bytes().any(|b| {
+                    matches!(b, b';' | b'=' | b'\r' | b'\n' | b'\0') || b.is_ascii_whitespace()
+                })
+                || value
+                    .bytes()
+                    .any(|b| matches!(b, b';' | b'\r' | b'\n' | b'\0'))
+            {
+                return Err(SpiderFetchError::InvalidRequest("invalid request cookies"));
+            }
+            pairs.push(format!("{name}={value}"));
+        }
+        let existing = self
+            .headers
+            .keys()
+            .find(|key| key.eq_ignore_ascii_case("cookie"))
+            .cloned();
+        if let Some(key) = existing {
+            let prior = self.headers.remove(&key).unwrap_or_default();
+            pairs.insert(0, prior);
+        }
+        self.headers.insert("Cookie".into(), pairs.join("; "));
+        self.cookies.clear();
+        Ok(self)
     }
 
     fn validate_fields(&mut self) -> Result<(), SpiderFetchError> {
@@ -416,7 +510,7 @@ impl SpiderRequest {
         if spec.crawldir.is_some()
             && !spec.development_mode
             && !spec.persist_sensitive_requests
-            && (self.body.is_some() || !self.headers.is_empty())
+            && (self.body.is_some() || !self.headers.is_empty() || !self.cookies.is_empty())
         {
             return Err(SpiderFetchError::SensitivePersistenceDenied);
         }
@@ -439,7 +533,22 @@ pub type ParseFuture<'a> =
 /// Returned requests enter the existing bounded scheduler, including robots,
 /// domain, link-rule and checkpoint handling.
 pub trait SpiderParser: Send + Sync {
+    /// Handle a successful response. `page.callback` names the callback the
+    /// originating request asked for (upstream `Request.callback`); `None`
+    /// is the default `parse`. `page.meta` carries the request metadata.
     fn parse<'a>(&'a self, page: &'a CrawlItem) -> ParseFuture<'a>;
+
+    /// Upstream `on_error(request, error)`: called with `page.error` set when
+    /// fetching failed or `parse` returned an error. May yield follow-ups.
+    fn on_error<'a>(&'a self, page: &'a CrawlItem) -> ParseFuture<'a> {
+        let _ = page;
+        Box::pin(async { Ok(Vec::new()) })
+    }
+
+    /// Upstream `on_scraped_item`: transform an item or drop it (`None`).
+    fn on_scraped_item(&self, item: serde_json::Value) -> Option<serde_json::Value> {
+        Some(item)
+    }
 }
 
 /// Events from [`crawl_with_parser`]. `Page` retains the existing crawl
@@ -490,7 +599,7 @@ impl From<StoredRequest> for QueuedRequest {
 
 impl From<QueuedRequest> for StoredRequest {
     fn from(value: QueuedRequest) -> Self {
-        if value.request.is_plain_get_transport() && value.request.priority == 0 {
+        if value.request.is_legacy_shape() {
             StoredRequest::Legacy((value.request.url, value.depth))
         } else {
             StoredRequest::Rich {
@@ -508,6 +617,13 @@ pub struct CrawlSummary {
     pub successful: usize,
     pub failed: usize,
     pub remaining: usize,
+    /// Parser callbacks that returned an error (handed to `on_error`).
+    #[serde(default, skip_serializing_if = "is_zero_usize")]
+    pub parse_errors: usize,
+}
+
+fn is_zero_usize(value: &usize) -> bool {
+    *value == 0
 }
 
 /// A separate start gate for each host. Never hold it across HTTP I/O.
@@ -601,13 +717,26 @@ fn request_payload_bytes(request: &SpiderRequest) -> usize {
         .iter()
         .map(|(name, value)| name.len().saturating_add(value.len()))
         .fold(0usize, usize::saturating_add);
-    headers.saturating_add(request.body.as_ref().map_or(0, Vec::len))
+    let cookies = request
+        .cookies
+        .iter()
+        .map(|(name, value)| name.len().saturating_add(value.len()))
+        .fold(0usize, usize::saturating_add);
+    let meta = if request.meta.is_empty() {
+        0
+    } else {
+        serde_json::to_vec(&request.meta).map_or(usize::MAX, |bytes| bytes.len())
+    };
+    headers
+        .saturating_add(request.body.as_ref().map_or(0, Vec::len))
+        .saturating_add(cookies)
+        .saturating_add(meta)
 }
 
 /// Preserve the legacy GET digest while distinguishing requests with a
 /// different method, body or headers. Priority is intentionally excluded.
 fn request_key(request: &SpiderRequest) -> String {
-    if request.is_plain_get_transport() {
+    if request.method == "GET" && request.headers.is_empty() && request.body.is_none() {
         return key(&request.url);
     }
     let mut hasher = blake3::Hasher::new();
@@ -629,6 +758,8 @@ fn request_key(request: &SpiderRequest) -> String {
         field(name.as_bytes());
         field(value.as_bytes());
     }
+    // Like upstream `Request.update_fingerprint`, cookies (session kwargs)
+    // are not part of the duplicate-filter identity.
     // Disambiguate absent body from a present zero-length body.
     field(if request.body.is_some() { b"1" } else { b"0" });
     if let Some(body) = &request.body {
@@ -1087,7 +1218,9 @@ fn enqueue_spider_request(
         .ensure_checkpoint_privacy(spec)
         .map_err(|err| err.to_string())?;
     let fingerprint = request_key(&request);
-    if !frontier.visited.contains(&fingerprint) && !frontier.queued.contains(&fingerprint) {
+    if request.dont_filter
+        || (!frontier.visited.contains(&fingerprint) && !frontier.queued.contains(&fingerprint))
+    {
         let total = frontier
             .reserved_payload_bytes
             .checked_add(request_payload_bytes(&request))
@@ -1273,7 +1406,7 @@ where
                 .validate_fields()
                 .map_err(|e| e.to_string())?;
             let digest = request_key(&pending.request);
-            if !visited.insert(digest) {
+            if !visited.insert(digest) && !pending.request.dont_filter {
                 reserved_payload_bytes = reserved_payload_bytes.saturating_sub(request_size);
                 continue;
             }
@@ -1287,6 +1420,8 @@ where
                     links: Vec::new(),
                     error: Some("blocked by robots.txt policy".into()),
                     body: None,
+                    callback: pending.request.callback.clone(),
+                    meta: pending.request.meta.clone(),
                 }))?;
                 continue;
             }
@@ -1323,6 +1458,7 @@ where
             let auto_throttle = spec.auto_throttle;
             let backend = Arc::clone(&fetcher);
             let request = pending.request;
+            let origin = (request.callback.clone(), request.meta.clone());
             batch.push(async move {
                 if let Some(ref host_clock) = host_clock {
                     // Do not keep the gate locked during sleep: an earlier
@@ -1354,10 +1490,13 @@ where
                     // have been spaced apart.
                 }
                 let started = Instant::now();
-                let result = backend
-                    .fetch_request(&request)
-                    .await
-                    .map_err(|err| err.to_string());
+                let result = match request.with_cookie_header() {
+                    Ok(request) => backend
+                        .fetch_request(&request)
+                        .await
+                        .map_err(|err| err.to_string()),
+                    Err(err) => Err(err.to_string()),
+                };
                 if auto_throttle {
                     if let Some(ref host_clock) = host_clock {
                         let status = result.as_ref().ok().map(|response| response.status);
@@ -1373,10 +1512,10 @@ where
                         );
                     }
                 }
-                (url.to_string(), depth, result, request_size)
+                (url.to_string(), depth, result, request_size, origin)
             });
         }
-        while let Some((url, depth, result, request_size)) = batch.next().await {
+        while let Some((url, depth, result, request_size, (callback, meta))) = batch.next().await {
             // An in-flight request retains its reservation until it completes;
             // otherwise high concurrency can exceed the frontier memory cap.
             reserved_payload_bytes = reserved_payload_bytes.saturating_sub(request_size);
@@ -1417,6 +1556,8 @@ where
                             links,
                             error: None,
                             body: Some(response.body),
+                            callback: callback.clone(),
+                            meta: meta.clone(),
                         },
                         response_base,
                     )
@@ -1431,6 +1572,8 @@ where
                             links: Vec::new(),
                             error: Some(err),
                             body: None,
+                            callback,
+                            meta,
                         },
                         None,
                     )
@@ -1453,11 +1596,30 @@ where
             if let Some(parser) = parser {
                 // Failure pages do not run application parsing, matching the
                 // default successful-response parse behavior of Scrapling.
-                if item
+                let outputs = if item
                     .status
                     .is_some_and(|status| (200..300).contains(&status))
                 {
-                    for output in parser.parse(&item).await? {
+                    // Upstream: an exception in a callback goes to
+                    // `on_error(request, error)` and the crawl continues.
+                    match parser.parse(&item).await {
+                        Ok(outputs) => outputs,
+                        Err(error) => {
+                            summary.parse_errors += 1;
+                            let failed = CrawlItem {
+                                error: Some(error),
+                                ..item.clone()
+                            };
+                            parser.on_error(&failed).await?
+                        }
+                    }
+                } else if item.error.is_some() {
+                    parser.on_error(&item).await?
+                } else {
+                    Vec::new()
+                };
+                {
+                    for output in outputs {
                         match output {
                             SpiderOutput::Request(request) => enqueue_spider_request(
                                 request,
@@ -1473,7 +1635,12 @@ where
                                     nonzero_priority_count: &mut nonzero_priority_count,
                                 },
                             )?,
-                            SpiderOutput::Item(value) => emit(SpiderEvent::Item(&value))?,
+                            SpiderOutput::Item(value) => {
+                                // Upstream `on_scraped_item`: transform or drop.
+                                if let Some(value) = parser.on_scraped_item(value) {
+                                    emit(SpiderEvent::Item(&value))?
+                                }
+                            }
                         }
                     }
                 }
@@ -2895,5 +3062,144 @@ mod tests {
         assert!(wire.starts_with("POST /submit HTTP/1.1"), "{wire}");
         assert!(wire.to_ascii_lowercase().contains("x-spider-test: present"));
         assert!(wire.ends_with("real-wire-body"));
+    }
+    use serde_json::json;
+
+    struct HookRecorder(Mutex<Vec<SpiderRequest>>);
+
+    impl Fetcher for HookRecorder {
+        fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
+            Box::pin(async move { panic!("unexpected URL-only fetch {url}") })
+        }
+
+        fn fetch_request<'a>(&'a self, request: &'a SpiderRequest) -> RequestFetchFuture<'a> {
+            Box::pin(async move {
+                self.0.lock().unwrap().push(request.clone());
+                if request.url.ends_with("/fail") {
+                    return Err(SpiderFetchError::Backend("connection refused".into()));
+                }
+                Ok(FetchPage {
+                    headers: Default::default(),
+                    status: 200,
+                    url: request.url.clone(),
+                    content_type: "text/plain".into(),
+                    body: "ok".into(),
+                })
+            })
+        }
+    }
+
+    struct HookParser(Mutex<Vec<String>>);
+
+    impl SpiderParser for HookParser {
+        fn parse<'a>(&'a self, page: &'a CrawlItem) -> ParseFuture<'a> {
+            Box::pin(async move {
+                self.0.lock().unwrap().push(format!(
+                    "parse:{}:{}",
+                    page.callback.as_deref().unwrap_or("parse"),
+                    page.meta.get("n").map_or(String::new(), |n| n.to_string())
+                ));
+                match page.callback.as_deref() {
+                    None => Ok(vec![
+                        SpiderOutput::Request(
+                            SpiderRequest::new("/detail")
+                                .callback("detail")
+                                .meta("n", json!(7))
+                                .cookie("sid", "abc"),
+                        ),
+                        // Same URL again: filtered unless dont_filter.
+                        SpiderOutput::Request(SpiderRequest::new("/detail").callback("detail")),
+                        SpiderOutput::Request(
+                            SpiderRequest::new("/start")
+                                .dont_filter(true)
+                                .callback("again"),
+                        ),
+                        SpiderOutput::Request(SpiderRequest::new("/fail").callback("never")),
+                        SpiderOutput::Item(json!({"keep": true})),
+                        SpiderOutput::Item(json!({"drop": true})),
+                    ]),
+                    Some("detail") => Err("detail parser failed".into()),
+                    _ => Ok(Vec::new()),
+                }
+            })
+        }
+
+        fn on_error<'a>(&'a self, page: &'a CrawlItem) -> ParseFuture<'a> {
+            Box::pin(async move {
+                self.0.lock().unwrap().push(format!(
+                    "error:{}:{}",
+                    page.callback.as_deref().unwrap_or("parse"),
+                    page.error.as_deref().unwrap_or_default()
+                ));
+                Ok(vec![SpiderOutput::Item(json!({"recovered": page.url}))])
+            })
+        }
+
+        fn on_scraped_item(&self, item: serde_json::Value) -> Option<serde_json::Value> {
+            (item.get("drop").is_none()).then_some(item)
+        }
+    }
+
+    #[tokio::test]
+    async fn callbacks_meta_dont_filter_cookies_and_error_hooks() {
+        let fetcher = Arc::new(HookRecorder(Mutex::new(Vec::new())));
+        let parser = HookParser(Mutex::new(Vec::new()));
+        let spec = CrawlSpec {
+            start_urls: vec!["https://example.org/start".into()],
+            max_pages: 10,
+            max_depth: 2,
+            concurrency: 1,
+            ..CrawlSpec::default()
+        };
+        let mut items = Vec::new();
+        let summary = crawl_with_parser(&spec, fetcher.clone(), &parser, |event| {
+            if let SpiderEvent::Item(value) = event {
+                items.push(value.clone());
+            }
+            Ok(())
+        })
+        .await
+        .unwrap();
+        let log = parser.0.lock().unwrap().clone();
+        assert!(log.contains(&"parse:parse:".to_owned()), "{log:?}");
+        assert!(log.contains(&"parse:detail:7".to_owned()), "{log:?}");
+        assert!(
+            log.contains(&"parse:again:".to_owned()),
+            "dont_filter refetch: {log:?}"
+        );
+        assert!(
+            log.contains(&"error:detail:detail parser failed".to_owned()),
+            "{log:?}"
+        );
+        assert!(
+            log.iter()
+                .any(|entry| entry.starts_with("error:never:")
+                    && entry.contains("connection refused")),
+            "{log:?}"
+        );
+        assert_eq!(summary.parse_errors, 1);
+        assert!(items.contains(&json!({"keep": true})));
+        assert!(
+            !items.contains(&json!({"drop": true})),
+            "on_scraped_item drops items"
+        );
+        assert!(items.iter().any(|item| item.get("recovered").is_some()));
+        let requests = fetcher.0.lock().unwrap().clone();
+        let detail: Vec<_> = requests
+            .iter()
+            .filter(|r| r.url.ends_with("/detail"))
+            .collect();
+        assert_eq!(detail.len(), 1, "duplicate /detail is filtered");
+        assert_eq!(
+            detail[0].headers.get("Cookie").map(String::as_str),
+            Some("sid=abc")
+        );
+        assert_eq!(
+            requests
+                .iter()
+                .filter(|r| r.url.ends_with("/start"))
+                .count(),
+            2
+        );
     }
 }

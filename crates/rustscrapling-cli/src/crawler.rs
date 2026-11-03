@@ -213,6 +213,8 @@ mod tests {
             links: vec!["https://example.org/t?x=<a>".into()],
             error: None,
             body: None,
+            callback: None,
+            meta: Default::default(),
         };
         for format in [
             CrawlFormat::Ndjson,

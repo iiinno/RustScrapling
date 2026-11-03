@@ -1470,7 +1470,17 @@ impl BrowserPage {
 
     /// Run `Page.captureScreenshot` and validate the encoded result size.
     pub(crate) async fn capture_screenshot(&self, args: Value) -> Result<String, BrowserError> {
-        let response = self.raw("Page.captureScreenshot", args).await?;
+        // Large viewports on a busy host can exceed the transport's 20 s
+        // default; callers bound the operation with the tool's own timeout.
+        let response = self
+            .connection
+            .send_with_timeout(
+                "Page.captureScreenshot",
+                args,
+                Some(&self.session_id),
+                Duration::from_secs(120),
+            )
+            .await?;
         let encoded = response
             .get("data")
             .and_then(Value::as_str)
