@@ -45,11 +45,12 @@ max_pages = 150
 max_depth = 2
 concurrency = 8
 delay_ms = 200
+auto_throttle = true
 obey_robots = true
 crawldir = ".rustscrapling-crawl"
 ```
 
-`obey_robots` defaults to false to preserve the original tool's behavior. Enabling it checks robots.txt, with a conservative failure policy. The crawler emits NDJSON incrementally and writes compact visited-URL fingerprints and pending URLs to its checkpoint directory. Do not assume a live network crawl has exactly-once output semantics under sudden process failure without verifying the resumed output.
+`obey_robots` defaults to false to preserve the original tool's behavior. Enabling it checks robots.txt, with a conservative failure policy. `auto_throttle` also defaults to false; enable it for per-host adaptive pacing based on observed latency and throttling errors such as 429/503. The configured `delay_ms` remains the lower bound for the adaptive interval. The crawler emits NDJSON incrementally and writes compact visited-URL fingerprints and pending URLs to its checkpoint directory. Do not assume a live network crawl has exactly-once output semantics under sudden process failure without verifying the resumed output.
 
 ## Verification
 

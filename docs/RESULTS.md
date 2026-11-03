@@ -1,5 +1,17 @@
 # RESULTS.md: 測定と検証の結果
 
+## 2026-11-03 Stage6 オプトインAutoThrottle追加
+
+- 統合コミット`05cda33`で`CrawlSpec.auto_throttle`を導入（既定false）。有効化した場合のみホスト別の動的な取得開始間隔を設定し、HTTP 408/429/502/503/504や取得失敗で上限付きバックオフ、200〜399の応答では実測応答時間の半分または既定の最小間隔に向けて平滑化する。`delay_ms`指定値を下回らず、`delay_ms=0`のAutoThrottle時は最小100ms。実行中リクエストはキャンセルせず、次回以降の取得開始時刻に反映する。`Retry-After`解析・分散ジョブ間の共有レート制限は未実装。
+- 旧CrawlSpec/チェックポイントの互換性を保つため`auto_throttle=false`はJSON出力から省略する。VPS Ubuntu・Rust1.99.1・Cargo offlineで`cargo test -p rustscrapling-spider --locked --offline` **17/17 PASS**。429後に同一ホストの次回開始が延期される試験、バックオフ/緩和、旧specハッシュを変えない試験を含む。これはモックFetchによる機能試験であり、外部サーバー負荷の低減や取得成功率を実測したものではない。
+- VPS Chrome155で`RUSTSCRAPLING_CHROME_FOR_TESTING=/usr/bin/google-chrome`、明示`--ignored`、テスト専用サンドボックス解除を指定した`chrome_data_e2e`が**1/1 PASS（約0.93秒）**。DOM/PNG/明示evaluateとRuntime非自動有効化を検証した。HTTPを使うlocalhost Chrome実機E2Eは依然未達。
+
+## 2026-11-03 VPSでのCLI性能・Daemon feature・Chrome for Testing追加追試
+
+- 現行統合版をVPS（Ubuntu/Linux、Rust1.99.1、Debugビルド）で`cargo build -p rustscrapling-cli --locked --offline`した後、`python3 tests/e2e_local.py target/debug/rustscrapling`は6/6 PASS。`python3 scripts/stress_local.py target/debug/rustscrapling`は固定localhost150ページ×並列8で**0.261秒、最大RSS24.46MiB、チェックポイント再開0.011秒**（1回実測）。WSL測定値0.877秒と異なる環境の値を性能改善倍率として扱わない。
+- VPSで`cargo test -p rustscrapling-daemon --features fetch-integration --locked --offline`を実行し、local E2E **7/7 PASS**。SQLiteによる再起動復元、304、token境界、認証IPC・状態ファイル保護を含む。
+- GoogleのChrome for Testing公式配布から156.0.8078.80のLinux64ビルドをVPSの専用`~/tools/rustscrapling-chrome-156`へ導入（既存ブラウザ設定は変更せず）。`RUSTSCRAPLING_CHROME_FOR_TESTING`を明示して実機localhost HTTP E2Eを走らせても、Chrome 155と同様に`Page.navigate`がタイムアウト。対照的にHTTPを使わない`data:` URLでの実CDP E2E（`cargo test -p rustscrapling-browser --test chrome_data_e2e -- --ignored`）は**1/1 PASS（約1.28秒）**し、DOM取得・PNG screenshot・明示Runtime.evaluateと通常操作のRuntime非有効化を確認した。`chrome_data_e2e`は通常テストで明示ignoreされるオプトイン実機試験。VPS localhost HTTPのネットワーク異常は未解決。
+
 ## 2026-11-03 VPS移管後の取得漏れ修正・チェックポイント保護・実機検証
 
 - 負荷の高いRustビルド/試験をWindows PCからUbuntu VPS `inouemasaki-ai` の `~/Project/RustScrapling` に移管。VPSでRust 1.95.0を1.99.1に更新した。Tailscale SSHによるGit同期を用い、ビルド/試験はVPSの `systemd-run --user --scope` で `MemoryMax=2600M`（全体試験は3000～3200M）、`MemorySwapMax=0`、`CARGO_BUILD_JOBS=2`、低優先度 `nice -n 12` を指定。PCのWSLで追加ビルドは実施していない。

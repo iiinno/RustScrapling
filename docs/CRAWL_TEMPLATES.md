@@ -12,11 +12,22 @@ csv_feed, shopify and content. The default is crawl.
     concurrency = 8
     obey_robots = true
     delay_ms = 200
+    auto_throttle = true
     crawldir = "./crawl-state"
 
 URL sets and nested sitemap indexes are supported. The index resolver is
 bounded to 64 index documents and four levels. Only HTTP(S) links in
 allowed domains are queued; credentials and external links are rejected.
+
+`auto_throttle` is opt-in and defaults to `false` (the previous fixed-delay
+behavior remains unchanged). When enabled, RustScrapling applies separate
+per-host request-start gates with a minimum of `delay_ms` or 100 milliseconds
+when `delay_ms = 0`. Responses such as HTTP 429 and 503 and connection errors
+increase the host's delay, and successful responses gradually move it towards
+the configured minimum or half the observed request latency. Backoff is
+limited to 30 seconds unless a larger `delay_ms` was explicitly specified.
+Updates affect future starts, not requests already in flight; they do not
+constitute a server-side rate-limit guarantee or a `Retry-After` parser.
 
 ## XMLFeedSpider / CSVFeedSpider
 
