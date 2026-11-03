@@ -391,13 +391,40 @@ fn restore(spec: &CrawlSpec) -> Result<Option<Progress>, String> {
     let Some(path) = state_path(spec) else {
         return Ok(None);
     };
+    if let Some(parent) = path.parent() {
+        match std::fs::symlink_metadata(parent) {
+            Ok(metadata) if !metadata.file_type().is_dir() => {
+                return Err("crawldir must be a real directory, not a symlink".into());
+            }
+            Ok(_) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(error) => return Err(format!("checking crawldir: {error}")),
+        }
+    }
     // Recover the last intact checkpoint if Windows had to move the
     // previous file aside before an interrupted replacement.
     let backup = path.with_extension("json.bak");
     let mut last_error = None;
     for candidate in [&path, &backup] {
-        if !candidate.exists() {
-            continue;
+        let metadata = match std::fs::symlink_metadata(candidate) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(error) => return Err(format!("checking crawl state: {error}")),
+        };
+        // Check symlink_metadata rather than following a malicious state-file
+        // symlink. This also prevents accidentally reading unrelated files.
+        if !metadata.file_type().is_file() {
+            return Err("crawl state must be a regular file (not a symlink)".into());
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            // Migrate older state files written with a permissive umask before
+            // reading URLs that can contain access tokens in their query.
+            if metadata.permissions().mode() & 0o077 != 0 {
+                std::fs::set_permissions(candidate, std::fs::Permissions::from_mode(0o600))
+                    .map_err(|e| format!("protecting crawl state: {e}"))?;
+            }
         }
         match std::fs::read(candidate)
             .map_err(|e| e.to_string())
@@ -423,16 +450,51 @@ fn persist(spec: &CrawlSpec, progress: &Progress) -> Result<(), String> {
         return Ok(());
     };
     let parent = path.parent().ok_or("state has no parent directory")?;
+    let parent_existed = parent.exists();
     std::fs::create_dir_all(parent).map_err(|e| format!("creating crawldir: {e}"))?;
-    let pending = path.with_extension("json.tmp");
+    if !std::fs::symlink_metadata(parent)
+        .map_err(|e| format!("checking crawldir: {e}"))?
+        .file_type()
+        .is_dir()
+    {
+        return Err("crawldir must be a real directory, not a symlink".into());
+    }
+    #[cfg(unix)]
+    if !parent_existed {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(parent, std::fs::Permissions::from_mode(0o700))
+            .map_err(|e| format!("protecting crawldir: {e}"))?;
+    }
+    // A unique, exclusively created temporary file cannot overwrite an
+    // attacker-supplied symlink or a stale temp file from a prior crash.
+    let nonce = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let pending = path.with_extension(format!("json.{}.{nonce}.tmp", std::process::id()));
     let mut data = progress.clone();
     data.spec_hash = spec_hash(spec)?;
     let bytes = serde_json::to_vec(&data).map_err(|e| e.to_string())?;
-    let mut file = std::fs::File::create(&pending).map_err(|e| format!("creating state: {e}"))?;
-    file.write_all(&bytes)
-        .map_err(|e| format!("writing state: {e}"))?;
-    file.sync_all().map_err(|e| format!("syncing state: {e}"))?;
+    let mut options = std::fs::OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    let mut file = options
+        .open(&pending)
+        .map_err(|e| format!("creating state: {e}"))?;
+    let write_result = (|| -> Result<(), String> {
+        file.write_all(&bytes)
+            .map_err(|e| format!("writing state: {e}"))?;
+        file.sync_all().map_err(|e| format!("syncing state: {e}"))
+    })();
     drop(file);
+    if let Err(error) = write_result {
+        let _ = std::fs::remove_file(&pending);
+        return Err(error);
+    }
     #[cfg(windows)]
     {
         let backup = path.with_extension("json.bak");
@@ -995,5 +1057,47 @@ mod tests {
         std::fs::copy(&file, file.with_extension("json.bak")).unwrap();
         std::fs::write(&file, b"{incomplete").unwrap();
         assert!(restore(&spec).unwrap().is_some());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn checkpoint_is_private_and_never_reads_a_state_symlink() {
+        use std::os::unix::fs::{symlink, PermissionsExt};
+
+        let dir = tempfile::tempdir().unwrap();
+        let crawldir = dir.path().join("private-state");
+        let spec = CrawlSpec {
+            start_urls: vec!["https://example.org/one?token=sensitive".into()],
+            crawldir: Some(crawldir.clone()),
+            ..CrawlSpec::default()
+        };
+        persist(&spec, &Progress::default()).unwrap();
+        let state = state_path(&spec).unwrap();
+        assert_eq!(
+            std::fs::metadata(&crawldir).unwrap().permissions().mode() & 0o777,
+            0o700
+        );
+        assert_eq!(
+            std::fs::metadata(&state).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+
+        // Legacy checkpoints with public permissions are secured on read.
+        std::fs::set_permissions(&state, std::fs::Permissions::from_mode(0o644)).unwrap();
+        assert!(restore(&spec).unwrap().is_some());
+        assert_eq!(
+            std::fs::metadata(&state).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+
+        let unrelated = dir.path().join("unrelated.json");
+        std::fs::write(&unrelated, b"not a crawl checkpoint").unwrap();
+        std::fs::remove_file(&state).unwrap();
+        symlink(&unrelated, &state).unwrap();
+        assert!(restore(&spec).unwrap_err().contains("not a symlink"));
+        assert_eq!(
+            std::fs::read(&unrelated).unwrap(),
+            b"not a crawl checkpoint"
+        );
     }
 }
