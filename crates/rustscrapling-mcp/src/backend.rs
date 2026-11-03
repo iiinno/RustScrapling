@@ -60,6 +60,7 @@ impl From<rustscrapling_browser::BrowserError> for BackendError {
             rustscrapling_browser::BrowserError::Disconnected => "browser_disconnected",
             rustscrapling_browser::BrowserError::Io(_) => "browser_io",
             rustscrapling_browser::BrowserError::Protocol(_) => "browser_protocol",
+            rustscrapling_browser::BrowserError::Blocked(_) => "blocked",
         };
         Self::new(kind, error.to_string())
     }
