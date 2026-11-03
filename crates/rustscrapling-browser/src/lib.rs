@@ -15,13 +15,13 @@ mod transport;
 pub use actions::{
     ActionError, BrowserAction, ElementState, LoadState, MouseButton, PointerTarget,
 };
+pub use cloudflare::{detect_cloudflare, solve_cloudflare, CloudflareChallenge};
 pub use settings::{
     fingerprint_for, merge_feature_switches, upstream_launch_args, Fingerprint, PageSettings,
     DISABLED_RESOURCE_TYPES, FINGERPRINTS, PLAYWRIGHT_HEADLESS_SWITCHES, PLAYWRIGHT_SWITCHES,
     UPSTREAM_LAUNCH_ARGS,
 };
 pub use transport::{BrowserError, CdpEvent};
-pub use cloudflare::{detect_cloudflare, solve_cloudflare, CloudflareChallenge};
 
 use chromiumoxide_cdp::cdp::browser_protocol::{dom, target};
 use serde::{Deserialize, Serialize};

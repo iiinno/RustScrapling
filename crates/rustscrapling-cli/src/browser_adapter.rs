@@ -125,17 +125,20 @@ impl BrowserBackend for CdpBackend {
                     .open_page(false)
                     .await
                     .map_err(|e| failed(&format!("CDP could not open a page: {e}")))?;
-                let outcome = match page
-                    .navigate(url, std::time::Duration::from_secs(30))
-                    .await
-                {
+                let outcome = match page.navigate(url, std::time::Duration::from_secs(30)).await {
                     Ok(()) => rustscrapling_browser::solve_cloudflare(&page, 30_000.0)
                         .await
                         .map_err(|e| failed(&format!("Cloudflare solve failed: {e}"))),
                     Err(error) => Err(failed(&format!("CDP navigation failed: {error}"))),
                 };
                 let reloaded = if outcome.is_ok() {
-                    Some(browser.as_ref().expect("initialized browser").get(url, self.get_options(headed)).await)
+                    Some(
+                        browser
+                            .as_ref()
+                            .expect("initialized browser")
+                            .get(url, self.get_options(headed))
+                            .await,
+                    )
                 } else {
                     None
                 };
@@ -150,7 +153,11 @@ impl BrowserBackend for CdpBackend {
                             final_url: refreshed.final_url,
                             headers: refreshed.headers.into_iter().collect(),
                             body: refreshed.body.into_bytes(),
-                            tier: if headed { FetchTier::Headed } else { FetchTier::Browser },
+                            tier: if headed {
+                                FetchTier::Headed
+                            } else {
+                                FetchTier::Browser
+                            },
                             protocol: Some("CDP".into()),
                         });
                     }

@@ -7,9 +7,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use serde_json::{json, Value};
 use tokio::time::sleep;
 
-use crate::{
-    BrowserAction, BrowserError, BrowserPage, LoadState, MouseButton, PointerTarget,
-};
+use crate::{BrowserAction, BrowserError, BrowserPage, LoadState, MouseButton, PointerTarget};
 
 /// Upstream `_detect_cloudflare`: the flavour decides which solve path runs, so
 /// it is read from the document rather than from the status code.
@@ -218,7 +216,10 @@ mod tests {
 
     #[test]
     fn an_ordinary_page_is_not_a_challenge() {
-        assert_eq!(detect_cloudflare("<html><body><h1>article</h1></body></html>"), None);
+        assert_eq!(
+            detect_cloudflare("<html><body><h1>article</h1></body></html>"),
+            None
+        );
     }
 
     #[test]

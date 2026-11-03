@@ -274,22 +274,19 @@ pub fn run_tier(target: &str, options: &RequestOptions, tier: FetchTier) -> Resu
             launched = Some(Arc::clone(&backend));
             fetcher = fetcher.with_browser(backend);
         }
-        let outcome = fetcher
-            .fetch(HttpRequest::get(target), tier)
-            .await;
+        let outcome = fetcher.fetch(HttpRequest::get(target), tier).await;
         // Close the browser before the runtime goes away, so its throwaway
         // profile is deleted while the child handles are still valid.
         if let Some(backend) = launched {
             backend.shutdown().await;
         }
-        outcome
-            .map_err(|e| {
-                error(
-                    &format!("{:?}", e.kind).to_ascii_lowercase(),
-                    &e.message,
-                    &e.hint,
-                )
-            })
+        outcome.map_err(|e| {
+            error(
+                &format!("{:?}", e.kind).to_ascii_lowercase(),
+                &e.message,
+                &e.hint,
+            )
+        })
     })?;
     if !response.success() {
         return Err(error(

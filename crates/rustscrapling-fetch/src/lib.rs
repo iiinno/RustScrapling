@@ -347,8 +347,7 @@ fn visible_text_len(body: &[u8]) -> Option<usize> {
     let markup = bytes.windows(5).any(|w| w == b"<html")
         || bytes.windows(9).any(|w| w == b"<!doctype")
         || bytes.windows(5).any(|w| w == b"<body")
-        || (bytes.windows(4).any(|w| w == b"<div")
-            && bytes.windows(5).any(|w| w == b"</div"));
+        || (bytes.windows(4).any(|w| w == b"<div") && bytes.windows(5).any(|w| w == b"</div"));
     if !markup {
         return None;
     }
