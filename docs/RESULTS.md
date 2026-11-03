@@ -16,6 +16,14 @@
 | `1a74ab5`（全12アクション） | 全workspaceテスト | **130 PASS・0 FAIL・4 ignored（実Chrome opt-in）** exit 0、fmt exit 0 |
 | `1a74ab5` | 実Chrome opt-in（上記env） | browser 4/4 PASS（新規 `all_actions_chrome_e2e` を含む） |
 
+### 追加検証（`caf6fb3` / `86a5500` / `51ed85a`、同一クラウドLinux・Chrome 153）
+
+| 対象SHA | 内容 | コマンド/結果 |
+| --- | --- | --- |
+| `caf6fb3` | ARIA snapshot（mode=ai）・`aria-ref`・要素screenshot | `oracle/aria_snapshot_oracle.py`で本家（patchright 1.64.4）から3 fixture×全体/targetの期待値を生成。`aria_snapshot_chrome_e2e`で**6/6バイト一致**（ref接頭辞`f<seq>`含む）。GitHub Actions run 10（Ubuntu 24.04 runnerのChrome）でも`chrome-e2e`ジョブ成功 |
+| `86a5500` | 本家`Convertor._extract_content`互換レンダラ＋markdownify移植 | `oracle/convertor_oracle.py`：5 fixture×(html/text/markdown)×main_content_only×8 selector＝**240/240一致**（C0制御文字のみ比較時に除外：MCPでは本家同様に除去）。全workspace 134 PASS・0 FAIL・5 ignored、clippy/fmt exit 0 |
+| `51ed85a` | MCP `tools/list`完全一致・outputSchema検証・evaluate | live schema oracle：**match、16/16ツール、差分0**（以前348）、exit 0。M0 37 tests OK、live opt-in 23 tests OK。全workspace 134 PASS・0 FAIL・5 ignored、実Chrome opt-in 5/5 PASS、clippy/fmt exit 0、CLI E2E 6/6 |
+
 ### Issue #1 の根本原因
 
 `net::ERR_CONNECTION_REFUSED` はブラウザ起動・鍵管理の問題ではなく**テストfixtureの欠陥**。MCP runtimeテストのHTTPサーバは`accept()`を2回だけ行う実装で、Chromeが`GET /page`の後に`GET /favicon.ico`を別接続で要求したため2回目の枠を消費しサーバスレッドが終了した。続く`browser_fetch`の遷移は待受ソケットが閉じており接続拒否になった（受信ログ：`GET /page` → `GET /favicon.ico`）。修正（`8bd7146`）はテスト終了まで全接続を処理し、`/page`以外へ404を返し、`/page`が2回以上配信されたことを検証する。製品Launcherに`--password-store=basic`は追加していない。修正後同テストを5回連続PASS。

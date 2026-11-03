@@ -40,8 +40,10 @@ Plan 7.1節の表が正本。実装が進んだコマンドからここへ実装
 
 - **CLI daemonの `network search` とMCPの `browser_network_requests` は別のデータ源**。前者は上位Fetch完了のメタデータのみ、後者は同じMCP browser sessionのCDPサブリクエスト（最新128件・session-local単調ID・body合計1MiB）と、`browser_network_request(part="response_body")`によるXHR/Fetchテキスト本文。本家の上限（1000件・20MiB・1件1MiB）とは異なる。URLとJSON機密キーは保守的に伏せるが、アプリ固有情報の完全な秘匿は保証しない。
 - `browser_actions`は本家の12種すべてを実装。selectorはPlaywright構文のうちCSS（open shadow rootを貫通、ただし境界をまたぐ子孫結合子は不可）、`xpath=`/`//`、`text=`（引用符で完全一致・無しで部分一致・`/re/`）、`role=`/`internal:role=`（accessible nameは簡易計算）、`internal:text=`/`internal:label=`/`internal:testid=`、`id=`、`data-testid=`、`nth=`、`visible=`、`>>`連結、`aria-ref=`。Playwright CSS拡張（`:has-text()`、`:nth-match()`等）、`frame_locator`相当、iframe内要素は未対応で、未知engineは`Unknown engine`エラー。
-- エラーは本家と同じ`Action N (type) failed: ...`文言を`error.message`に入れ、`error.kind`（`action_failed`/`timeout`/`invalid_arguments`）を付けたJSONで返す（本家はプレーンテキストのToolError）。timeoutは`Timeout {ms}ms exceeded; <最後の待機理由>`で、Playwrightのcall logは返さない。
-- `aria-ref=`はRust側ARIA snapshotが未実装のため現状どのrefにも一致しない（`browser_extract`/`browser_fetch`の`snapshot`形式は`unsupported_operation`）。
+- browser_actionsのエラーは本家と同じ`Action N (type) failed: ...`文言を`error.message`に入れ、`error.kind`（`action_failed`/`timeout`/`invalid_arguments`）を付けたJSONで返す（本家はプレーンテキストのToolError）。timeoutは`Timeout {ms}ms exceeded; <最後の待機理由>`で、Playwrightのcall logは返さない。
+- ARIA snapshotと`aria-ref=`、およびselector評価は、本家が実行時に使うpatchright-core 1.64.3の注入スクリプトをvendorし分離worldで実行するため本家と同一（fixture差分0）。ただしiframe内容のsnapshotへの統合と、iframe内refへの操作は未対応。
+- MCPのコンテンツ出力（markdown/html/text）は本家`Convertor._extract_content`互換（body無害化＋markdownify移植）で、`content`配列末尾の空文字列も本家どおり。Rust独自の記事抽出（`rustscrapling-extract::extract`）はCLI等の追加機能として残し、MCP互換出力を上書きしない（Plan 5.9）。
+- `tools/list`は本家live出力と完全一致。引数検証はJSON Schemaに対し厳格で、本家（Pydantic lax）が型変換で受理する値（例：`"5"`→整数）や未知の追加引数は`invalid_arguments`として拒否する。
 - 入力はCDP `Input`ドメインの信頼イベント。要素判定は分離worldで実行し、`browser_actions`はmain worldの`Runtime.enable`を送らない。応答のないJavaScript dialogは自動でdismissする（Playwright既定と同じ）。
 
 ### Spider rich Request（S-03部分、`7752546`統合）
