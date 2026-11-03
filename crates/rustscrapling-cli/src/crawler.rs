@@ -55,6 +55,7 @@ impl Fetcher for HttpBackend {
                 .map(|(_, v)| v.clone())
                 .unwrap_or_default();
             Ok(FetchPage {
+                headers: Default::default(),
                 status: response.status,
                 url: response.final_url,
                 content_type,

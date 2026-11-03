@@ -264,6 +264,7 @@ mod tests {
                     "<html>page</html>"
                 };
                 Ok(FetchPage {
+                    headers: Default::default(),
                     status: 200,
                     url: url.into(),
                     content_type: "text/plain".into(),

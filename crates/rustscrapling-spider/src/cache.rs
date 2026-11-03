@@ -190,6 +190,7 @@ mod tests {
                     return Err("upstream intentionally offline".into());
                 }
                 Ok(FetchPage {
+                    headers: Default::default(),
                     status: 200,
                     url: url.to_owned(),
                     content_type: "text/html".into(),
@@ -247,6 +248,7 @@ mod tests {
                 Box::pin(async move {
                     let call = self.0.fetch_add(1, Ordering::SeqCst);
                     Ok(FetchPage {
+                        headers: Default::default(),
                         status: if url.ends_with("/blocked") { 429 } else { 200 },
                         url: url.to_owned(),
                         content_type: "text/plain".into(),

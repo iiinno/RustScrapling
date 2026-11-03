@@ -4,7 +4,7 @@
 use futures_util::stream::{FuturesUnordered, StreamExt};
 use rustscrapling_dom::html5_backend::{parse_html, Html5Options};
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::future::Future;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -51,6 +51,7 @@ impl Fetcher for AutoFetcher {
                 url: response.final_url,
                 content_type,
                 body: String::from_utf8_lossy(&response.body).into_owned(),
+                headers: response.headers.into_iter().collect(),
             })
         })
     }
@@ -62,6 +63,10 @@ pub struct FetchPage {
     pub url: String,
     pub content_type: String,
     pub body: String,
+    /// Response headers are available to the scheduler for Retry-After.
+    /// Older JSON cache entries without this field remain readable.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub headers: BTreeMap<String, String>,
 }
 
 fn default_max_pages() -> usize {
@@ -188,6 +193,9 @@ pub struct CrawlSummary {
 struct HostThrottle {
     last_start: Option<Instant>,
     delay: Duration,
+    /// Server-supplied Retry-After is measured from the response time,
+    /// independently of the inter-request start spacing.
+    not_before: Option<Instant>,
 }
 
 impl HostThrottle {
@@ -195,13 +203,28 @@ impl HostThrottle {
         Self {
             last_start: None,
             delay: base_delay,
+            not_before: None,
         }
     }
 
-    fn observe(&mut self, status: Option<u16>, latency: Duration, minimum: Duration) {
+    fn observe(
+        &mut self,
+        status: Option<u16>,
+        latency: Duration,
+        minimum: Duration,
+        retry_after: Option<Duration>,
+    ) {
         let maximum = Duration::from_secs(30).max(minimum);
         if matches!(status, None | Some(408 | 429 | 502 | 503 | 504)) {
             self.delay = self.delay.saturating_mul(2).min(maximum);
+            if matches!(status, Some(429 | 503)) {
+                if let Some(delay) = retry_after {
+                    if let Some(deadline) = Instant::now().checked_add(delay) {
+                        self.not_before =
+                            Some(self.not_before.map_or(deadline, |old| old.max(deadline)));
+                    }
+                }
+            }
         } else if status.is_some_and(|code| (200..400).contains(&code)) {
             // Smooth successful responses; a very fast single request should
             // not instantly undo a server's previous backpressure signal.
@@ -210,6 +233,18 @@ impl HostThrottle {
             self.delay = Duration::from_millis(next_ms.min(u64::MAX as u128) as u64);
         }
     }
+}
+
+/// Retry-After's delta-seconds form is reliable across timezones and clock
+/// skew. The HTTP-date form is not yet interpreted (rather than guessed).
+fn retry_after_delta(headers: &BTreeMap<String, String>) -> Option<Duration> {
+    let value = headers
+        .iter()
+        .find(|(name, _)| name.eq_ignore_ascii_case("retry-after"))?
+        .1
+        .trim();
+    let seconds = value.parse::<u64>().ok()?;
+    (seconds <= 86_400).then(|| Duration::from_secs(seconds))
 }
 
 fn valid_url(raw: &str) -> Result<Url, String> {
@@ -754,26 +789,49 @@ where
             let backend = Arc::clone(&fetcher);
             batch.push(async move {
                 if let Some(ref host_clock) = host_clock {
-                    let mut gate = host_clock.lock().await;
-                    if let Some(last) = gate.last_start {
-                        if let Some(next) = last.checked_add(gate.delay) {
-                            tokio::time::sleep_until(tokio::time::Instant::from_std(next)).await;
+                    // Do not keep the gate locked during sleep: an earlier
+                    // response may arrive with a Retry-After while another
+                    // request is already waiting to launch.
+                    loop {
+                        let mut gate = host_clock.lock().await;
+                        let spaced = gate
+                            .last_start
+                            .and_then(|last| last.checked_add(gate.delay));
+                        let deadline = match (spaced, gate.not_before) {
+                            (Some(left), Some(right)) => Some(left.max(right)),
+                            (left, right) => left.or(right),
+                        };
+                        if let Some(deadline) = deadline {
+                            if deadline > Instant::now() {
+                                drop(gate);
+                                tokio::time::sleep_until(tokio::time::Instant::from_std(deadline))
+                                    .await;
+                                continue;
+                            }
                         }
+                        gate.last_start = Some(Instant::now());
+                        gate.not_before = None;
+                        break;
                     }
                     // Release the gate before awaiting the network response:
                     // different requests can overlap once their start times
                     // have been spaced apart.
-                    gate.last_start = Some(Instant::now());
                 }
                 let started = Instant::now();
                 let result = backend.fetch(url.as_str()).await;
                 if auto_throttle {
                     if let Some(ref host_clock) = host_clock {
                         let status = result.as_ref().ok().map(|response| response.status);
-                        host_clock
-                            .lock()
-                            .await
-                            .observe(status, started.elapsed(), minimum);
+                        let retry_after = result
+                            .as_ref()
+                            .ok()
+                            .and_then(|response| retry_after_delta(&response.headers));
+                        host_clock.lock().await.observe(
+                            status,
+                            started.elapsed(),
+                            minimum,
+                            retry_after,
+                        );
                     }
                 }
                 (url.to_string(), depth, result)
@@ -867,6 +925,7 @@ mod tests {
         fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
             Box::pin(async move {
                 Ok(FetchPage {
+                    headers: Default::default(),
                     status: 200,
                     url: url.into(),
                     content_type: "text/html".into(),
@@ -911,6 +970,7 @@ mod tests {
             Box::pin(async move {
                 self.0.lock().unwrap().push(Instant::now());
                 Ok(FetchPage {
+                    headers: Default::default(),
                     status: 200,
                     url: url.into(),
                     content_type: "text/plain".into(),
@@ -956,6 +1016,7 @@ mod tests {
                         tokio::time::sleep(Duration::from_millis(180)).await;
                     }
                     return Ok(FetchPage {
+                        headers: Default::default(),
                         status: 200,
                         url: url.into(),
                         content_type: "text/plain".into(),
@@ -964,6 +1025,7 @@ mod tests {
                 }
                 self.0.lock().unwrap().push((url.into(), Instant::now()));
                 Ok(FetchPage {
+                    headers: Default::default(),
                     status: 200,
                     url: url.into(),
                     content_type: "text/plain".into(),
@@ -1009,20 +1071,77 @@ mod tests {
     fn auto_throttle_backoff_and_recovery_are_bounded() {
         let base = Duration::from_millis(100);
         let mut throttle = HostThrottle::new(base);
-        throttle.observe(Some(429), Duration::from_millis(20), base);
+        throttle.observe(Some(429), Duration::from_millis(20), base, None);
         assert_eq!(throttle.delay, Duration::from_millis(200));
-        throttle.observe(Some(503), Duration::from_millis(10), base);
+        throttle.observe(Some(503), Duration::from_millis(10), base, None);
         assert_eq!(throttle.delay, Duration::from_millis(400));
-        throttle.observe(Some(200), Duration::from_millis(20), base);
+        throttle.observe(Some(200), Duration::from_millis(20), base, None);
         assert_eq!(throttle.delay, Duration::from_millis(325));
         for _ in 0..20 {
-            throttle.observe(None, Duration::from_millis(1), base);
+            throttle.observe(None, Duration::from_millis(1), base, None);
         }
         assert_eq!(throttle.delay, Duration::from_secs(30));
         for _ in 0..100 {
-            throttle.observe(Some(200), Duration::from_millis(2), base);
+            throttle.observe(Some(200), Duration::from_millis(2), base, None);
         }
         assert_eq!(throttle.delay, base);
+    }
+
+    #[test]
+    fn retry_after_delta_is_case_insensitive_and_bounded() {
+        let mut headers = BTreeMap::new();
+        headers.insert("rEtRy-AfTeR".into(), " 12 ".into());
+        assert_eq!(retry_after_delta(&headers), Some(Duration::from_secs(12)));
+        for bad in ["NaN", "-1", "86401", "Wed, 21 Oct 2015 07:28:00 GMT"] {
+            headers.insert("rEtRy-AfTeR".into(), bad.into());
+            assert_eq!(retry_after_delta(&headers), None, "{bad}");
+        }
+    }
+
+    struct RetryAfterFetcher(Mutex<Vec<Instant>>);
+
+    impl Fetcher for RetryAfterFetcher {
+        fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
+            Box::pin(async move {
+                self.0.lock().unwrap().push(Instant::now());
+                let throttled = url.ends_with("/first");
+                let mut headers = BTreeMap::new();
+                if throttled {
+                    headers.insert("Retry-After".into(), "1".into());
+                }
+                Ok(FetchPage {
+                    status: if throttled { 429 } else { 200 },
+                    url: url.into(),
+                    content_type: "text/plain".into(),
+                    body: String::new(),
+                    headers,
+                })
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn concurrent_waiting_request_rechecks_retry_after_backpressure() {
+        let fetcher = Arc::new(RetryAfterFetcher(Mutex::new(Vec::new())));
+        let spec = CrawlSpec {
+            start_urls: vec![
+                "https://example.com/first".into(),
+                "https://example.com/second".into(),
+            ],
+            concurrency: 2,
+            max_depth: 0,
+            auto_throttle: true,
+            ..CrawlSpec::default()
+        };
+        let summary = crawl(&spec, fetcher.clone(), |_| Ok(())).await.unwrap();
+        assert_eq!(summary.successful, 1);
+        assert_eq!(summary.failed, 1);
+        let starts = fetcher.0.lock().unwrap();
+        assert_eq!(starts.len(), 2);
+        assert!(
+            starts[1].duration_since(starts[0]) >= Duration::from_millis(900),
+            "Retry-After must delay even a previously waiting concurrent request"
+        );
     }
 
     #[test]
@@ -1055,6 +1174,7 @@ mod tests {
                     return Err("offline source must not be fetched again".into());
                 }
                 Ok(FetchPage {
+                    headers: Default::default(),
                     status: 200,
                     url: url.to_owned(),
                     content_type: "text/html".into(),
@@ -1118,6 +1238,7 @@ mod tests {
                 starts.push(Instant::now());
                 let status = if url.ends_with("/one") { 429 } else { 200 };
                 Ok(FetchPage {
+                    headers: Default::default(),
                     status,
                     url: url.into(),
                     content_type: "text/plain".into(),
@@ -1197,6 +1318,7 @@ mod tests {
                     "<p>Done</p>".to_owned()
                 };
                 Ok(FetchPage {
+                    headers: Default::default(),
                     status: 200,
                     url: url.to_owned(),
                     content_type: "text/html".into(),
@@ -1245,6 +1367,7 @@ mod tests {
                     "<p>target found</p>".to_owned()
                 };
                 Ok(FetchPage {
+                    headers: Default::default(),
                     status: 200,
                     url: url.to_owned(),
                     content_type: "text/html".into(),
@@ -1358,6 +1481,7 @@ mod tests {
             Box::pin(async move {
                 if url.ends_with("/robots.txt") {
                     return Ok(FetchPage {
+                        headers: Default::default(),
                         status: 200,
                         url: url.to_owned(),
                         content_type: "text/plain".into(),
@@ -1367,6 +1491,7 @@ mod tests {
                 }
                 self.0.lock().unwrap().push(Instant::now());
                 Ok(FetchPage {
+                    headers: Default::default(),
                     status: 200,
                     url: url.into(),
                     content_type: "text/plain".into(),
@@ -1406,6 +1531,7 @@ mod tests {
         fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
             Box::pin(async move {
                 Ok(FetchPage {
+                    headers: Default::default(),
                     status: 200,
                     url: url.into(),
                     content_type: "text/plain".into(),
