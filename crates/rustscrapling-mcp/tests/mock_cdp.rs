@@ -26,8 +26,10 @@ async fn state_roundtrip_and_screenshots_via_mock_cdp() {
     ]));
     let page_origin = Arc::new(Mutex::new("http://example.test".to_owned()));
     let captures = Arc::new(Mutex::new(Vec::<Value>::new()));
+    let input_actions = Arc::new(Mutex::new(Vec::<Value>::new()));
     let server_cookies = cookies.clone();
     let server_captures = captures.clone();
+    let server_input_actions = input_actions.clone();
     let server_local_storage = local_storage.clone();
     let server_origin = page_origin.clone();
     let mock = tokio::spawn(async move {
@@ -46,6 +48,24 @@ async fn state_roundtrip_and_screenshots_via_mock_cdp() {
                 }}),
                 "DOM.getOuterHTML" => {
                     json!({"outerHTML":"<html><body><h1>Mock CDP page</h1></body></html>"})
+                }
+                "DOM.querySelector" => {
+                    assert_eq!(message["sessionId"], "mock-session");
+                    assert_eq!(params["selector"], "#test");
+                    json!({"nodeId":7})
+                }
+                "DOM.getBoxModel" => {
+                    assert_eq!(params["nodeId"], 7);
+                    json!({"model":{"content":[10,20,90,20,90,60,10,60]}})
+                }
+                "DOM.scrollIntoViewIfNeeded"
+                | "DOM.focus"
+                | "Input.dispatchMouseEvent"
+                | "Input.insertText"
+                | "Input.dispatchKeyEvent" => {
+                    assert_eq!(message["sessionId"], "mock-session");
+                    server_input_actions.lock().await.push(message.clone());
+                    json!({})
                 }
                 "Page.getFrameTree" => {
                     let origin = server_origin.lock().await.clone();
@@ -134,6 +154,45 @@ async fn state_roundtrip_and_screenshots_via_mock_cdp() {
     )
     .await;
     assert_eq!(fetched.is_error, Some(false), "{fetched:?}");
+    let interacted = call(
+        &handler,
+        "browser_actions",
+        json!({"session_id":"mock","actions":[
+            {"type":"click","target":"#test"},
+            {"type":"textbox","target":"#test","value":"日本語","clear":false},
+            {"type":"press_key","key":"Enter"},
+            {"type":"wait_time","milliseconds":0}
+        ]}),
+    )
+    .await;
+    assert_eq!(interacted.is_error, Some(false), "{interacted:?}");
+    let commands = input_actions.lock().await;
+    assert!(commands.iter().any(|command| {
+        command["method"] == "Input.insertText" && command["params"]["text"] == "日本語"
+    }));
+    assert_eq!(
+        commands
+            .iter()
+            .filter(|command| command["method"] == "Input.dispatchMouseEvent")
+            .count(),
+        2
+    );
+    drop(commands);
+    for invalid in [
+        json!({"type":"textbox","target":"#test","value":"replace-default-clear"}),
+        json!({"type":"click","target":"#test","x":22}),
+        json!({"type":"press_key","key":"Ctrl+L"}),
+        json!({"type":"wait_time","milliseconds":-1}),
+        json!({"type":"dialog","accept":true}),
+    ] {
+        let result = call(
+            &handler,
+            "browser_actions",
+            json!({"session_id":"mock","actions":[invalid]}),
+        )
+        .await;
+        assert_eq!(result.is_error, Some(true), "{result:?}");
+    }
     let png = call(&handler, "browser_screenshot", json!({"session_id":"mock"})).await;
     assert_eq!(png.is_error, Some(false), "{png:?}");
     let png_value = serde_json::to_value(&png.content[0]).unwrap();

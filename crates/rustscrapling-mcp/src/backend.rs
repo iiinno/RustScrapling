@@ -636,15 +636,15 @@ impl RuntimeBackend {
             .get("actions")
             .and_then(Value::as_array)
             .ok_or_else(|| BackendError::new("invalid_arguments", "actions must be an array"))?;
-        if actions.iter().any(|action| action["type"] != "wait_time") {
+        if actions.len() > 128 {
             return Err(BackendError::new(
-                "unsupported_operation",
-                "This CDP backend has no mouse/keyboard/dialog action API",
+                "invalid_arguments",
+                "browser_actions supports at most 128 sequential actions",
             ));
         }
         let session = self.session(required(args, "session_id")?).await?;
         let s = session.lock().await;
-        let Engine::Browser { last_url, .. } = &s.engine else {
+        let Engine::Browser { page, last_url, .. } = &s.engine else {
             return Err(BackendError::new(
                 "session_type",
                 "Expected browser session",
@@ -653,17 +653,97 @@ impl RuntimeBackend {
         if last_url.is_none() {
             return Err(BackendError::new("no_page", "Call browser_fetch first"));
         }
-        for action in actions {
-            let millis = action["milliseconds"].as_f64().unwrap_or(0.0);
-            if millis > 60000.0 {
-                return Err(BackendError::new(
+        for (index, action) in actions.iter().enumerate() {
+            let action = action.as_object().ok_or_else(|| {
+                BackendError::new(
                     "invalid_arguments",
-                    "wait_time must be <= 60000ms",
-                ));
+                    format!("action {} must be an object", index + 1),
+                )
+            })?;
+            let action_type = action.get("type").and_then(Value::as_str).ok_or_else(|| {
+                BackendError::new(
+                    "invalid_arguments",
+                    format!("action {} has no valid type", index + 1),
+                )
+            })?;
+            let outcome: Result<(), BackendError> = async {
+                match action_type {
+                    "wait_time" => {
+                        let millis = action_duration(action, "milliseconds", None, 60_000)?;
+                        sleep(millis).await;
+                        Ok(())
+                    }
+                    "click" => {
+                        // Only CSS element targeting and one left click are
+                        // implemented. Do not pretend that coordinate clicks,
+                        // refs, right clicks, repeated clicks or delayed clicks
+                        // were honored.
+                        for key in ["x", "y"] {
+                            reject_some(action, key)?;
+                        }
+                        if action.get("button").is_some_and(|v| v != "left")
+                            || action
+                                .get("click_count")
+                                .is_some_and(|v| v.as_u64() != Some(1))
+                            || action.get("delay").is_some_and(|v| v.as_f64() != Some(0.0))
+                        {
+                            return Err(BackendError::unsupported(
+                                "click button/click_count/delay",
+                            ));
+                        }
+                        let timeout = action_duration(action, "timeout", Some(30_000), 300_000)?;
+                        let target = action_target(action)?;
+                        tokio::time::timeout(timeout, page.click_css(target))
+                            .await
+                            .map_err(|_| BackendError::new("timeout", "click timed out"))??;
+                        Ok(())
+                    }
+                    "textbox" => {
+                        if action.get("clear").and_then(Value::as_bool) != Some(false) {
+                            return Err(BackendError::unsupported(
+                                "textbox clear=true (only append without clearing is supported)",
+                            ));
+                        }
+                        let timeout = action_duration(action, "timeout", Some(30_000), 300_000)?;
+                        let target = action_target(action)?;
+                        let value =
+                            action.get("value").and_then(Value::as_str).ok_or_else(|| {
+                                BackendError::new(
+                                    "invalid_arguments",
+                                    "textbox value must be a string",
+                                )
+                            })?;
+                        tokio::time::timeout(timeout, page.type_text_css(target, value))
+                            .await
+                            .map_err(|_| BackendError::new("timeout", "textbox timed out"))??;
+                        Ok(())
+                    }
+                    "press_key" => {
+                        let key = action.get("key").and_then(Value::as_str).ok_or_else(|| {
+                            BackendError::new(
+                                "invalid_arguments",
+                                "press_key requires a key string",
+                            )
+                        })?;
+                        page.press_key(key).await?;
+                        Ok(())
+                    }
+                    _ => Err(BackendError::new(
+                        "unsupported_operation",
+                        format!("browser action '{action_type}' is not implemented"),
+                    )),
+                }
             }
-            sleep(Duration::from_millis(millis as u64)).await;
+            .await;
+            if let Err(mut error) = outcome {
+                error.message = format!("action {} ({action_type}): {}", index + 1, error.message);
+                return Err(error);
+            }
         }
-        Ok(text(format!("Completed {} wait action(s)", actions.len())))
+        Ok(text(format!(
+            "Completed {} browser action(s)",
+            actions.len()
+        )))
     }
     async fn browser_save_state(&self, args: &Map<String, Value>) -> Outcome {
         let path = state_file_path(required(args, "path")?)?;
@@ -964,6 +1044,44 @@ fn opt_bool(args: &Map<String, Value>, key: &str, default: bool) -> Result<bool,
             BackendError::new("invalid_arguments", format!("'{key}' must be boolean"))
         })
     })
+}
+
+fn action_target(args: &Map<String, Value>) -> Result<&str, BackendError> {
+    args.get("target")
+        .and_then(Value::as_str)
+        .filter(|selector| !selector.trim().is_empty())
+        .ok_or_else(|| {
+            BackendError::new(
+                "unsupported_operation",
+                "only explicit nonempty CSS selector targets are supported",
+            )
+        })
+}
+
+fn action_duration(
+    args: &Map<String, Value>,
+    key: &str,
+    default: Option<u64>,
+    max_ms: u64,
+) -> Result<Duration, BackendError> {
+    let value = match args.get(key) {
+        Some(value) => value.as_f64().ok_or_else(|| {
+            BackendError::new(
+                "invalid_arguments",
+                format!("'{key}' must be a finite number"),
+            )
+        })?,
+        None => default
+            .map(|ms| ms as f64)
+            .ok_or_else(|| BackendError::new("invalid_arguments", format!("missing '{key}'")))?,
+    };
+    if !value.is_finite() || value < 0.0 || value > max_ms as f64 {
+        return Err(BackendError::new(
+            "invalid_arguments",
+            format!("'{key}' must be a finite number from 0 to {max_ms} milliseconds"),
+        ));
+    }
+    Ok(Duration::from_secs_f64(value / 1000.0))
 }
 
 /// Network cursors and request IDs are integers, never floating-point values.
