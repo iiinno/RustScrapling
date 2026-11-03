@@ -1,5 +1,12 @@
 # RESULTS.md: 測定と検証の結果
 
+## 2026-11-03 CDP通信本文・LinkExtractor補完後のVPS統合回帰
+
+- 統合ブランチ `integration/plan-v2-recovered` の `22a7d60`（Spider `8c2ca06` とBrowser `22a7d60` を含む）で、VPS Ubuntu 24.04・Rust1.99.1の `cargo test --workspace --lib --tests --locked --offline -- --skip local_browser_navigation_reuse_external_connection_and_shadow_dom --skip browser_get_and_session_if_chrome_is_available` が **104件PASS、0件FAIL、Chrome HTTP実機2件filtered out、Chrome data URL実機1件ignored、終了コード0**。`systemd-run --user --scope`、`MemoryMax=3000M`、`MemorySwapMax=0`、Cargo2ジョブ、`nice -n 12`、420秒timeoutで実行。ログはVPSの `/tmp/rustscrapling-22a7d60-tests.log`。
+- 同HEADで `cargo clippy --workspace --all-targets --locked --offline -- -D warnings` が **終了コード0**（`MemoryMax=2800M`、スワップ追加なし、360秒timeout）、`cargo fmt --all --check` も終了コード0。ClippyログはVPSの `/tmp/rustscrapling-22a7d60-clippy.log`。
+- Spiderは宣言的な `link_allow` / `link_deny` URL正規表現を追加（各64件、1件1024バイト、コンパイルサイズ制限）。大量の対象外リンクを先に除外してfrontier枠を守り、seedには適用しない。Spider単体27件PASS。ただしPythonのLinkExtractor全オプションやカスタムparse/Request callbackの互換を意味しない。
+- Browserは同一CDP page session内の`Network.responseReceived`/`loadingFinished`をrequestIdで関連付け、XHR/FetchのJSON/テキスト応答本文を有界取得する。128履歴・64KiB/件・合計1MiB・2秒上限、binary/base64/大型bodyの除外、URL/レスポンスヘッダ/JSON機密値の秘匿を実装。CDP mockの追加テストを含むworkspace回帰はPASS。ただしChrome実機のlocalhost HTTP遷移問題は継続中で、ブラウザ通信本文の実サイトE2EとMCP経由でのbody参照は**未達**。
+
 ## 2026-11-03 先行Rust移植を参照したStage6補完・VPS実証
 
 - 比較した公開Rust移植: `Liohtml/RUSTScrapling`の`2dd9a5eb0627fdb7b5c0aae7b5fc4dc9e8cc092c`（robots.rs/throttle.rs/cache.rs）、`chrisabruce/scrapling-rs`の`0d61c3e88d95473d77d90d3e374ffded79de07da`。Python本家の固定仕様はPlan.md記載`95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0`。採用対象とライセンスを`docs/UPSTREAM_PORTS.md`、`NOTICE`、`licenses/RUSTScrapling-MIT.txt`に記録。
