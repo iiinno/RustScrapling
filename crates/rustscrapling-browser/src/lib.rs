@@ -54,10 +54,15 @@ impl LaunchOptions {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct BrowserGetOptions {
     pub navigation_timeout: Duration,
     pub capture_network: bool,
+    /// Applied once when the reusable default page is created (upstream
+    /// session settings such as the headless UA fix and 1920x1080 viewport).
+    pub settings: Option<PageSettings>,
+    /// Navigation referrer (upstream `google_search` uses Google's).
+    pub referrer: Option<String>,
 }
 
 impl Default for BrowserGetOptions {
@@ -65,6 +70,8 @@ impl Default for BrowserGetOptions {
         Self {
             navigation_timeout: Duration::from_secs(15),
             capture_network: true,
+            settings: None,
+            referrer: None,
         }
     }
 }
@@ -501,13 +508,18 @@ impl BrowserClient {
     ) -> Result<BrowserResponse, BrowserError> {
         let mut page = self.default_page.lock().await;
         if page.is_none() {
-            *page = Some(self.open_page(options.capture_network).await?);
+            let created = self.open_page(options.capture_network).await?;
+            if let Some(settings) = &options.settings {
+                created.apply_settings(settings).await?;
+            }
+            *page = Some(created);
         }
         let tab = page.as_ref().expect("initialized above");
         if options.capture_network && !tab.network_enabled {
             tab.raw("Network.enable", json!({})).await?;
         }
-        tab.navigate(url, options.navigation_timeout).await?;
+        tab.navigate_with_referrer(url, options.navigation_timeout, options.referrer.as_deref())
+            .await?;
         let body = tab.source().await?;
         let final_url = tab.current_url().await.unwrap_or_else(|_| url.to_owned());
         let network = if options.capture_network {

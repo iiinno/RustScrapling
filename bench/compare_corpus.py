@@ -11,12 +11,12 @@ and the SAME mechanical success check is applied to both results:
 
 Page text is the whole-page Convertor text (`main_content_only=False`) in both
 implementations: upstream `Convertor._extract_content(page, "text", ...)` and
-RustScrapling's port (`shell` command `text --full`), so extraction differences
+RustScrapling's port (`extract ... out.txt`), so extraction differences
 cannot bias the comparison.
 
 Modes:
-  static  - upstream `Fetcher.get`            vs `rustscrapling shell: get`
-  browser - upstream `StealthyFetcher.fetch`  vs `rustscrapling shell: fetch`
+  static  - upstream `Fetcher.get`            vs `rustscrapling extract get`
+  browser - upstream `StealthyFetcher.fetch`  vs `rustscrapling extract fetch`
 
 The order of implementations alternates per entry. Every attempt is written to
 --out (JSONL raw outcomes) and a per-category summary is printed. Exclusions
@@ -38,6 +38,7 @@ import pathlib
 import platform
 import subprocess
 import sys
+import tempfile
 import time
 import tomllib
 
@@ -64,23 +65,28 @@ except Exception as error:
 
 
 def rust_attempt(binary: str, mode: str, url: str, timeout: float, chrome: str | None) -> dict:
-    command = "get" if mode == "static" else "fetch"
-    script = f"{command} '{url}'" + (f" --timeout {int(timeout)}" if mode == "static" else "")
-    script += "\npage\ntext --full"
-    argv = [binary, "shell", "-c", script]
-    if chrome and mode == "browser":
-        argv[2:2] = ["--chrome-path", chrome]
-    result = subprocess.run(argv, capture_output=True, text=True, timeout=timeout + 60)
-    lines = result.stdout.split("\n")
-    if result.returncode or len(lines) < 2:
-        error = result.stderr.strip().splitlines()[0] if result.stderr.strip() else "no output"
-        try:
-            parsed = json.loads(error)["error"]
-            return {"error": parsed.get("kind"), "message": parsed.get("message", "")[:300]}
-        except (ValueError, KeyError, TypeError):
-            return {"error": "process", "message": error[:300]}
-    page = json.loads(lines[1])
-    return {"status": page.get("status"), "final_url": page.get("url"), "text": "\n".join(lines[2:])}
+    """`rustscrapling extract get|fetch URL out.txt`: the upstream-equivalent
+    path (MCP make_request / browser_fetch); out.txt is the whole-page
+    Convertor text, like upstream's write_content_to_file(..., '.txt')."""
+    with tempfile.TemporaryDirectory(prefix="rs-corpus-") as directory:
+        out = pathlib.Path(directory) / "page.txt"
+        if mode == "static":
+            argv = [binary, "extract", "get", url, str(out), "--timeout", str(int(timeout))]
+        else:
+            argv = [binary, "extract", "fetch", url, str(out), "--timeout", str(int(timeout * 1000))]
+            if chrome:
+                argv += ["--executable-path", chrome]
+        result = subprocess.run(argv, capture_output=True, text=True, timeout=timeout + 60)
+        if result.returncode:
+            line = result.stderr.strip().splitlines()[-1] if result.stderr.strip() else "no output"
+            try:
+                parsed = json.loads(line)["error"]
+                return {"error": parsed.get("kind"), "message": str(parsed.get("message", ""))[:300]}
+            except (ValueError, KeyError, TypeError):
+                return {"error": "process", "message": line[:300]}
+        receipt = json.loads(result.stdout.strip().splitlines()[-1])
+        return {"status": receipt.get("status"), "final_url": receipt.get("url"),
+                "text": out.read_text(encoding="utf-8") if out.exists() else ""}
 
 
 def upstream_attempt(python: str, upstream: str, mode: str, url: str, timeout: float) -> dict:
@@ -169,10 +175,23 @@ def main() -> int:
             out.flush()
             time.sleep(args.delay)
     out.close()
+    attempts: dict[str, dict[str, dict]] = {}
+    for line in args.out.read_text(encoding="utf-8").splitlines():
+        row = json.loads(line)
+        if row.get("kind") == "attempt":
+            attempts.setdefault(row["id"], {})[row["implementation"]] = row
+    disagreements = [
+        {"id": key, "url": pair["rust"]["url"],
+         "rust": {k: pair["rust"].get(k) for k in ("success", "reason", "status", "text_chars", "message")},
+         "upstream": {k: pair["upstream"].get(k) for k in ("success", "reason", "status", "text_chars", "message")}}
+        for key, pair in attempts.items()
+        if len(pair) == 2 and pair["rust"]["success"] != pair["upstream"]["success"]
+    ]
     total = {impl: {"attempted": sum(c[impl]["attempted"] for c in stats.values() if impl in c),
                     "success": sum(c[impl]["success"] for c in stats.values() if impl in c)}
              for impl in ("rust", "upstream")}
     summary = {"meta": meta, "skipped_by_policy": skipped, "by_category": stats, "total": total,
+               "disagreements": disagreements,
                "success_rate": {impl: round(v["success"] / v["attempted"], 4) if v["attempted"] else None
                                 for impl, v in total.items()}}
     print(json.dumps(summary, indent=1, ensure_ascii=False))

@@ -73,6 +73,27 @@ fn failed(message: &str) -> FetchError {
     }
 }
 
+impl CdpBackend {
+    /// Upstream StealthyFetcher defaults: Google referrer, 30 s navigation,
+    /// and — for browsers launched here (not attached via CDP) — the
+    /// headless UA fix and a 1920x1080 viewport.
+    fn get_options(&self, headed: bool) -> BrowserGetOptions {
+        BrowserGetOptions {
+            navigation_timeout: std::time::Duration::from_secs(30),
+            capture_network: true,
+            settings: self
+                .endpoint
+                .is_none()
+                .then(|| rustscrapling_browser::PageSettings {
+                    headless: !headed,
+                    viewport: Some((1920, 1080)),
+                    ..Default::default()
+                }),
+            referrer: Some("https://www.google.com/".into()),
+        }
+    }
+}
+
 impl BrowserBackend for CdpBackend {
     fn fetch<'a>(&'a self, url: &'a str, headed: bool) -> BrowserFuture<'a> {
         Box::pin(async move {
@@ -80,7 +101,7 @@ impl BrowserBackend for CdpBackend {
             let response = browser
                 .as_ref()
                 .expect("initialized browser")
-                .get(url, BrowserGetOptions::default())
+                .get(url, self.get_options(headed))
                 .await
                 .map_err(|e| failed(&format!("CDP navigation failed: {e}")))?;
             if response.blocked.is_some() {
