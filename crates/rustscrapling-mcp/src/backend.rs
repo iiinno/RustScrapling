@@ -412,8 +412,13 @@ impl RuntimeBackend {
                         "cookie contains control delimiter",
                     ));
                 }
-                pairs.push(format!("{key}={v}"));
+                pairs.push((key.clone(), format!("{key}={v}")));
             }
+            // curl (upstream's curl_cffi) orders cookies by path length,
+            // domain length, then name length (longest first), then creation
+            // order; request cookies share path and domain.
+            pairs.sort_by_key(|pair| std::cmp::Reverse(pair.0.len()));
+            let mut pairs: Vec<String> = pairs.into_iter().map(|(_, pair)| pair).collect();
             if !pairs.is_empty() {
                 let existing = req
                     .headers
@@ -444,6 +449,10 @@ impl RuntimeBackend {
                 req = req.body(json_body.to_string().into_bytes());
             } else if let Some(data) = args.get("data").filter(|v| !v.is_null()) {
                 if let Some(s) = data.as_str() {
+                    // curl_cffi labels raw string bodies as octet-stream.
+                    if !has_header(&req, "content-type") {
+                        req = req.header("Content-Type", "application/octet-stream");
+                    }
                     req = req.body(s.as_bytes().to_vec());
                 } else if let Some(obj) = data.as_object() {
                     let mut form = url::form_urlencoded::Serializer::new(String::new());

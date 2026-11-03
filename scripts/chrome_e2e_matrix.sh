@@ -31,5 +31,6 @@ for chrome in "$@"; do
     echo "mcp-session-reuse-headed BLOCKED (no xvfb-run)"
   fi
   run cli-shell-fetch cargo test --locked -p rustscrapling-cli --test shell_command -- --ignored
+  run cli-extract-fetch cargo test --locked -p rustscrapling-cli --test extract_command -- --ignored
 done
 exit $status

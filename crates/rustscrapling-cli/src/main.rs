@@ -6,6 +6,7 @@ mod browser_adapter;
 mod crawler;
 mod curl;
 mod daemon;
+mod extract;
 mod install;
 mod network;
 mod sessions;
@@ -72,6 +73,8 @@ enum Command {
     Session(sessions::SessionArgs),
     /// Serve the upstream-compatible MCP server (16 tools) over stdio.
     Mcp,
+    /// Fetch a page and save HTML/Markdown/text to a file (upstream `scrapling extract`).
+    Extract(extract::ExtractArgs),
     /// Install Chrome for Testing with version and SHA-256 verification.
     Install(install::InstallArgs),
     /// Interactive scraping console (upstream `scrapling shell`).
@@ -440,6 +443,7 @@ fn run() -> Result<(), String> {
         Command::Network(args) => sessions::run_network(args),
         Command::Shell(args) => shell::run(args),
         Command::Install(args) => install::run(args),
+        Command::Extract(args) => extract::run(args),
         Command::Get { url, options } => network::run_request("GET", &url, &options),
         Command::Auto { url, options } => {
             network::run_tier(&url, &options, rustscrapling_fetch::FetchTier::Auto)

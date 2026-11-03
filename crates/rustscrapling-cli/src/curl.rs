@@ -280,6 +280,35 @@ pub fn parse_cookie_string(input: &str) -> Vec<(String, String)> {
     cookies
 }
 
+/// Ordered name/value pairs (header or cookie lists).
+pub type Pairs = Vec<(String, String)>;
+
+/// Upstream `_ParseHeaders`: "Key: Value" lines into headers and (when
+/// `parse_cookies`) a `Cookie:` header into cookies; "Key;" is an empty header.
+pub fn parse_header_lines(lines: &[String], parse_cookies: bool) -> Result<(Pairs, Pairs), String> {
+    let mut headers: Vec<(String, String)> = Vec::new();
+    let mut cookies: Vec<(String, String)> = Vec::new();
+    for line in lines {
+        match line.split_once(':') {
+            None if line.ends_with(';') => upsert(
+                &mut headers,
+                line[..line.len() - 1].trim().to_owned(),
+                String::new(),
+            ),
+            None => return Err(format!("Could not parse header without colon: '{line}'.")),
+            Some((key, value)) => {
+                let (key, value) = (key.trim(), value.trim());
+                if parse_cookies && key.eq_ignore_ascii_case("cookie") {
+                    cookies = parse_cookie_string(value);
+                } else {
+                    upsert(&mut headers, key.to_owned(), value.to_owned());
+                }
+            }
+        }
+    }
+    Ok((headers, cookies))
+}
+
 /// `urllib.parse.parse_qsl(.., keep_blank_values=True)`.
 pub fn parse_qsl(query: &str) -> Vec<(String, String)> {
     fn decode(text: &str) -> String {
@@ -311,7 +340,7 @@ pub fn parse_qsl(query: &str) -> Vec<(String, String)> {
         .collect()
 }
 
-fn upsert(items: &mut Vec<(String, String)>, key: String, value: String) {
+pub fn upsert(items: &mut Vec<(String, String)>, key: String, value: String) {
     match items.iter_mut().find(|(k, _)| *k == key) {
         Some(existing) => existing.1 = value,
         None => items.push((key, value)),
@@ -343,26 +372,7 @@ pub fn parse_curl(command: &str) -> Result<CurlRequest, String> {
         "get".to_owned()
     };
 
-    let mut headers: Vec<(String, String)> = Vec::new();
-    let mut cookies: Vec<(String, String)> = Vec::new();
-    for line in &parsed.headers {
-        match line.split_once(':') {
-            None if line.ends_with(';') => upsert(
-                &mut headers,
-                line[..line.len() - 1].trim().to_owned(),
-                String::new(),
-            ),
-            None => return Err(format!("Could not parse header without colon: '{line}'.")),
-            Some((key, value)) => {
-                let (key, value) = (key.trim(), value.trim());
-                if key.eq_ignore_ascii_case("cookie") {
-                    cookies = parse_cookie_string(value);
-                } else {
-                    upsert(&mut headers, key.to_owned(), value.to_owned());
-                }
-            }
-        }
-    }
+    let (mut headers, mut cookies) = parse_header_lines(&parsed.headers, true)?;
     if let Some(agent) = &parsed.user_agent {
         if !headers
             .iter()

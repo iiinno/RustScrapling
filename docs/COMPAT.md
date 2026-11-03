@@ -45,6 +45,9 @@ Plan 7.1節の表が正本。実装が進んだコマンドからここへ実装
 
 - MCP/shellの`main_content_only=True`出力は本家Convertorとバイト一致（240/240）だが、**HTML `hidden`属性の要素も除去する**点だけ意図的に異なる（本家は`<p hidden>`等の非表示テキストを残し、隠しプロンプト注入がAI向け本文に混入する。D-013）。
 
+- `rustscrapling extract get|post|put|delete|fetch URL OUTPUT_FILE`は本家`scrapling extract`と同じ引数（`--ai-targeted`、`-s/--css-selector`、`-H`、`--cookies`、`-p`、`--json/-j`、`--data/-d`、`--impersonate`（カンマ区切りはランダム選択）、`--[no-]verify`、`--[no-]follow-redirects`、`--[no-]stealthy-headers`、`--timeout`、`--proxy`、fetchの`--[no-]headless`等）を受け、拡張子`.md/.html/.txt`で形式を決めて`Convertor.write_content_to_file`と同じ連結で保存する。本家CLIの実出力13ケース（`fixtures/oracle/extract_cli`、`oracle/extract_cli_oracle.py`）と**バイト一致**。差分：成功時にJSON receiptをstdoutへ出す（本家はログ）、HTMLは常にUTF-8で保存（本家はページcharset）、`fetch --block-ads`（本家の広告ドメイン一覧はPeter Lowe's listで再配布条件が未確認のため同梱しない）と`--dns-over-https`は`unsupported`。
+- MCP `make_request`は本家（curl_cffi）同様、文字列`data`に`Content-Type: application/octet-stream`を付け、`cookies`をcurlの順序（名前の長い順、同長は指定順）で送る。
+
 ### MCPブラウザ通信と操作（Python v0.5との差、`1a74ab5`時点）
 
 - **CLI daemonの `network search` とMCPの `browser_network_requests` は別のデータ源**。前者は上位Fetch完了のメタデータのみ、後者は同じMCP browser sessionのCDPサブリクエスト（最新128件・session-local単調ID・body合計1MiB）と、`browser_network_request(part="response_body")`によるXHR/Fetchテキスト本文。本家の上限（1000件・20MiB・1件1MiB）とは異なる。URLとJSON機密キーは保守的に伏せるが、アプリ固有情報の完全な秘匿は保証しない。
