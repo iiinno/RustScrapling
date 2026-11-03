@@ -28,6 +28,9 @@ pub struct Node {
     pub data: String,
     pub parent: Option<NodeId>,
     pub children: Vec<NodeId>,
+    /// Bit `i` is set when attribute `i` (< 64) was written without a value
+    /// (`<slot hidden>`); libxml2's HTML serializer prints those minimized.
+    pub valueless_attrs: u64,
 }
 
 impl Node {
@@ -39,6 +42,7 @@ impl Node {
             data: String::new(),
             parent: None,
             children: Vec::new(),
+            valueless_attrs: 0,
         }
     }
 

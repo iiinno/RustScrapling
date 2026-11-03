@@ -12,7 +12,7 @@ use rustscrapling_browser::{
     detect_block, BrowserAction, BrowserClient, BrowserPage, ElementState, LaunchOptions,
     LoadState, MouseButton, NetworkRecord, PointerTarget,
 };
-use rustscrapling_extract::{extract, ExtractOptions};
+use rustscrapling_extract::compat::{convert_content, ContentFormat};
 use rustscrapling_http::{HttpClient, HttpOptions, HttpRequest, HttpResponse};
 use serde_json::{json, Map, Value};
 use tokio::{sync::Mutex, time::sleep};
@@ -308,7 +308,6 @@ impl RuntimeBackend {
             args,
             &[
                 ("impersonate", json!("chrome")),
-                ("main_content_only", json!(true)),
                 ("stealthy_headers", json!(true)),
                 ("timeout", json!(30)),
                 ("max_redirects", json!(30)),
@@ -319,7 +318,7 @@ impl RuntimeBackend {
                 ("follow_redirects", json!("safe")),
             ],
         )?;
-        for key in ["css_selector", "auth", "proxy_auth"] {
+        for key in ["auth", "proxy_auth"] {
             reject_some(args, key)?;
         }
         if session_client.is_some() {
@@ -628,7 +627,6 @@ impl RuntimeBackend {
         render_browser(&body, &final_url, status, args)
     }
     async fn browser_extract(&self, args: &Map<String, Value>) -> Outcome {
-        allow_defaults(args, &[("main_content_only", json!(true))])?;
         let format = opt_str(args, "extraction_type")?.unwrap_or("snapshot");
         let target = opt_str(args, "target")?;
         let pattern = match opt_str(args, "search")? {
@@ -684,8 +682,14 @@ impl RuntimeBackend {
             .current_url()
             .await
             .unwrap_or_else(|_| last_url.clone().unwrap_or_default());
-        let out = render_content(&html, &url, format)?;
-        Ok(text(out))
+        let _ = url;
+        let chunks = render_chunks(
+            &html,
+            format,
+            None,
+            opt_bool(args, "main_content_only", true)?,
+        )?;
+        Ok(text(chunks.concat()))
     }
     async fn browser_evaluate(&self, args: &Map<String, Value>) -> Outcome {
         reject_some(args, "arg")?;
@@ -1392,15 +1396,10 @@ fn text(value: String) -> CallToolResult {
     CallToolResult::success(vec![ContentBlock::text(value)])
 }
 fn render_http(response: HttpResponse, args: &Map<String, Value>) -> Outcome {
-    let body = std::str::from_utf8(&response.body)
-        .map_err(|_| BackendError::new("decode", "Body is not UTF-8"))?;
-    let format = args
-        .get("extraction_type")
-        .and_then(Value::as_str)
-        .unwrap_or("markdown");
-    let content = render_content(body, &response.final_url, format)?;
+    let body = String::from_utf8_lossy(&response.body);
+    let content = render_args(&body, args)?;
     Ok(structured(
-        json!({"status":response.status,"url":response.final_url,"content":[content]}),
+        json!({"status":response.status,"url":response.final_url,"content":content}),
     ))
 }
 fn render_browser(
@@ -1409,20 +1408,47 @@ fn render_browser(
     status: Option<u16>,
     args: &Map<String, Value>,
 ) -> Outcome {
-    let format = args
-        .get("extraction_type")
-        .and_then(Value::as_str)
-        .unwrap_or("markdown");
-    if format == "snapshot" {
-        return Err(BackendError::new(
-            "unsupported_operation",
-            "ARIA snapshots are not exposed by CDP backend",
-        ));
-    }
-    let content = render_content(html, url, format)?;
+    let content = render_args(html, args)?;
     Ok(structured(
-        json!({"status":status.unwrap_or(0),"url":url,"content":[content]}),
+        json!({"status":status.unwrap_or(0),"url":url,"content":content}),
     ))
+}
+/// Upstream `_translate_response`: every chunk of `Convertor._extract_content`
+/// (including its trailing empty chunk) with C0 control characters removed.
+fn render_args(html: &str, args: &Map<String, Value>) -> Result<Vec<String>, BackendError> {
+    let format = opt_str(args, "extraction_type")?.unwrap_or("markdown");
+    let mut chunks = render_chunks(
+        html,
+        format,
+        opt_str(args, "css_selector")?,
+        opt_bool(args, "main_content_only", true)?,
+    )?;
+    chunks.push(String::new());
+    Ok(chunks)
+}
+fn render_chunks(
+    html: &str,
+    format: &str,
+    css_selector: Option<&str>,
+    main_content_only: bool,
+) -> Result<Vec<String>, BackendError> {
+    let format = ContentFormat::parse(format).ok_or_else(|| {
+        BackendError::new(
+            "invalid_arguments",
+            format!("Unknown extraction type: {format}"),
+        )
+    })?;
+    let chunks = convert_content(html, format, css_selector, main_content_only)
+        .map_err(|error| BackendError::new("invalid_arguments", error))?;
+    Ok(chunks
+        .into_iter()
+        .map(|chunk| {
+            chunk
+                .chars()
+                .filter(|&c| !matches!(c as u32, 0x00..=0x08 | 0x0b | 0x0c | 0x0e..=0x1f))
+                .collect()
+        })
+        .collect())
 }
 fn check_challenge(body: &str, status: Option<u16>) -> Result<(), BackendError> {
     if let Some(kind) = detect_block(body, status, &BTreeMap::new()) {
@@ -1433,32 +1459,9 @@ fn check_challenge(body: &str, status: Option<u16>) -> Result<(), BackendError> 
     }
     Ok(())
 }
-fn render_content(html: &str, url: &str, format: &str) -> Result<String, BackendError> {
-    let page = extract(
-        html,
-        ExtractOptions {
-            page_url: Some(url),
-            query: None,
-        },
-    )
-    .map_err(|e| BackendError::new("parse", e))?;
-    match format {
-        "markdown" => Ok(page.markdown),
-        "text" => Ok(page.text),
-        "html" => Ok(page.html),
-        _ => Err(BackendError::new(
-            "invalid_arguments",
-            "Unsupported extraction_type",
-        )),
-    }
-}
 fn browser_options(args: &Map<String, Value>, once: bool) -> Result<(), BackendError> {
     // Session fetches implement snapshot targets and page waits through the
     // browser action engine; one-shot fetches do not expose the page yet.
-    let snapshot = args.get("extraction_type").and_then(Value::as_str) == Some("snapshot");
-    if once || !snapshot {
-        reject_some(args, "css_selector")?;
-    }
     if once {
         reject_some(args, "wait_selector")?;
     }
@@ -1475,7 +1478,6 @@ fn browser_options(args: &Map<String, Value>, once: bool) -> Result<(), BackendE
     }
     let mut defaults = vec![
         ("google_search", json!(true)),
-        ("main_content_only", json!(true)),
         ("disable_resources", json!(false)),
         ("solve_cloudflare", json!(false)),
         ("pierce_shadow", json!(false)),

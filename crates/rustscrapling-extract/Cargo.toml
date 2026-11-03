@@ -6,6 +6,8 @@ license = "BSD-3-Clause"
 
 [dependencies]
 rustscrapling-dom = { path = "../rustscrapling-dom" }
+rustscrapling-select = { path = "../rustscrapling-select" }
+regex = { workspace = true }
 htmd = "0.5"
 serde = { workspace = true }
 serde_json = { workspace = true }

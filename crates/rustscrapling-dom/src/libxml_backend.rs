@@ -67,7 +67,9 @@ unsafe fn convert(node_ptr: *mut xmlNode, parent: NodeId, dom: &mut Dom, keep_co
     let node_type: xmlElementType = (*node_ptr).type_;
     if node_type == xmlElementType_XML_ELEMENT_NODE {
         let tag = cstr_to_string((*node_ptr).name as *const i8);
-        let id = dom.add_element(parent, &tag, ordered_attrs(node_ptr));
+        let (attrs, valueless) = ordered_attrs(node_ptr);
+        let id = dom.add_element(parent, &tag, attrs);
+        dom.nodes[id as usize].valueless_attrs = valueless;
         let mut child = (*node_ptr).children;
         while !child.is_null() {
             convert(child, id, dom, keep_comments);
@@ -98,13 +100,17 @@ unsafe fn convert(node_ptr: *mut xmlNode, parent: NodeId, dom: &mut Dom, keep_co
 /// Attributes in document order, read from the libxml2 `xmlAttr` chain.
 /// The safe wrapper only exposes attributes as a hash map, which would
 /// lose the order that adaptive fingerprints depend on (Plan section 9.2).
-unsafe fn ordered_attrs(node_ptr: *mut xmlNode) -> Vec<(String, String)> {
+unsafe fn ordered_attrs(node_ptr: *mut xmlNode) -> (Vec<(String, String)>, u64) {
     let mut out = Vec::new();
+    let mut valueless = 0u64;
     let mut attr: *mut xmlAttr = (*node_ptr).properties;
     while !attr.is_null() {
         let name = cstr_to_string((*attr).name as *const i8);
         let mut value = String::new();
         let mut child = (*attr).children;
+        if child.is_null() && out.len() < 64 {
+            valueless |= 1 << out.len();
+        }
         while !child.is_null() {
             if !(*child).content.is_null() {
                 value.push_str(&cstr_to_string((*child).content as *const i8));
@@ -114,7 +120,7 @@ unsafe fn ordered_attrs(node_ptr: *mut xmlNode) -> Vec<(String, String)> {
         out.push((name, value));
         attr = (*attr).next;
     }
-    out
+    (out, valueless)
 }
 
 unsafe fn cstr_to_string(ptr: *const i8) -> String {

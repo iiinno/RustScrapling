@@ -28,3 +28,8 @@ derived from Tab Atkins' parse-css (CC0 public domain dedication).
 The independent selector/actionability helpers in
 crates/rustscrapling-browser/src/injected.js follow Playwright's documented
 locator semantics but are not copied from it.
+
+crates/rustscrapling-extract/src/markdownify.rs is a Rust port of
+python-markdownify 1.2.3 (https://github.com/matthewwithanm/python-markdownify),
+Copyright 2012-2018 Matthew Tretter, MIT License
+(licenses/markdownify-MIT.txt). Pinned Scrapling v0.5 renders Markdown with it.

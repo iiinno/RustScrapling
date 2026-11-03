@@ -5,6 +5,8 @@
 //! filtering can remove invisible instructions and active content, but cannot
 //! determine whether visible article prose is an instruction to an LLM.
 
+pub mod compat;
+mod markdownify;
 mod metadata;
 mod rank;
 mod sanitize;

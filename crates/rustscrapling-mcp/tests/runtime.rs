@@ -39,6 +39,14 @@ async fn real_http_and_http_session_round_trip() {
         .as_str()
         .unwrap()
         .contains("MCP HTTP backend works"));
+    // Upstream `_translate_response` keeps Convertor's trailing empty chunk.
+    assert_eq!(
+        one.structured_content.as_ref().unwrap()["content"],
+        json!([
+            "Local story\n===========\n\nThe MCP HTTP backend works.",
+            ""
+        ])
+    );
 
     let opened = call(
         &handler,
@@ -83,7 +91,7 @@ async fn real_http_and_http_session_round_trip() {
     let unsupported = call(
         &handler,
         "make_request",
-        json!({"url":url,"css_selector":"p"}),
+        json!({"url":url,"auth":{"username":"u","password":"p"}}),
     )
     .await;
     assert_eq!(unsupported.is_error, Some(true));

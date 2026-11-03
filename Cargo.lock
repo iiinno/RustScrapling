@@ -2325,7 +2325,9 @@ name = "rustscrapling-extract"
 version = "0.1.0"
 dependencies = [
  "htmd",
+ "regex",
  "rustscrapling-dom",
+ "rustscrapling-select",
  "serde",
  "serde_json",
  "url",
