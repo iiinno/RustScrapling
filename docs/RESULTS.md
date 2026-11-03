@@ -11,6 +11,10 @@
 | `6ca254e`+作業ツリー（`50b6e1c`と同一コード） | G-03 実機マトリクス | `scripts/chrome_e2e_matrix.sh /usr/bin/google-chrome chrome155 chrome156`（root環境のため`--no-sandbox`ラッパー経由）：**153.0.8010.12 / 155.0.8059.84 / 156.0.8078.80 の各版で** browser opt-in 5/5、MCP 16/16、セッション再利用 headless 1/1・headed（Xvfb）1/1、shell fetch 1/1、すべてexit 0 |
 | 修正前（`6ca254e`） | headed再利用の不具合 | Chrome 156 headedで遷移直後の`click`がエラー無しで無効になるラウンドを1件観測（約1/150）。原因：本家が受け取るPlaywright `chromiumSwitches`（`--disable-features=PaintHolding`等）の欠落→`50b6e1c`で修正（D-011）。修正後 155/156 × headed/headless × 150ラウンド＝**600ラウンドで取りこぼし0** |
 | `b6948c0` | G-11 負例追加 | CDP endpoint allowlist（D-012）、state読込`O_NOFOLLOW`、状態ファイル負例2件、daemon IPC負例（誤/空/前方一致/欠落トークン、不正JSON、深いネスト、16MiB超、送信停止）。全workspace **159 PASS・0 FAIL・8 ignored**、strict clippy・fmt・M0 quick checks exit 0。`docs/THREAT_MODEL.md`で7.1の攻撃面→テストを対応付け |
+| `2a8cb7b`+作業ツリー / `caf5685` | G-09 1時間fuzz×4 | `cargo +nightly fuzz run -O <t> -- -max_total_time=3600 -timeout=60 -rss_limit_mb=3072 -max_len=65536`（ASan、`ASAN_OPTIONS=detect_odr_violation=0`、nice 15、4並列）：html_parse 840,938回/peak 585MB、selectors 4,723,863回/1187MB、adaptive 707,655回/645MB、markdown 224,806回/678MB、すべて3601秒・exit 0・artifacts 0件 |
+| `29ae0df` | G-05/G-08 150×8 | `bench/compare_local_crawl.py`（本家側`allowed_domains`がポート付きnetloc比較である点を修正後、交互5回）：遅延0/50/200msでRust 0.105/1.097/4.114s・RSS≤18.0MiB、本家0.687/1.692/4.665s・53.9MiB、双方150/150。生データ`bench/results/local_crawl_150x8_29ae0df.json` |
+| `e90421c` | 依存脆弱性 | `cargo audit`（RustSec 1403件）：zip 2.6.1に4件＋rustls-pemfile unmaintained→zip 9.3.0・pki-types PEMへ移行し`--deny warnings`で0件 |
+| `5a6a4c5`（Rust部は`29ae0df`と同一） | release smoke | `scripts/release_smoke.sh`：19サブコマンド`--help`、localhost E2E 6/6、shell・install dry-run、SHA-256 `feb1cefc…40f8`（26,636,920 bytes） |
 | `373acff` | CI run 19–23の失敗原因 | すべて`test_rust_catalog_and_rust_backend_unchanged`のみ（監査がRust関数の行番号を索引するため）。Rust/実Chromeジョブは成功。`audit_parity.py`再生成、`scripts/quick_checks.sh`を追加 |
 
 ## 2026-11-03 後継セッション: Issue #1修正・2ブランチ統合・browser_actions全12種
