@@ -103,6 +103,9 @@ impl Connection {
                     break;
                 };
                 if let Some(id) = value.get("id").and_then(Value::as_u64) {
+                    if std::env::var_os("RUSTSCRAPLING_TRACE_CDP_METHODS").is_some() {
+                        eprintln!("CDP recv id={id}");
+                    }
                     if let Some(sender) = this.pending.lock().await.remove(&id) {
                         let outcome = if let Some(error) = value.get("error") {
                             Err(BrowserError::Protocol(error.to_string()))
@@ -112,6 +115,12 @@ impl Connection {
                         let _ = sender.send(outcome);
                     }
                 } else if let Ok(event) = serde_json::from_value::<CdpEvent>(value) {
+                    if std::env::var_os("RUSTSCRAPLING_TRACE_CDP_METHODS").is_some()
+                        && (event.method.starts_with("Page.")
+                            || event.method.starts_with("Target."))
+                    {
+                        eprintln!("CDP event {}", event.method);
+                    }
                     let _ = this.events.send(event);
                 }
             }
@@ -156,6 +165,9 @@ impl Connection {
         let mut message = json!({"id": id, "method": method, "params": params});
         if let Some(session_id) = session_id {
             message["sessionId"] = session_id.into();
+        }
+        if std::env::var_os("RUSTSCRAPLING_TRACE_CDP_METHODS").is_some() {
+            eprintln!("CDP send id={id} method={method}");
         }
         self.history.lock().await.push(method.to_owned());
         let data = Message::Text(message.to_string().into());
