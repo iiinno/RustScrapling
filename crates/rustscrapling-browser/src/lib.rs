@@ -912,6 +912,121 @@ impl BrowserPage {
             .ok_or_else(|| BrowserError::Protocol("Page.getFrameTree has no URL".into()))
     }
 
+    /// Locate a CSS element through DOM CDP commands, without Runtime.enable
+    /// or JavaScript injection. This currently targets the main document only.
+    async fn css_node(&self, selector: &str) -> Result<u64, BrowserError> {
+        if selector.trim().is_empty() || selector.len() > 2048 || selector.contains('\0') {
+            return Err(BrowserError::InvalidArgument(
+                "CSS selector must be 1..=2048 bytes and contain no NUL".into(),
+            ));
+        }
+        let root = self.raw("DOM.getDocument", json!({"depth":0})).await?;
+        let root_id = root
+            .pointer("/root/nodeId")
+            .and_then(Value::as_u64)
+            .filter(|id| *id > 0)
+            .ok_or_else(|| BrowserError::Protocol("DOM root node missing".into()))?;
+        let queried = self
+            .raw(
+                "DOM.querySelector",
+                json!({"nodeId":root_id,"selector":selector}),
+            )
+            .await?;
+        queried
+            .get("nodeId")
+            .and_then(Value::as_u64)
+            .filter(|id| *id > 0)
+            .ok_or_else(|| BrowserError::InvalidArgument("CSS selector matched no element".into()))
+    }
+
+    /// Click the center of the first matching element using real CDP mouse
+    /// events, not a DOM-dispatched synthetic click. Does not enter iframes.
+    pub async fn click_css(&self, selector: &str) -> Result<(), BrowserError> {
+        let node = self.css_node(selector).await?;
+        self.raw("DOM.scrollIntoViewIfNeeded", json!({"nodeId":node}))
+            .await?;
+        let model = self.raw("DOM.getBoxModel", json!({"nodeId":node})).await?;
+        let quad = model
+            .pointer("/model/content")
+            .and_then(Value::as_array)
+            .filter(|points| points.len() == 8)
+            .ok_or_else(|| BrowserError::Protocol("element has no usable box model".into()))?;
+        let mut position = [0.0_f64; 2];
+        for pair in quad.chunks_exact(2) {
+            for (index, value) in pair.iter().enumerate() {
+                position[index] += value
+                    .as_f64()
+                    .filter(|v| v.is_finite() && v.abs() <= 65536.0)
+                    .ok_or_else(|| BrowserError::Protocol("invalid element coordinates".into()))?
+                    / 4.0;
+            }
+        }
+        if position[0] < 0.0 || position[1] < 0.0 {
+            return Err(BrowserError::InvalidArgument(
+                "element is outside the visible viewport".into(),
+            ));
+        }
+        let [x, y] = position;
+        self.raw(
+            "Input.dispatchMouseEvent",
+            json!({"type":"mousePressed","x":x,"y":y,
+                "button":"left","clickCount":1}),
+        )
+        .await?;
+        self.raw(
+            "Input.dispatchMouseEvent",
+            json!({"type":"mouseReleased","x":x,"y":y,
+                "button":"left","clickCount":1}),
+        )
+        .await?;
+        Ok(())
+    }
+
+    /// Focus the first CSS match and append UTF-8 text via Chrome's input
+    /// domain. Deliberately not called `fill`: it does not clear existing text.
+    pub async fn type_text_css(&self, selector: &str, text: &str) -> Result<(), BrowserError> {
+        if text.len() > 65536 || text.contains('\0') {
+            return Err(BrowserError::InvalidArgument(
+                "input text exceeds 64 KiB or contains NUL".into(),
+            ));
+        }
+        let node = self.css_node(selector).await?;
+        self.raw("DOM.focus", json!({"nodeId":node})).await?;
+        if !text.is_empty() {
+            self.raw("Input.insertText", json!({"text":text})).await?;
+        }
+        Ok(())
+    }
+
+    /// Press and release a supported physical key in the current page.
+    pub async fn press_key(&self, key: &str) -> Result<(), BrowserError> {
+        let (code, virtual_key) = match key {
+            "Enter" => ("Enter", 13),
+            "Tab" => ("Tab", 9),
+            "Escape" => ("Escape", 27),
+            "Backspace" => ("Backspace", 8),
+            "Delete" => ("Delete", 46),
+            "ArrowUp" => ("ArrowUp", 38),
+            "ArrowDown" => ("ArrowDown", 40),
+            "ArrowLeft" => ("ArrowLeft", 37),
+            "ArrowRight" => ("ArrowRight", 39),
+            _ => {
+                return Err(BrowserError::InvalidArgument(
+                    "unsupported key; use Enter/Tab/Escape/Backspace/Delete/Arrow keys".into(),
+                ))
+            }
+        };
+        for event_type in ["keyDown", "keyUp"] {
+            self.raw(
+                "Input.dispatchKeyEvent",
+                json!({"type":event_type,"key":key,"code":code,
+                    "windowsVirtualKeyCode":virtual_key,"nativeVirtualKeyCode":virtual_key}),
+            )
+            .await?;
+        }
+        Ok(())
+    }
+
     /// Resolve the first-party storage key from the *current page session*.
     /// The server-supplied state origin is never passed as a CDP storage target.
     async fn storage_context(&self) -> Result<StorageContext, BrowserError> {
