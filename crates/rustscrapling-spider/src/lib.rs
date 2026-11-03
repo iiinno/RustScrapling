@@ -774,17 +774,23 @@ fn persist(spec: &CrawlSpec, progress: &Progress) -> Result<(), String> {
 
 /// A parser request follows the same frontier controls as discovered links.
 /// Robots checks run when the request is actually dispatched.
+struct Frontier<'a> {
+    visited: &'a HashSet<String>,
+    queued: &'a mut HashSet<String>,
+    queue: &'a mut VecDeque<(String, usize)>,
+}
+
 fn enqueue_spider_request(
     raw: &str,
     base: &str,
     depth: usize,
     spec: &CrawlSpec,
     rules: &LinkRules,
-    visited: &HashSet<String>,
-    queued: &mut HashSet<String>,
-    queue: &mut VecDeque<(String, usize)>,
+    frontier: Frontier<'_>,
 ) {
-    if depth >= spec.max_depth || visited.len().saturating_add(queue.len()) >= spec.max_pages {
+    if depth >= spec.max_depth
+        || frontier.visited.len().saturating_add(frontier.queue.len()) >= spec.max_pages
+    {
         return;
     }
     let Ok(base) = valid_url(base) else {
@@ -799,8 +805,8 @@ fn enqueue_spider_request(
     }
     let normalized = url.to_string();
     let fingerprint = key(&normalized);
-    if !visited.contains(&fingerprint) && queued.insert(fingerprint) {
-        queue.push_back((normalized, depth + 1));
+    if !frontier.visited.contains(&fingerprint) && frontier.queued.insert(fingerprint) {
+        frontier.queue.push_back((normalized, depth + 1));
     }
 }
 
@@ -1096,9 +1102,11 @@ where
                                 depth,
                                 spec,
                                 &link_rules,
-                                &visited,
-                                &mut queued,
-                                &mut queue,
+                                Frontier {
+                                    visited: &visited,
+                                    queued: &mut queued,
+                                    queue: &mut queue,
+                                },
                             ),
                             SpiderOutput::Item(value) => emit(SpiderEvent::Item(&value))?,
                         }
