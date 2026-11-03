@@ -190,6 +190,146 @@ pub const DISABLED_RESOURCE_TYPES: [&str; 8] = [
     "Stylesheet",
 ];
 
+/// A browser identity whose parts really co-occur in the wild. The table is
+/// fixed rather than assembled from random pieces: a user agent that disagrees
+/// with `Sec-CH-UA`, the accept language or the timezone is itself a signal.
+///
+/// `sec_chua` is empty for engines that do not send Client Hints (Firefox,
+/// Safari); `impersonate` names the matching `rustscrapling-http` profile so
+/// the HTTP and browser tiers present the same identity.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Fingerprint {
+    pub user_agent: &'static str,
+    pub sec_chua: &'static str,
+    pub sec_chua_mobile: &'static str,
+    pub sec_chua_platform: &'static str,
+    pub accept_language: &'static str,
+    pub locale: &'static str,
+    pub timezone_id: &'static str,
+    pub impersonate: &'static str,
+}
+
+pub const FINGERPRINTS: &[Fingerprint] = &[
+    Fingerprint {
+        user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+        sec_chua: "\"Google Chrome\";v=\"149\", \"Chromium\";v=\"149\", \"Not_A Brand\";v=\"24\"",
+        sec_chua_mobile: "?0",
+        sec_chua_platform: "\"Windows\"",
+        accept_language: "ja-JP,ja;q=0.9,en-US;q=0.8,en;q=0.7",
+        locale: "ja-JP",
+        timezone_id: "Asia/Tokyo",
+        impersonate: "chrome149",
+    },
+    Fingerprint {
+        user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+        sec_chua: "\"Google Chrome\";v=\"149\", \"Chromium\";v=\"149\", \"Not_A Brand\";v=\"24\"",
+        sec_chua_mobile: "?0",
+        sec_chua_platform: "\"Windows\"",
+        accept_language: "en-US,en;q=0.9",
+        locale: "en-US",
+        timezone_id: "America/New_York",
+        impersonate: "chrome149",
+    },
+    Fingerprint {
+        user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+        sec_chua: "\"Google Chrome\";v=\"149\", \"Chromium\";v=\"149\", \"Not_A Brand\";v=\"24\"",
+        sec_chua_mobile: "?0",
+        sec_chua_platform: "\"macOS\"",
+        accept_language: "en-GB,en;q=0.9",
+        locale: "en-GB",
+        timezone_id: "Europe/London",
+        impersonate: "chrome149",
+    },
+    Fingerprint {
+        user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+        sec_chua: "\"Google Chrome\";v=\"149\", \"Chromium\";v=\"149\", \"Not_A Brand\";v=\"24\"",
+        sec_chua_mobile: "?0",
+        sec_chua_platform: "\"macOS\"",
+        accept_language: "ja-JP,ja;q=0.9",
+        locale: "ja-JP",
+        timezone_id: "Asia/Tokyo",
+        impersonate: "chrome149",
+    },
+    Fingerprint {
+        user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+        sec_chua: "\"Google Chrome\";v=\"149\", \"Chromium\";v=\"149\", \"Not_A Brand\";v=\"24\"",
+        sec_chua_mobile: "?0",
+        sec_chua_platform: "\"Linux\"",
+        accept_language: "en-US,en;q=0.9",
+        locale: "en-US",
+        timezone_id: "Etc/UTC",
+        impersonate: "chrome149",
+    },
+    Fingerprint {
+        user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0",
+        sec_chua: "",
+        sec_chua_mobile: "",
+        sec_chua_platform: "",
+        accept_language: "ja-JP,ja;q=0.8,en-US;q=0.5,en;q=0.3",
+        locale: "ja-JP",
+        timezone_id: "Asia/Tokyo",
+        impersonate: "firefox151",
+    },
+    Fingerprint {
+        user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0",
+        sec_chua: "",
+        sec_chua_mobile: "",
+        sec_chua_platform: "",
+        accept_language: "en-US,en;q=0.5",
+        locale: "en-US",
+        timezone_id: "America/Chicago",
+        impersonate: "firefox151",
+    },
+    Fingerprint {
+        user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15",
+        sec_chua: "",
+        sec_chua_mobile: "",
+        sec_chua_platform: "",
+        accept_language: "en-US,en;q=0.9",
+        locale: "en-US",
+        timezone_id: "America/Los_Angeles",
+        impersonate: "safari26",
+    },
+];
+
+/// Deterministic selection: the same seed always yields the same identity, so a
+/// retry presents the same browser instead of flipping fingerprints mid-session.
+pub fn fingerprint_for(seed: u64) -> &'static Fingerprint {
+    &FINGERPRINTS[(seed % FINGERPRINTS.len() as u64) as usize]
+}
+
+impl Fingerprint {
+    /// The HTTP headers this identity must send, so the request tier and the
+    /// browser tier never disagree. Empty Client Hints are omitted, matching
+    /// engines that do not send them.
+    pub fn headers(&self) -> Vec<(String, String)> {
+        let mut headers = vec![
+            ("user-agent".to_owned(), self.user_agent.to_owned()),
+            ("accept-language".to_owned(), self.accept_language.to_owned()),
+        ];
+        for (name, value) in [
+            ("sec-ch-ua", self.sec_chua),
+            ("sec-ch-ua-mobile", self.sec_chua_mobile),
+            ("sec-ch-ua-platform", self.sec_chua_platform),
+        ] {
+            if !value.is_empty() {
+                headers.push((name.to_owned(), value.to_owned()));
+            }
+        }
+        headers
+    }
+
+    /// The page settings that make the browser agree with this identity.
+    pub fn page_settings(&self) -> PageSettings {
+        PageSettings {
+            locale: Some(self.locale.to_owned()),
+            timezone_id: Some(self.timezone_id.to_owned()),
+            user_agent: Some(self.user_agent.to_owned()),
+            ..PageSettings::default()
+        }
+    }
+}
+
 /// Session-level settings applied once to a fresh page.
 #[derive(Clone, Debug, Default)]
 pub struct PageSettings {
@@ -441,5 +581,111 @@ mod launch_arg_tests {
         assert!(!merged.iter().any(|a| a == "--no-sandbox"));
         assert!(!upstream_launch_args(false).contains(&"--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4".to_owned())
             || UPSTREAM_LAUNCH_ARGS.iter().any(|a| a.starts_with("--blink-settings=")));
+    }
+}
+
+#[cfg(test)]
+mod fingerprint_tests {
+    use super::{fingerprint_for, FINGERPRINTS};
+
+    /// Region each locale may legitimately claim, so a user agent is never
+    /// paired with a timezone no real user in that locale would have.
+    fn allowed_regions(locale: &str) -> &'static [&'static str] {
+        match locale {
+            "ja-JP" => &["Asia/"],
+            "en-GB" => &["Europe/"],
+            "en-US" => &["America/", "Etc/UTC"],
+            other => panic!("locale {other} has no region rule"),
+        }
+    }
+
+    #[test]
+    fn client_hints_only_appear_for_engines_that_send_them() {
+        for entry in FINGERPRINTS {
+            let chromium = entry.user_agent.contains("Chrome/");
+            assert_eq!(
+                !entry.sec_chua.is_empty(),
+                chromium,
+                "{} carries the wrong Client Hints",
+                entry.user_agent
+            );
+            if chromium {
+                let major = entry
+                    .user_agent
+                    .split("Chrome/")
+                    .nth(1)
+                    .and_then(|rest| rest.split('.').next())
+                    .expect("a Chrome user agent has a version");
+                assert!(
+                    entry.sec_chua.contains(&format!("v=\"{major}\"")),
+                    "Sec-CH-UA disagrees with the user agent version: {}",
+                    entry.sec_chua
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn accept_language_agrees_with_the_locale() {
+        for entry in FINGERPRINTS {
+            let primary = entry
+                .accept_language
+                .split(',')
+                .next()
+                .expect("an accept language has one entry");
+            assert_eq!(
+                primary, entry.locale,
+                "accept language {primary} does not start with locale {}",
+                entry.locale
+            );
+        }
+    }
+
+    #[test]
+    fn the_timezone_matches_the_locale_region() {
+        for entry in FINGERPRINTS {
+            assert!(
+                allowed_regions(entry.locale)
+                    .iter()
+                    .any(|prefix| entry.timezone_id.starts_with(prefix)),
+                "{} is not a plausible timezone for {}",
+                entry.timezone_id,
+                entry.locale
+            );
+        }
+    }
+
+    #[test]
+    fn page_settings_repeat_the_same_identity() {
+        for entry in FINGERPRINTS {
+            let settings = entry.page_settings();
+            assert_eq!(settings.user_agent.as_deref(), Some(entry.user_agent));
+            assert_eq!(settings.locale.as_deref(), Some(entry.locale));
+            assert_eq!(settings.timezone_id.as_deref(), Some(entry.timezone_id));
+        }
+    }
+
+    #[test]
+    fn headers_omit_empty_client_hints() {
+        let chromium = FINGERPRINTS[0].headers();
+        assert!(chromium.iter().any(|(name, _)| name == "sec-ch-ua"));
+        let firefox = FINGERPRINTS
+            .iter()
+            .find(|entry| entry.impersonate == "firefox151")
+            .expect("a firefox identity");
+        assert!(!firefox
+            .headers()
+            .iter()
+            .any(|(name, _)| name.starts_with("sec-ch-ua")));
+    }
+
+    #[test]
+    fn selection_is_deterministic_and_in_range() {
+        assert_eq!(fingerprint_for(7), fingerprint_for(7));
+        assert!(std::ptr::eq(fingerprint_for(0), &FINGERPRINTS[0]));
+        assert!(std::ptr::eq(
+            fingerprint_for(FINGERPRINTS.len() as u64),
+            &FINGERPRINTS[0]
+        ));
     }
 }
