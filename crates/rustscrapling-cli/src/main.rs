@@ -821,6 +821,10 @@ fn error_details(message: &str) -> (&'static str, &'static str) {
 }
 
 fn main() -> ExitCode {
+    // A one-shot command that died before its drop could remove a throwaway
+    // Chrome profile leaves it behind; reclaiming at startup keeps repeated
+    // command runs from accumulating them.
+    rustscrapling_daemon::sweep_stale_profiles();
     match run() {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {

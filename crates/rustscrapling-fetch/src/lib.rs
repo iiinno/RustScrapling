@@ -216,25 +216,28 @@ impl Fetcher {
             FetchTier::Auto => unreachable!(),
         };
         let mut first_error = None;
+        // The best HTTP result seen so far. A thin page is escalated rather than
+        // returned, but it is still better than an error when the browser also
+        // finds nothing.
+        let mut best: Option<FetchResponse> = None;
         for &choice in candidates {
             if choice != FetchTier::Http && self.browser.is_none() {
                 break;
             }
             match self.attempt(&request, choice).await {
                 Ok(response) => {
-                    if response.success() {
-                        self.remember(&request.url, choice).await;
+                    let escalate = self.options.detect_blocks && needs_browser(&response);
+                    if !escalate {
+                        if response.success() {
+                            self.remember(&request.url, choice).await;
+                        }
                         return Ok(response);
                     }
-                    if !self.options.detect_blocks || !response.blocked() {
-                        return Ok(response);
+                    if response.success() && best.is_none() {
+                        best = Some(response);
+                    } else if best.is_none() && response.status < 400 {
+                        best = Some(response);
                     }
-                    first_error.get_or_insert(FetchError {
-                        kind: FetchErrorKind::Blocked,
-                        message: format!("HTTP {} or verification challenge", response.status),
-                        hint: "try --tier browser".into(),
-                        status: Some(response.status),
-                    });
                 }
                 Err(err) => {
                     if !matches!(
@@ -251,6 +254,11 @@ impl Fetcher {
                     first_error.get_or_insert(err);
                 }
             }
+        }
+        if let Some(response) = best {
+            // Every candidate produced a thin page; the HTTP one is still the
+            // most complete, so return it instead of an error.
+            return Ok(response);
         }
         Err(first_error.unwrap_or(FetchError {
             kind: FetchErrorKind::BrowserUnavailable,
@@ -319,6 +327,77 @@ fn domain(input: &str) -> Result<String, FetchError> {
             hint: "provide a URL hostname".into(),
             status: None,
         })
+}
+
+/// Minimum visible text an HTML page must carry before the HTTP tier is
+/// trusted. A JavaScript shell or an unrecognised interstitial renders far
+/// less, so the browser is tried; if the browser also finds little, the HTTP
+/// response is still returned rather than turning a usable page into an error.
+const MIN_USEFUL_TEXT: usize = 200;
+
+/// Visible text length of an HTML body, or `None` when the body is not HTML and
+/// must never be judged by length. Script and style bodies are excluded because
+/// a JavaScript shell can carry more code than prose.
+fn visible_text_len(body: &[u8]) -> Option<usize> {
+    let head = &body[..body.len().min(65_536)];
+    let lowered = String::from_utf8_lossy(head).to_ascii_lowercase();
+    let bytes = lowered.as_bytes();
+    if !(bytes.windows(5).any(|w| w == b"<html")
+        || bytes.windows(9).any(|w| w == b"<!doctype")
+        || bytes.windows(5).any(|w| w == b"<body"))
+    {
+        return None;
+    }
+    const SCRIPT: &[u8] = b"<script";
+    const SCRIPT_END: &[u8] = b"</script";
+    const STYLE: &[u8] = b"<style";
+    const STYLE_END: &[u8] = b"</style";
+    let mut count = 0usize;
+    let mut skipping: u8 = 0;
+    let mut index = 0;
+    while index < bytes.len() {
+        let rest = &bytes[index..];
+        if rest.starts_with(SCRIPT) {
+            skipping = 2;
+            index += SCRIPT.len();
+            continue;
+        }
+        if rest.starts_with(SCRIPT_END) {
+            skipping = 0;
+            index += SCRIPT_END.len();
+            continue;
+        }
+        if rest.starts_with(STYLE) {
+            skipping = 3;
+            index += STYLE.len();
+            continue;
+        }
+        if rest.starts_with(STYLE_END) {
+            skipping = 0;
+            index += STYLE_END.len();
+            continue;
+        }
+        let byte = bytes[index];
+        if byte == b'<' {
+            skipping = 1;
+        } else if byte == b'>' {
+            skipping = 0;
+        } else if byte == b'!' && skipping == 1 {
+            // comment or doctype inside a tag: nothing visible
+        } else if skipping == 0 && !byte.is_ascii_whitespace() {
+            count += 1;
+        }
+        index += 1;
+    }
+    Some(count)
+}
+
+/// Whether the HTTP result should not be trusted yet.
+fn needs_browser(response: &FetchResponse) -> bool {
+    if response.blocked() {
+        return true;
+    }
+    visible_text_len(&response.body).is_some_and(|visible| visible < MIN_USEFUL_TEXT)
 }
 
 fn is_challenge(body: &[u8]) -> bool {

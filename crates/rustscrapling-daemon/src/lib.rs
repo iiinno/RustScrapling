@@ -13,7 +13,8 @@ pub use protocol::{
     NetworkRecord, Status,
 };
 pub use service::{
-    DaemonClient, DaemonConfig, DaemonServer, FetchBackend, FetchFuture, ToolFuture, ToolHost,
+    sweep_stale_profiles, DaemonClient, DaemonConfig, DaemonServer, FetchBackend, FetchFuture,
+    ToolFuture, ToolHost,
 };
 
 #[cfg(feature = "fetch-integration")]

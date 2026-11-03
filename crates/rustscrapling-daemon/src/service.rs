@@ -463,13 +463,16 @@ fn cacheable(result: &FetchResult) -> bool {
             .any(|(name, value)| name.eq_ignore_ascii_case("vary") && value.trim() == "*")
 }
 
-/// Remove `rustscrapling-cdp-*` profiles abandoned by a process that died
-/// without running `BrowserClient`'s drop. A live Chrome keeps rewriting its
-/// profile, so only directories untouched for six hours are eligible.
-fn sweep_stale_profiles() {
+/// Remove `rustscrapling-cdp-*` profiles left behind by a process that died or
+/// whose directory could not be deleted in time. A directory renamed to
+/// `.abandoned` has no live owner, so it goes immediately; a plain profile is
+/// only eligible once six hours have passed, because a live Chrome keeps
+/// rewriting its own directory and a short window would delete an active one.
+pub fn sweep_stale_profiles() {
     let Ok(entries) = std::fs::read_dir(std::env::temp_dir()) else {
         return;
     };
+    let cutoff = Duration::from_secs(6 * 60 * 60);
     for entry in entries.flatten() {
         let name = entry.file_name();
         let Some(name) = name.to_str() else { continue };
@@ -482,10 +485,13 @@ fn sweep_stale_profiles() {
         if !metadata.is_dir() {
             continue;
         }
-        let Ok(modified) = metadata.modified() else {
-            continue;
-        };
-        if modified.elapsed().unwrap_or_default() < Duration::from_secs(6 * 60 * 60) {
+        let abandoned = name.ends_with(".abandoned");
+        if !abandoned
+            && metadata
+                .modified()
+                .map(|modified| modified.elapsed().unwrap_or_default() < cutoff)
+                .unwrap_or(true)
+        {
             continue;
         }
         let _ = std::fs::remove_dir_all(entry.path());

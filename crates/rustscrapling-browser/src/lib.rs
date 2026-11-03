@@ -411,7 +411,7 @@ impl BrowserClient {
             Ok(endpoint) => endpoint,
             Err(error) => {
                 let _ = child.kill().await;
-                let _ = tokio::fs::remove_dir_all(&profile).await;
+                discard_profile(&profile).await;
                 return Err(error);
             }
         };
@@ -419,7 +419,7 @@ impl BrowserClient {
             Ok(connection) => connection,
             Err(error) => {
                 let _ = child.kill().await;
-                let _ = tokio::fs::remove_dir_all(&profile).await;
+                discard_profile(&profile).await;
                 return Err(error);
             }
         };
@@ -757,19 +757,24 @@ impl BrowserClient {
                 // Chrome's renderer and utility subprocesses may still be
                 // releasing files after the browser parent exits. A single
                 // recursive delete can race with their last profile writes.
-                for attempt in 0..10 {
+                let mut cleared = false;
+                for attempt in 0..30 {
                     match tokio::fs::remove_dir_all(&profile).await {
-                        Ok(()) => break,
-                        Err(error) if error.kind() == std::io::ErrorKind::NotFound => break,
-                        Err(error)
-                            if (error.kind() == std::io::ErrorKind::DirectoryNotEmpty
-                                || error.kind() == std::io::ErrorKind::PermissionDenied)
-                                && attempt < 9 =>
-                        {
-                            sleep(Duration::from_millis(100)).await;
+                        Ok(()) => {
+                            cleared = true;
+                            break;
                         }
-                        Err(error) => return Err(BrowserError::Io(error.to_string())),
+                        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                            cleared = true;
+                            break;
+                        }
+                        Err(_) if attempt < 29 => sleep(Duration::from_millis(100)).await,
+                        Err(_) => break,
                     }
+                }
+                if !cleared {
+                    // Hand it to the daemon sweep rather than reporting success.
+                    let _ = tokio::fs::rename(&profile, abandoned_name(&profile)).await;
                 }
             }
         }
@@ -948,15 +953,44 @@ impl Drop for BrowserClient {
     }
 }
 
+/// A launch that never produced a client has no owner, so it cannot rely on
+/// `Drop`; it deletes the profile with the same patience and then renames what
+/// is left, which is what stopped failed launches from accumulating.
+async fn discard_profile(profile: &Path) {
+    for attempt in 0..30 {
+        match tokio::fs::remove_dir_all(profile).await {
+            Ok(()) => return,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return,
+            Err(_) if attempt < 29 => sleep(Duration::from_millis(100)).await,
+            Err(_) => break,
+        }
+    }
+    let _ = tokio::fs::rename(profile, abandoned_name(profile)).await;
+}
+
+/// Chrome's renderer and utility processes release profile files well after
+/// the browser process is reaped, so a short fixed budget left roughly a
+/// quarter of one-shot clients behind. Three seconds of 100 ms attempts covers
+/// the observed latency; anything still stuck is renamed so the daemon sweep
+/// can collect it later instead of being mistaken for a live profile.
 fn remove_profile_blocking(profile: &Path) {
-    for attempt in 0..10 {
+    for attempt in 0..30 {
         match std::fs::remove_dir_all(profile) {
             Ok(()) => return,
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => return,
-            Err(_) if attempt < 9 => std::thread::sleep(Duration::from_millis(50)),
-            Err(_) => return,
+            Err(_) if attempt < 29 => std::thread::sleep(Duration::from_millis(100)),
+            Err(_) => break,
         }
     }
+    let _ = std::fs::rename(profile, abandoned_name(profile));
+}
+
+/// Marks a profile that outlived its owner, so the sweep can remove it without
+/// waiting for the six-hour staleness window.
+fn abandoned_name(profile: &Path) -> std::path::PathBuf {
+    let mut name = profile.file_name().unwrap_or_default().to_os_string();
+    name.push(".abandoned");
+    profile.with_file_name(name)
 }
 
 pub struct BrowserPage {
