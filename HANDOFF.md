@@ -37,7 +37,7 @@
 
 ### ローカルの重要な未コミット変更（GitHubには含まれない）
 
-以下の5ファイルは統合worktreeに**最初から存在した他作業者由来の未コミット変更**。引継ぎ時に無断commit/reset/checkoutで破壊しないこと。クラウドGitHubだけを使う場合はこれらが含まれないと認識し、必要な差分を所有者・担当者の進捗と照合する。
+以下の5ファイルは統合worktreeに**最初から存在した他作業者由来の未コミット変更**。引継ぎ時に無断commit/reset/checkoutで破壊しないこと。**GitHubのmainには含まれないが、`handoff/local-docs-wip`（`7d89ce1`）へ未レビューの参考スナップショットを別途保存済み**。必要な差分を所有者・担当者の進捗と照合する。
 
 - `crates/rustscrapling-mcp/README.md`
 - `docs/COMPAT.md`
@@ -45,7 +45,7 @@
 - `docs/RESULTS.md`
 - `docs/UPSTREAM_PORTS.md`
 
-新規プライベートrepoには**コミット済みの成果物のみ**を初期掲載し、未コミットの5ファイルは別途保護する。
+GitHubの`main`はコミット済みの本体のみを掲載。5ファイルの原本はローカルの未コミット状態のまま保存されており、別branchのスナップショットは**品質保証済み変更やmainへのmerge承認ではない**。
 
 ## 3. 後継者が優先レビューすべき開発ブランチ
 
@@ -71,6 +71,8 @@
 ### C. その他の独立作業
 
 ローカルには`fix/browser-http-test-keyring`（Chrome localhostのテスト環境）、`feat/browser-native-pointer`（native操作）等多数のworktreeが存在する。GitHubの初期mainと上記2ブランチが引継ぎの主対象であり、他branchは`git worktree list`・各コミットと進捗記録を調査して**二重実装・無断上書きを避ける**。
+
+未コミットドキュメントの保全用には**`handoff/local-docs-wip`**がある。`docs/compat/LOCAL_DOCS_WIP.md`を先に読み、他作業者の成果と重複しないか確認する。**レビューなしの直接merge禁止**。
 
 ## 4. 開発環境と守るべき制約
 
