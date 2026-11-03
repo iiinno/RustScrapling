@@ -1,5 +1,37 @@
 # RESULTS.md: 測定と検証の結果
 
+## 2026-11-03 後継セッション: Issue #1修正・2ブランチ統合・browser_actions全12種
+
+検証環境：claude.ai cloud の隔離Linuxコンテナ（Ubuntu 24.04系、4 vCPU、15GiB RAM、Rust 1.99.1、libxml2 2.9.14、Google Chrome for Testing **153.0.8010.12**、Python 3.13.18）。VPS・Windows/WSLは使用していない。Chrome 155/156ではないため **G-03の合格根拠にはならない**。
+
+| 対象SHA | コマンド | 結果 |
+| --- | --- | --- |
+| `7752546`（m0+spider統合直後） | `cargo test --workspace --lib --tests --locked` | **FAIL**: `rustscrapling-mcp/tests/runtime.rs::browser_get_and_session_if_chrome_is_available` が `net::ERR_CONNECTION_REFUSED`（GitHub Actions run 5と同一症状をローカル再現） |
+| `8bd7146`（Issue #1修正） | `cargo fmt --all -- --check` / `cargo test --workspace --lib --tests --locked --no-fail-fast` / `cargo clippy --workspace --all-targets --locked -- -D warnings` | exit 0 / **127 PASS・0 FAIL・3 ignored・0 filtered** / exit 0 |
+| `8bd7146` | `RUSTSCRAPLING_CHROME_FOR_TESTING=/usr/bin/google-chrome RUSTSCRAPLING_CHROME_TEST_NO_SANDBOX=1 cargo test -p rustscrapling-browser --tests -- --ignored` | 実Chrome 3/3 PASS |
+| `8bd7146` | `cargo build -p rustscrapling-cli --locked` + `python3 tests/e2e_local.py target/debug/rustscrapling` | exit 0 / CLI E2E 6/6 PASS |
+| `8bd7146` | `python3 -m unittest discover -s tests -p 'test_m0*.py'` / `inventory_upstream.py --check` / `audit_parity.py --check` | 37 tests OK（2 skip）/ exit 0 / exit 0 |
+| `8bd7146` | live runtime schema oracle（隔離venv、mcp 2.3.0、pydantic 2.14.2） | 16/16ツール、差分**348件**（コミット済みスナップショットと`differences`完全一致）。exit 1は設計どおり |
+| `1a74ab5`（全12アクション） | 全workspaceテスト | **130 PASS・0 FAIL・4 ignored（実Chrome opt-in）** exit 0、fmt exit 0 |
+| `1a74ab5` | 実Chrome opt-in（上記env） | browser 4/4 PASS（新規 `all_actions_chrome_e2e` を含む） |
+
+### Issue #1 の根本原因
+
+`net::ERR_CONNECTION_REFUSED` はブラウザ起動・鍵管理の問題ではなく**テストfixtureの欠陥**。MCP runtimeテストのHTTPサーバは`accept()`を2回だけ行う実装で、Chromeが`GET /page`の後に`GET /favicon.ico`を別接続で要求したため2回目の枠を消費しサーバスレッドが終了した。続く`browser_fetch`の遷移は待受ソケットが閉じており接続拒否になった（受信ログ：`GET /page` → `GET /favicon.ico`）。修正（`8bd7146`）はテスト終了まで全接続を処理し、`/page`以外へ404を返し、`/page`が2回以上配信されたことを検証する。製品Launcherに`--password-store=basic`は追加していない。修正後同テストを5回連続PASS。
+
+### 統合したブランチ
+
+- `feat/m0-runtime-schema`（`e00b0b0`+`f0275ce`）をmerge commit `4aaaab9`で統合。M0系37テストOK、Linuxで本家live `tools/list`との比較を再現（348件はJSON表現差を含む構造差分の数であり、互換バグ件数ではない）。
+- `feat/spider-rich-request-s03`（`ce77df3`+`98707e6`）をmerge commit `7752546`で統合。Spider 39テストを含む全workspace回帰PASS（`8bd7146`）。S-03の残り（cookies/session/metadata/callback/errback、CLI経由rich request、checkpoint暗号化、priority frontierの計算量）は未達のまま。
+- `handoff/local-docs-wip`（`7d89ce1`）は未レビュー資料として扱い、merge していない。内容を現行コードと照合し、正確な記述（MCP network本文の上限、textbox clear=trueの実装）は本書・COMPATへ書き直して反映し、Spider GET-only記述等の古くなった記述は採用しない。VPS上の過去ログ（`c6434bb`/`4d1ed34`）は本セッションで再検証できないため証跡として転記しない。
+
+### browser_actions 全12種（`1a74ab5`）
+
+- 実装：`rustscrapling-browser`の新`actions`モジュール（Page.createIsolatedWorldの補助world内でPlaywright互換selector/actionabilityを評価し、入力はCDP `Input`ドメインで送信）。MCP `browser_actions`はこれに接続。
+- 本家との突合：同じChrome 153で本家Scrapling v0.5（patchright 1.64.4）を隔離venvから実行し、`Control+A`のevent.key=`A`、未フォーカスinputへの`clear=false`入力がcaret先頭（`Xold`）、strict mode違反・`Input of type "checkbox" cannot be filled`・`Unknown key: "Foo"`・option欠落時timeoutの文言、`click_count=2`で`event.detail=2`を確認しRust実装へ反映。
+- テスト：`crates/rustscrapling-browser/tests/all_actions_chrome_e2e.rs`（全12種＋shadow DOM、xpath/text/role、ラベルretarget、dialog accept/prompt/自動dismiss、遮蔽/disabled/未知engineの失敗、slowly）、`crates/rustscrapling-mcp/tests/actions_runtime.rs`（本家`_validate_actions`の文言、セッション前検証、実Chromeでのツール経由チェーン）。`Runtime.enable`が送られないことも検証。
+- 限界：iframe内要素（`aria-ref`のframe ref含む）、CSSのshadow境界をまたぐ子孫結合子、Playwright CSS拡張（`:has-text()`等）、`role=`のaccessible name計算の完全互換、macOS編集コマンドは未対応または近似。ARIA snapshot（`aria-ref`の発行元）は未実装のため、`aria-ref=`は現状どのrefにも一致しない。
+
 ## 2026-11-03 CDP通信本文・LinkExtractor補完後のVPS統合回帰
 
 - 統合ブランチ `integration/plan-v2-recovered` の `22a7d60`（Spider `8c2ca06` とBrowser `22a7d60` を含む）で、VPS Ubuntu 24.04・Rust1.99.1の `cargo test --workspace --lib --tests --locked --offline -- --skip local_browser_navigation_reuse_external_connection_and_shadow_dom --skip browser_get_and_session_if_chrome_is_available` が **104件PASS、0件FAIL、Chrome HTTP実機2件filtered out、Chrome data URL実機1件ignored、終了コード0**。`systemd-run --user --scope`、`MemoryMax=3000M`、`MemorySwapMax=0`、Cargo2ジョブ、`nice -n 12`、420秒timeoutで実行。ログはVPSの `/tmp/rustscrapling-22a7d60-tests.log`。

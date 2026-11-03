@@ -36,6 +36,19 @@ Plan 7.1節の表が正本。実装が進んだコマンドからここへ実装
 - `rustscrapling network search [--url-contains TEXT] [--limit 1..100]` は、起動中のdaemonが完了した取得のメタデータ（URL、method、status、tier）を、認証付きIPCを通じて検索する。最新128件の揮発性履歴で、URLのquery/fragment/認証情報とヘッダー・本文は返さない。**Python Scraplingの `session.network.search` が対象とするブラウザ内部通信までは取得しない**ため、現状は部分実装。
 - `rustscrapling session open/close/list/save-state/load-state` はコマンドとして受理するが、現行daemonがブラウザセッションを保持しないため `error.kind=unsupported` で失敗する。CLIのプロセス終了後に有効なセッションIDを捏造しない。永続MCPサーバ内のブラウザセッションは別実装。
 
+### MCPブラウザ通信と操作（Python v0.5との差、`1a74ab5`時点）
+
+- **CLI daemonの `network search` とMCPの `browser_network_requests` は別のデータ源**。前者は上位Fetch完了のメタデータのみ、後者は同じMCP browser sessionのCDPサブリクエスト（最新128件・session-local単調ID・body合計1MiB）と、`browser_network_request(part="response_body")`によるXHR/Fetchテキスト本文。本家の上限（1000件・20MiB・1件1MiB）とは異なる。URLとJSON機密キーは保守的に伏せるが、アプリ固有情報の完全な秘匿は保証しない。
+- `browser_actions`は本家の12種すべてを実装。selectorはPlaywright構文のうちCSS（open shadow rootを貫通、ただし境界をまたぐ子孫結合子は不可）、`xpath=`/`//`、`text=`（引用符で完全一致・無しで部分一致・`/re/`）、`role=`/`internal:role=`（accessible nameは簡易計算）、`internal:text=`/`internal:label=`/`internal:testid=`、`id=`、`data-testid=`、`nth=`、`visible=`、`>>`連結、`aria-ref=`。Playwright CSS拡張（`:has-text()`、`:nth-match()`等）、`frame_locator`相当、iframe内要素は未対応で、未知engineは`Unknown engine`エラー。
+- エラーは本家と同じ`Action N (type) failed: ...`文言を`error.message`に入れ、`error.kind`（`action_failed`/`timeout`/`invalid_arguments`）を付けたJSONで返す（本家はプレーンテキストのToolError）。timeoutは`Timeout {ms}ms exceeded; <最後の待機理由>`で、Playwrightのcall logは返さない。
+- `aria-ref=`はRust側ARIA snapshotが未実装のため現状どのrefにも一致しない（`browser_extract`/`browser_fetch`の`snapshot`形式は`unsupported_operation`）。
+- 入力はCDP `Input`ドメインの信頼イベント。要素判定は分離worldで実行し、`browser_actions`はmain worldの`Runtime.enable`を送らない。応答のないJavaScript dialogは自動でdismissする（Playwright既定と同じ）。
+
+### Spider rich Request（S-03部分、`7752546`統合）
+
+- `SpiderRequest`はmethod/body/headers/priorityを持ち、URLだけでなくmethod・正規化header・bodyを含むdedupe keyで重複排除する（priorityはkeyに含めない）。旧`[url, depth]`形式checkpointは読み書き互換。
+- `crawldir`使用時にbody/headerを含むRequestを保存するには`persist_sensitive_requests = true`の明示が必要（平文・所有者限定ファイル）。cookies/session/metadata/callback/errbackは未実装。
+
 ## 4. find_by_regex の正規表現の差
 
 `find_by_regex` は Rust の `regex` クレートで実装している。Python の `re` との主な差:
