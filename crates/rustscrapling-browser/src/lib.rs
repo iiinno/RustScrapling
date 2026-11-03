@@ -760,32 +760,15 @@ impl BrowserClient {
 
     pub async fn shutdown(mut self) -> Result<(), BrowserError> {
         self.default_page.lock().await.take();
+        // The kill and the profile removal are independent: a client that
+        // connected to an external endpoint owns no child process but can still
+        // own a throwaway profile, and nesting the removal under the child check
+        // left those behind.
         if let Some(mut child) = self.owned_child.take() {
             let _ = child.kill().await;
-            if let Some(profile) = self.owned_profile.take() {
-                // Chrome's renderer and utility subprocesses may still be
-                // releasing files after the browser parent exits. A single
-                // recursive delete can race with their last profile writes.
-                let mut cleared = false;
-                for attempt in 0..30 {
-                    match tokio::fs::remove_dir_all(&profile).await {
-                        Ok(()) => {
-                            cleared = true;
-                            break;
-                        }
-                        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-                            cleared = true;
-                            break;
-                        }
-                        Err(_) if attempt < 29 => sleep(Duration::from_millis(100)).await,
-                        Err(_) => break,
-                    }
-                }
-                if !cleared {
-                    // Hand it to the daemon sweep rather than reporting success.
-                    let _ = tokio::fs::rename(&profile, abandoned_name(&profile)).await;
-                }
-            }
+        }
+        if let Some(profile) = self.owned_profile.take() {
+            discard_profile(&profile).await;
         }
         Ok(())
     }
