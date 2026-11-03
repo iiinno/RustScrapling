@@ -1,6 +1,6 @@
 //! Real-browser interaction check; opt in with a dedicated Chrome binary.
 //! No external HTTP dependency. Runs with a throwaway browser profile.
-use rustscrapling_browser::{BrowserClient, LaunchOptions};
+use rustscrapling_browser::{BrowserClient, BrowserError, LaunchOptions};
 use std::{path::PathBuf, time::Duration};
 
 #[tokio::test(flavor = "multi_thread")]
@@ -60,6 +60,18 @@ async fn real_chrome_click_and_unicode_input_without_implicit_runtime() {
             .as_str(),
         Some("日本語テキスト")
     );
+    page.fill_text_css("#entry", "置き換え").await.unwrap();
+    assert_eq!(
+        page.evaluate("document.querySelector('#entry').value")
+            .await
+            .unwrap()
+            .as_str(),
+        Some("置き換え")
+    );
+    assert!(matches!(
+        page.fill_text_css("#push", "不正対象").await,
+        Err(BrowserError::InvalidArgument(_))
+    ));
     page.close().await.unwrap();
     browser.shutdown().await.unwrap();
 }

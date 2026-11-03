@@ -36,6 +36,7 @@ async fn css_click_type_and_keys_use_page_session_without_runtime() {
                         json!({"nodeId":7})
                     }
                 }
+                "DOM.describeNode" => json!({"node":{"nodeName":"INPUT"}}),
                 "DOM.getBoxModel" => {
                     json!({"model":{"content":[10.0,20.0,110.0,20.0,110.0,60.0,10.0,60.0]}})
                 }
@@ -57,6 +58,7 @@ async fn css_click_type_and_keys_use_page_session_without_runtime() {
     let page = client.open_page(false).await.unwrap();
     page.click_css("#button").await.unwrap();
     page.type_text_css("#input", "日本語").await.unwrap();
+    page.fill_text_css("#input", "新しい値").await.unwrap();
     page.press_key("Enter").await.unwrap();
     assert!(matches!(
         page.click_css("#missing").await,
@@ -88,12 +90,16 @@ async fn css_click_type_and_keys_use_page_session_without_runtime() {
         .iter()
         .any(|command| command["method"] == "Input.insertText"
             && command["params"]["text"] == "日本語"));
+    assert!(commands
+        .iter()
+        .any(|command| command["method"] == "Input.insertText"
+            && command["params"]["text"] == "新しい値"));
     assert_eq!(
         commands
             .iter()
             .filter(|command| command["method"] == "Input.dispatchKeyEvent")
             .count(),
-        2
+        6
     );
     assert!(!commands
         .iter()

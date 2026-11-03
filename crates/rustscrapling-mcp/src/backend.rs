@@ -699,11 +699,7 @@ impl RuntimeBackend {
                         Ok(())
                     }
                     "textbox" => {
-                        if action.get("clear").and_then(Value::as_bool) != Some(false) {
-                            return Err(BackendError::unsupported(
-                                "textbox clear=true (only append without clearing is supported)",
-                            ));
-                        }
+                        let clear = opt_bool(action, "clear", true)?;
                         let timeout = action_duration(action, "timeout", Some(30_000), 300_000)?;
                         let target = action_target(action)?;
                         let value =
@@ -713,9 +709,15 @@ impl RuntimeBackend {
                                     "textbox value must be a string",
                                 )
                             })?;
-                        tokio::time::timeout(timeout, page.type_text_css(target, value))
-                            .await
-                            .map_err(|_| BackendError::new("timeout", "textbox timed out"))??;
+                        tokio::time::timeout(timeout, async {
+                            if clear {
+                                page.fill_text_css(target, value).await
+                            } else {
+                                page.type_text_css(target, value).await
+                            }
+                        })
+                        .await
+                        .map_err(|_| BackendError::new("timeout", "textbox timed out"))??;
                         Ok(())
                     }
                     "press_key" => {

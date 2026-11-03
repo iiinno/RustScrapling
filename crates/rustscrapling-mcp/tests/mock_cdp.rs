@@ -54,6 +54,10 @@ async fn state_roundtrip_and_screenshots_via_mock_cdp() {
                     assert_eq!(params["selector"], "#test");
                     json!({"nodeId":7})
                 }
+                "DOM.describeNode" => {
+                    assert_eq!(params["nodeId"], 7);
+                    json!({"node":{"nodeName":"INPUT","attributes":["type","text"]}})
+                }
                 "DOM.getBoxModel" => {
                     assert_eq!(params["nodeId"], 7);
                     json!({"model":{"content":[10,20,90,20,90,60,10,60]}})
@@ -160,6 +164,7 @@ async fn state_roundtrip_and_screenshots_via_mock_cdp() {
         json!({"session_id":"mock","actions":[
             {"type":"click","target":"#test"},
             {"type":"textbox","target":"#test","value":"日本語","clear":false},
+            {"type":"textbox","target":"#test","value":"上書き"},
             {"type":"press_key","key":"Enter"},
             {"type":"wait_time","milliseconds":0}
         ]}),
@@ -179,7 +184,7 @@ async fn state_roundtrip_and_screenshots_via_mock_cdp() {
     );
     drop(commands);
     for invalid in [
-        json!({"type":"textbox","target":"#test","value":"replace-default-clear"}),
+        json!({"type":"textbox","target":"#test","value":"bad-clear","clear":"unknown"}),
         json!({"type":"click","target":"#test","x":22}),
         json!({"type":"press_key","key":"Ctrl+L"}),
         json!({"type":"wait_time","milliseconds":-1}),

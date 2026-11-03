@@ -998,6 +998,73 @@ impl BrowserPage {
         Ok(())
     }
 
+    /// Replace the value of a native input/textarea with UTF-8 text.
+    /// Uses a focused Ctrl+A / Backspace / insertText sequence on the actual
+    /// CDP Input domain, so ordinary input/change handlers can observe input.
+    /// Rich contenteditable widgets and platform-specific shortcuts remain
+    /// outside this contract.
+    pub async fn fill_text_css(&self, selector: &str, text: &str) -> Result<(), BrowserError> {
+        if text.len() > 65536 || text.contains('\0') {
+            return Err(BrowserError::InvalidArgument(
+                "input text exceeds 64 KiB or contains NUL".into(),
+            ));
+        }
+        let node = self.css_node(selector).await?;
+        let description = self.raw("DOM.describeNode", json!({"nodeId":node})).await?;
+        let node_name = description
+            .pointer("/node/nodeName")
+            .and_then(Value::as_str)
+            .ok_or_else(|| BrowserError::Protocol("element type unavailable".into()))?;
+        if !matches!(node_name, "INPUT" | "TEXTAREA") {
+            return Err(BrowserError::InvalidArgument(
+                "fill_text_css only supports native input and textarea elements".into(),
+            ));
+        }
+        if node_name == "INPUT" {
+            let attributes = description
+                .pointer("/node/attributes")
+                .and_then(Value::as_array);
+            let input_type = attributes
+                .and_then(|attributes| {
+                    attributes
+                        .as_chunks::<2>()
+                        .0
+                        .iter()
+                        .find(|pair| {
+                            pair[0]
+                                .as_str()
+                                .is_some_and(|key| key.eq_ignore_ascii_case("type"))
+                        })
+                        .and_then(|pair| pair[1].as_str())
+                })
+                .unwrap_or("text");
+            if ![
+                "text", "search", "email", "password", "url", "tel", "number",
+            ]
+            .iter()
+            .any(|allowed| input_type.eq_ignore_ascii_case(allowed))
+            {
+                return Err(BrowserError::InvalidArgument(
+                    "fill_text_css supports only editable text-like input types".into(),
+                ));
+            }
+        }
+        self.raw("DOM.focus", json!({"nodeId":node})).await?;
+        for event_type in ["keyDown", "keyUp"] {
+            self.raw(
+                "Input.dispatchKeyEvent",
+                json!({"type":event_type,"modifiers":2,"key":"a","code":"KeyA",
+                    "windowsVirtualKeyCode":65,"nativeVirtualKeyCode":65}),
+            )
+            .await?;
+        }
+        self.press_key("Backspace").await?;
+        if !text.is_empty() {
+            self.raw("Input.insertText", json!({"text":text})).await?;
+        }
+        Ok(())
+    }
+
     /// Press and release a supported physical key in the current page.
     pub async fn press_key(&self, key: &str) -> Result<(), BrowserError> {
         let (code, virtual_key) = match key {
