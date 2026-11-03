@@ -191,8 +191,33 @@ async fn serve(cfg: DaemonConfig, direct: bool) -> Result<(), String> {
     if let Some(browser) = CdpBackend::new(None, None, None) {
         fetcher = fetcher.with_browser(browser);
     }
-    let daemon = DaemonServer::start_with_fetcher(cfg, fetcher)
+    // Host the MCP executor so browser/HTTP sessions opened by one CLI call
+    // stay alive for the next (the same core the MCP server runs).
+    let tools: std::sync::Arc<dyn rustscrapling_daemon::ToolHost> =
+        std::sync::Arc::new(McpToolHost(rustscrapling_mcp::RustScraplingMcp::default()));
+    let daemon = DaemonServer::start_with_fetcher_and_tools(cfg, fetcher, tools)
         .await
         .map_err(|e| typed_error(&e))?;
     daemon.wait().await.map_err(|e| typed_error(&e))
+}
+
+/// Daemon-side adapter from IPC tool calls to the MCP executor.
+struct McpToolHost(rustscrapling_mcp::RustScraplingMcp);
+
+impl rustscrapling_daemon::ToolHost for McpToolHost {
+    fn call<'a>(
+        &'a self,
+        name: &'a str,
+        arguments: serde_json::Map<String, serde_json::Value>,
+    ) -> rustscrapling_daemon::ToolFuture<'a> {
+        Box::pin(async move {
+            let result = self
+                .0
+                .execute_tool(name, arguments)
+                .await
+                .map_err(|error| DaemonError::new("invalid_request", error.message.to_string()))?;
+            serde_json::to_value(result)
+                .map_err(|error| DaemonError::new("internal", error.to_string()))
+        })
+    }
 }

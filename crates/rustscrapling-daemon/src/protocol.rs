@@ -78,8 +78,19 @@ pub struct NetworkRecord {
 pub enum DaemonRequest {
     Status,
     Stop,
-    Fetch { request: FetchRequest },
-    NetworkSearch { url_contains: String, limit: usize },
+    Fetch {
+        request: FetchRequest,
+    },
+    NetworkSearch {
+        url_contains: String,
+        limit: usize,
+    },
+    /// Call one of the 16 MCP tools on the daemon-hosted executor (browser
+    /// and HTTP sessions live in the daemon process across CLI calls).
+    Tool {
+        name: String,
+        arguments: serde_json::Map<String, serde_json::Value>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -89,6 +100,8 @@ pub enum DaemonResponse {
     Stopping,
     Fetch(FetchResult),
     NetworkSearch(Vec<NetworkRecord>),
+    /// The MCP `CallToolResult` serialized as JSON.
+    Tool(serde_json::Value),
     Error(DaemonError),
 }
 

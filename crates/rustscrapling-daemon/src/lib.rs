@@ -12,7 +12,9 @@ pub use protocol::{
     DaemonError, DaemonRequest, DaemonResponse, FetchRequest, FetchResult, FetchTier,
     NetworkRecord, Status,
 };
-pub use service::{DaemonClient, DaemonConfig, DaemonServer, FetchBackend, FetchFuture};
+pub use service::{
+    DaemonClient, DaemonConfig, DaemonServer, FetchBackend, FetchFuture, ToolFuture, ToolHost,
+};
 
 #[cfg(feature = "fetch-integration")]
 mod integration;
@@ -28,5 +30,19 @@ impl DaemonServer {
         fetcher: rustscrapling_fetch::Fetcher,
     ) -> Result<Self, DaemonError> {
         Self::start(config, std::sync::Arc::new(FetcherBackend(fetcher))).await
+    }
+
+    /// [`Self::start_with_fetcher`] plus a hosted MCP tool executor.
+    pub async fn start_with_fetcher_and_tools(
+        config: DaemonConfig,
+        fetcher: rustscrapling_fetch::Fetcher,
+        tools: std::sync::Arc<dyn ToolHost>,
+    ) -> Result<Self, DaemonError> {
+        Self::start_with_tools(
+            config,
+            std::sync::Arc::new(FetcherBackend(fetcher)),
+            Some(tools),
+        )
+        .await
     }
 }

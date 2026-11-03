@@ -538,7 +538,7 @@ fn network_search_cli_queries_daemon_across_processes() {
 }
 
 #[test]
-fn session_cli_never_reports_a_disposable_browser_as_persistent() {
+fn session_cli_without_daemon_fails_instead_of_inventing_sessions() {
     let stamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
@@ -555,11 +555,123 @@ fn session_cli_never_reports_a_disposable_browser_as_persistent() {
         vec!["session", "load-state", "demo", "snapshot.json"],
     ] {
         let result = command(&args, &state);
-        assert_eq!(error_kind(&result), "unsupported", "{args:?}");
+        assert_eq!(error_kind(&result), "not_running", "{args:?}");
         assert!(
             result.stdout.is_empty(),
-            "unsupported operations cannot return success"
+            "no session may be reported without a host"
         );
     }
     assert!(!state.exists());
+}
+
+fn chrome() -> Option<String> {
+    [
+        "SCRAPLING_EXECUTABLE_PATH",
+        "RUSTSCRAPLING_CHROME_FOR_TESTING",
+    ]
+    .into_iter()
+    .filter_map(std::env::var_os)
+    .map(|path| path.to_string_lossy().into_owned())
+    .chain(["/usr/bin/google-chrome", "/usr/bin/chromium"].map(str::to_owned))
+    .find(|path| std::path::Path::new(path).is_file())
+}
+
+/// Sessions opened by one CLI process are hosted by the daemon (the MCP
+/// executor) and usable from later CLI processes until closed.
+#[test]
+fn daemon_hosted_sessions_survive_between_cli_processes() {
+    let fixture = Fixture::new();
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let root = std::env::temp_dir().join(format!(
+        "rustscrapling-cli-sessions-{}-{stamp}",
+        std::process::id()
+    ));
+    std::fs::create_dir(&root).unwrap();
+    let state = root.join("private").join("daemon.json");
+    std::env::set_var("RUSTSCRAPLING_STATE_DIR", root.join("states"));
+    json_ok(&command(&["daemon", "start", "--direct"], &state));
+    let _cleanup = Cleanup(state.clone());
+    let url = format!("http://{}/fixture", fixture.addr);
+
+    // HTTP session: open in one process, use and close in others.
+    let opened = json_ok(&command(
+        &["session", "open", "--http", "--session-id", "web"],
+        &state,
+    ));
+    assert_eq!(opened["result"]["session_type"], "static");
+    let fetched = json_ok(&command(
+        &["session", "request", "web", &url, "--format", "text"],
+        &state,
+    ));
+    assert_eq!(fetched["result"]["status"], 200);
+    assert!(fetched["result"]["content"][0]
+        .as_str()
+        .unwrap()
+        .contains("daemon origin fixture"));
+    let listed = json_ok(&command(&["session", "list"], &state));
+    assert_eq!(listed["result"]["result"][0]["session_id"], "web");
+    let duplicate = command(
+        &["session", "open", "--http", "--session-id", "web"],
+        &state,
+    );
+    assert_eq!(error_kind(&duplicate), "duplicate_session");
+
+    if let Some(chrome) = chrome() {
+        let opened = json_ok(&command(
+            &[
+                "session",
+                "open",
+                "--session-id",
+                "tab",
+                "--executable-path",
+                &chrome,
+            ],
+            &state,
+        ));
+        assert_eq!(opened["result"]["session_type"], "stealthy");
+        let page = json_ok(&command(
+            &["session", "fetch", "tab", &url, "--format", "snapshot"],
+            &state,
+        ));
+        assert!(page["result"]["content"][0]
+            .as_str()
+            .unwrap()
+            .contains("heading \"daemon origin fixture\""));
+        let evaluated = json_ok(&command(
+            &[
+                "session",
+                "tool",
+                "browser_evaluate",
+                "--args",
+                r#"{"session_id":"tab","expression":"document.title.length >= 0"}"#,
+            ],
+            &state,
+        ));
+        assert_eq!(evaluated["result"][0]["text"], "true");
+        json_ok(&command(
+            &["session", "save-state", "tab", "tab.json"],
+            &state,
+        ));
+        assert!(root.join("states").join("tab.json").exists());
+        json_ok(&command(
+            &["session", "load-state", "tab", "tab.json"],
+            &state,
+        ));
+        json_ok(&command(&["session", "close", "tab"], &state));
+    }
+    json_ok(&command(&["session", "close", "web"], &state));
+    let missing = command(&["session", "request", "web", &url], &state);
+    assert_eq!(error_kind(&missing), "session_not_found");
+    let bad = command(
+        &["session", "tool", "list_sessions", "--args", "[1]"],
+        &state,
+    );
+    assert_eq!(error_kind(&bad), "invalid_arguments");
+    json_ok(&command(&["daemon", "stop"], &state));
+    wait_for_stop(&state);
+    std::env::remove_var("RUSTSCRAPLING_STATE_DIR");
+    let _ = std::fs::remove_dir_all(root);
 }

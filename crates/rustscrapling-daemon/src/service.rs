@@ -33,6 +33,20 @@ pub trait FetchBackend: Send + Sync + 'static {
     fn fetch<'a>(&'a self, request: FetchRequest) -> FetchFuture<'a>;
 }
 
+pub type ToolFuture<'a> =
+    Pin<Box<dyn Future<Output = Result<serde_json::Value, DaemonError>> + Send + 'a>>;
+
+/// Executor for MCP tool calls hosted by the daemon (the same
+/// `RustScraplingMcp` core the MCP server uses), so browser sessions outlive
+/// the CLI process that opened them.
+pub trait ToolHost: Send + Sync + 'static {
+    fn call<'a>(
+        &'a self,
+        name: &'a str,
+        arguments: serde_json::Map<String, serde_json::Value>,
+    ) -> ToolFuture<'a>;
+}
+
 #[derive(Debug, Clone)]
 pub struct DaemonConfig {
     pub state_file: PathBuf,
@@ -81,6 +95,7 @@ type Inflight = OnceCell<Result<FetchResult, DaemonError>>;
 
 struct Shared {
     backend: Arc<dyn FetchBackend>,
+    tools: Option<Arc<dyn ToolHost>>,
     config: DaemonConfig,
     persistence: Persistence,
     inflight: Mutex<HashMap<String, Arc<Inflight>>>,
@@ -103,6 +118,7 @@ impl Shared {
         let now = Instant::now();
         Self {
             backend,
+            tools: None,
             config,
             persistence,
             inflight: Mutex::new(HashMap::new()),
@@ -475,6 +491,15 @@ impl DaemonServer {
         config: DaemonConfig,
         backend: Arc<dyn FetchBackend>,
     ) -> Result<Self, DaemonError> {
+        Self::start_with_tools(config, backend, None).await
+    }
+
+    /// Start a daemon that also hosts MCP tool calls (`DaemonRequest::Tool`).
+    pub async fn start_with_tools(
+        config: DaemonConfig,
+        backend: Arc<dyn FetchBackend>,
+        tools: Option<Arc<dyn ToolHost>>,
+    ) -> Result<Self, DaemonError> {
         let listener = TcpListener::bind("127.0.0.1:0").await.map_err(io_err)?;
         let address = listener.local_addr().map_err(io_err)?.to_string();
         let mut bytes = [0_u8; 32];
@@ -497,7 +522,9 @@ impl DaemonServer {
                     return Err(error);
                 }
             };
-        let shared = Arc::new(Shared::new(backend, config, persistence, restored));
+        let mut shared = Shared::new(backend, config, persistence, restored);
+        shared.tools = tools;
+        let shared = Arc::new(shared);
         let task = tokio::spawn(serve(
             listener,
             state,
@@ -588,6 +615,16 @@ async fn handle(
             } => match shared.network_search(&url_contains, limit).await {
                 Ok(records) => DaemonResponse::NetworkSearch(records),
                 Err(err) => DaemonResponse::Error(err),
+            },
+            DaemonRequest::Tool { name, arguments } => match &shared.tools {
+                Some(tools) => match tools.call(&name, arguments).await {
+                    Ok(result) => DaemonResponse::Tool(result),
+                    Err(err) => DaemonResponse::Error(err),
+                },
+                None => DaemonResponse::Error(DaemonError::new(
+                    "unsupported",
+                    "this daemon does not host browser/HTTP sessions",
+                )),
             },
         },
         Ok(_) => DaemonResponse::Error(DaemonError::new("unauthorized", "invalid local token")),
@@ -827,6 +864,25 @@ impl DaemonClient {
         match self.call(DaemonRequest::Fetch { request }).await? {
             DaemonResponse::Fetch(result) => Ok(result),
             _ => Err(DaemonError::new("protocol", "expected fetch result")),
+        }
+    }
+
+    /// Call an MCP tool on the daemon-hosted executor.
+    pub async fn tool(
+        &self,
+        name: impl Into<String>,
+        arguments: serde_json::Map<String, serde_json::Value>,
+    ) -> Result<serde_json::Value, DaemonError> {
+        match self
+            .call(DaemonRequest::Tool {
+                name: name.into(),
+                arguments,
+            })
+            .await?
+        {
+            DaemonResponse::Tool(result) => Ok(result),
+            DaemonResponse::Error(error) => Err(error),
+            _ => Err(DaemonError::new("protocol", "expected tool result")),
         }
     }
 

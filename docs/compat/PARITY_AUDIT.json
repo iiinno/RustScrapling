@@ -425,7 +425,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-daemon",
-          "line": 474,
+          "line": 490,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-daemon/src/service.rs"
         }
@@ -564,7 +564,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-daemon",
-          "line": 474,
+          "line": 490,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-daemon/src/service.rs"
         }
@@ -727,7 +727,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-daemon",
-          "line": 474,
+          "line": 490,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-daemon/src/service.rs"
         }
@@ -1689,7 +1689,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-daemon",
-          "line": 474,
+          "line": 490,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-daemon/src/service.rs"
         }
@@ -1840,7 +1840,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-daemon",
-          "line": 474,
+          "line": 490,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-daemon/src/service.rs"
         }
@@ -2027,7 +2027,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-daemon",
-          "line": 474,
+          "line": 490,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-daemon/src/service.rs"
         }
@@ -3008,7 +3008,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-daemon",
-          "line": 474,
+          "line": 490,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-daemon/src/service.rs"
         }
@@ -3025,7 +3025,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-daemon",
-          "line": 826,
+          "line": 863,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-daemon/src/service.rs"
         },
@@ -3064,7 +3064,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-daemon",
-          "line": 474,
+          "line": 490,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-daemon/src/service.rs"
         }
@@ -3081,7 +3081,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-daemon",
-          "line": 826,
+          "line": 863,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-daemon/src/service.rs"
         },
@@ -3352,7 +3352,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-daemon",
-          "line": 826,
+          "line": 863,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-daemon/src/service.rs"
         },
@@ -4576,7 +4576,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-daemon",
-          "line": 474,
+          "line": 490,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-daemon/src/service.rs"
         }
@@ -4610,7 +4610,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-daemon",
-          "line": 826,
+          "line": 863,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-daemon/src/service.rs"
         },
@@ -4776,7 +4776,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-daemon",
-          "line": 474,
+          "line": 490,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-daemon/src/service.rs"
         }
@@ -5145,7 +5145,7 @@
       "same_name_candidates": [
         {
           "crate": "rustscrapling-daemon",
-          "line": 826,
+          "line": 863,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-daemon/src/service.rs"
         },

@@ -34,7 +34,8 @@ libxml2 の HTML 解析器は、位置によって空白のみのテキストノ
 Plan 7.1節の表が正本。実装が進んだコマンドからここへ実装状況を追記する。
 
 - `rustscrapling network search [--url-contains TEXT] [--limit 1..100]` は、起動中のdaemonが完了した取得のメタデータ（URL、method、status、tier）を、認証付きIPCを通じて検索する。最新128件の揮発性履歴で、URLのquery/fragment/認証情報とヘッダー・本文は返さない。**Python Scraplingの `session.network.search` が対象とするブラウザ内部通信までは取得しない**ため、現状は部分実装。
-- `rustscrapling session open/close/list/save-state/load-state` はコマンドとして受理するが、現行daemonがブラウザセッションを保持しないため `error.kind=unsupported` で失敗する。CLIのプロセス終了後に有効なセッションIDを捏造しない。永続MCPサーバ内のブラウザセッションは別実装。
+- `rustscrapling session open/close/list/save-state/load-state/fetch/request/tool` は、起動中のdaemonがホストするMCP実行器（`rustscrapling mcp`と同一の`RustScraplingMcp`）へ認証IPCで転送される。session（ブラウザ/HTTP）はdaemonプロセス内に実体があり、CLIプロセスを越えて利用できる。daemonが無い場合は`not_running`で失敗し、IDを捏造しない。`session tool <name> --args JSON`で16ツールすべてを呼べる。状態ファイルはMCPと同じく専用ディレクトリ内のファイル名のみ。
+- `rustscrapling mcp` は同じ16ツールのMCPサーバをstdioで提供する（本家`scrapling mcp`の既定stdio相当。streamable-http transportは未実装）。
 
 ### MCPブラウザ通信と操作（Python v0.5との差、`1a74ab5`時点）
 

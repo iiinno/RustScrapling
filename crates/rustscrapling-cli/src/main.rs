@@ -65,8 +65,10 @@ struct Cli {
 enum Command {
     /// Manage the authenticated local fetch daemon.
     Daemon(daemon::DaemonArgs),
-    /// Manage reusable browser sessions (requires a persistent browser host).
+    /// Manage reusable browser/HTTP sessions hosted by the daemon.
     Session(sessions::SessionArgs),
+    /// Serve the upstream-compatible MCP server (16 tools) over stdio.
+    Mcp,
     /// Search recent daemon-managed upstream requests.
     Network(sessions::NetworkArgs),
     /// HTTP GET and article extraction (no browser).
@@ -422,6 +424,12 @@ fn run() -> Result<(), String> {
     match cli.command {
         Command::Daemon(args) => daemon::run(args),
         Command::Session(args) => sessions::run_session(args),
+        Command::Mcp => tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .map_err(|_| json!({"schema_version":1,"error":{"kind":"runtime","message":"Tokio runtime initialization failed"}}).to_string())?
+            .block_on(rustscrapling_mcp::serve_stdio(rustscrapling_mcp::RustScraplingMcp::default()))
+            .map_err(|error| json!({"schema_version":1,"error":{"kind":"mcp","message":error.to_string()}}).to_string()),
         Command::Network(args) => sessions::run_network(args),
         Command::Get { url, options } => network::run_request("GET", &url, &options),
         Command::Auto { url, options } => {
