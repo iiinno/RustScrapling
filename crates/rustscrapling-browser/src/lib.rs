@@ -647,10 +647,20 @@ impl BrowserPage {
                 "unsupported navigation URL scheme".into(),
             ));
         }
+        // A navigation timeout is a single deadline for both the CDP command
+        // acknowledgment and the subsequent load events. Otherwise a stalled
+        // Page.navigate can spend the transport's full fixed timeout before
+        // the configured navigation timeout even starts.
+        let deadline = tokio::time::Instant::now()
+            .checked_add(navigation_timeout)
+            .ok_or_else(|| BrowserError::InvalidArgument("navigation timeout too large".into()))?;
         self.network.lock().await.clear();
         let mut receiver = self.events.lock().await;
         while receiver.try_recv().is_ok() {} // discard prior-page events
-        let result = self.raw("Page.navigate", json!({"url":url})).await?;
+        let result =
+            tokio::time::timeout_at(deadline, self.raw("Page.navigate", json!({"url":url})))
+                .await
+                .map_err(|_| BrowserError::Timeout("Page.navigate".into()))??;
         if let Some(error) = result.get("errorText").and_then(Value::as_str) {
             return Err(BrowserError::Protocol(error.into()));
         }
@@ -681,7 +691,7 @@ impl BrowserPage {
                 }
             }
         };
-        timeout(navigation_timeout, wait)
+        tokio::time::timeout_at(deadline, wait)
             .await
             .map_err(|_| BrowserError::Timeout("Page.loadEventFired".into()))??;
         while let Ok(event) = receiver.try_recv() {
