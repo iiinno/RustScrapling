@@ -42,7 +42,7 @@ async fn load(
     url: &Url,
     spec: &CrawlSpec,
     fetcher: &Arc<dyn Fetcher>,
-    robots: &mut HashMap<String, Option<Vec<super::RobotsRule>>>,
+    robots: &mut HashMap<String, Option<super::RobotsPolicy>>,
 ) -> Result<(Url, String), String> {
     if spec.obey_robots && !robots_allowed(url, fetcher, robots).await {
         return Err(format!("feed source blocked by robots.txt: {url}"));

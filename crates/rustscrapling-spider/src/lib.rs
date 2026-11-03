@@ -222,13 +222,45 @@ struct RobotsRule {
     allow: bool,
 }
 
+#[derive(Default, Clone, Debug)]
+struct RobotsPolicy {
+    rules: Vec<RobotsRule>,
+    minimum_delay: Duration,
+}
+
+#[derive(Default)]
+struct RobotsGroup {
+    agents: Vec<String>,
+    policy: RobotsPolicy,
+}
+
+/// Reject unbounded/non-finite robots pacing values rather than allowing
+/// untrusted policy data to panic Duration conversion or stall a crawl.
+fn robots_seconds(value: &str) -> Option<Duration> {
+    let seconds = value.trim().parse::<f64>().ok()?;
+    (seconds.is_finite() && (0.0..=86_400.0).contains(&seconds))
+        .then(|| Duration::from_secs_f64(seconds))
+}
+
+fn robots_request_rate(value: &str) -> Option<Duration> {
+    let (requests, seconds) = value.trim().split_once('/')?;
+    let requests = requests.trim().parse::<u32>().ok()?;
+    let period = robots_seconds(seconds)?;
+    if requests == 0 {
+        return None;
+    }
+    // Round up: rounding down would violate the server's stated rate.
+    let nanos = period.as_nanos().div_ceil(u128::from(requests));
+    Some(Duration::from_nanos(nanos.min(u64::MAX as u128) as u64))
+}
+
 /// Implements the common RFC 9309 path-prefix and `*`/`$` matching syntax.
 /// Specific RustScrapling groups win over the generic `*` group.
-fn parse_robots(source: &str) -> Vec<RobotsRule> {
-    let mut general = Vec::new();
-    let mut specific = Vec::new();
+fn parse_robots_policy(source: &str) -> RobotsPolicy {
+    let mut groups = Vec::<RobotsGroup>::new();
+    let mut current = RobotsGroup::default();
     let mut agents = Vec::<String>::new();
-    let mut group_has_rules = false;
+    let mut group_has_directives = false;
     for raw in source.lines() {
         let line = raw.split('#').next().unwrap_or_default().trim();
         let Some((name, value)) = line.split_once(':') else {
@@ -237,32 +269,66 @@ fn parse_robots(source: &str) -> Vec<RobotsRule> {
         let key = name.trim().to_ascii_lowercase();
         let value = value.trim();
         if key == "user-agent" {
-            if group_has_rules {
-                agents.clear();
-                group_has_rules = false;
+            if group_has_directives {
+                current.agents = std::mem::take(&mut agents);
+                groups.push(std::mem::take(&mut current));
+                group_has_directives = false;
             }
             agents.push(value.to_ascii_lowercase());
-        } else if matches!(key.as_str(), "allow" | "disallow") {
-            group_has_rules = true;
-            if value.is_empty() {
-                continue;
+        } else if !agents.is_empty() {
+            match key.as_str() {
+                "allow" | "disallow" => {
+                    if !value.is_empty() {
+                        current.policy.rules.push(RobotsRule {
+                            pattern: value.to_owned(),
+                            allow: key == "allow",
+                        });
+                    }
+                }
+                "crawl-delay" => {
+                    if let Some(delay) = robots_seconds(value) {
+                        current.policy.minimum_delay = current.policy.minimum_delay.max(delay);
+                    }
+                }
+                "request-rate" => {
+                    if let Some(delay) = robots_request_rate(value) {
+                        current.policy.minimum_delay = current.policy.minimum_delay.max(delay);
+                    }
+                }
+                _ => {}
             }
-            let rule = RobotsRule {
-                pattern: value.to_owned(),
-                allow: key == "allow",
-            };
-            if agents.iter().any(|a| a == "rustscrapling") {
-                specific.push(rule);
-            } else if agents.iter().any(|a| a == "*") {
-                general.push(rule);
-            }
+            // Unknown directives still terminate the current user-agent
+            // header group before another User-agent declaration.
+            group_has_directives = true;
         }
     }
-    if specific.is_empty() {
-        general
-    } else {
-        specific
+    if !agents.is_empty() {
+        current.agents = agents;
+        groups.push(current);
     }
+    let specific = groups
+        .iter()
+        .any(|group| group.agents.iter().any(|agent| agent == "rustscrapling"));
+    let mut selected = RobotsPolicy::default();
+    for group in groups {
+        let matches = group.agents.iter().any(|agent| {
+            if specific {
+                agent == "rustscrapling"
+            } else {
+                agent == "*"
+            }
+        });
+        if matches {
+            selected.rules.extend(group.policy.rules);
+            selected.minimum_delay = selected.minimum_delay.max(group.policy.minimum_delay);
+        }
+    }
+    selected
+}
+
+#[cfg(test)]
+fn parse_robots(source: &str) -> Vec<RobotsRule> {
+    parse_robots_policy(source).rules
 }
 
 fn robots_rule_matches(pattern: &str, path: &str) -> bool {
@@ -287,22 +353,17 @@ fn robots_permitted(rules: &[RobotsRule], path: &str) -> bool {
 async fn robots_allowed(
     url: &Url,
     fetcher: &Arc<dyn Fetcher>,
-    cache: &mut HashMap<String, Option<Vec<RobotsRule>>>,
+    cache: &mut HashMap<String, Option<RobotsPolicy>>,
 ) -> bool {
-    let host_key = format!(
-        "{}://{}:{}",
-        url.scheme(),
-        url.host_str().unwrap_or_default(),
-        url.port_or_known_default().unwrap_or(0)
-    );
+    let host_key = url.origin().ascii_serialization();
     if !cache.contains_key(&host_key) {
         let mut robots = url.clone();
         robots.set_path("/robots.txt");
         robots.set_query(None);
         robots.set_fragment(None);
         let policy = match fetcher.fetch(robots.as_str()).await {
-            Ok(page) if page.status == 404 => Some(Vec::new()),
-            Ok(page) if (200..300).contains(&page.status) => Some(parse_robots(&page.body)),
+            Ok(page) if page.status == 404 => Some(RobotsPolicy::default()),
+            Ok(page) if (200..300).contains(&page.status) => Some(parse_robots_policy(&page.body)),
             // If robot policy cannot be established while obedience is
             // explicitly requested, fail closed instead of ignoring it.
             _ => None,
@@ -319,7 +380,7 @@ async fn robots_allowed(
     cache
         .get(&host_key)
         .and_then(Option::as_ref)
-        .is_some_and(|rules| robots_permitted(rules, &path))
+        .is_some_and(|policy| robots_permitted(&policy.rules, &path))
 }
 
 fn host_allowed(spec: &CrawlSpec, url: &Url) -> bool {
@@ -601,7 +662,7 @@ where
     // Shared per-host gates must run in the futures themselves. A timestamp
     // computed while filling a batch can be stale before the first poll.
     let mut site_clock = HashMap::<String, Arc<tokio::sync::Mutex<HostThrottle>>>::new();
-    let mut robot_cache = HashMap::<String, Option<Vec<RobotsRule>>>::new();
+    let mut robot_cache = HashMap::<String, Option<RobotsPolicy>>::new();
     while !queue.is_empty() && visited.len() < spec.max_pages {
         let mut batch = FuturesUnordered::new();
         while batch.len() < spec.concurrency && !queue.is_empty() && visited.len() < spec.max_pages
@@ -631,20 +692,36 @@ where
                 })?;
                 continue;
             }
-            let host_clock = if spec.delay_ms > 0 || spec.auto_throttle {
-                let host = url.host_str().unwrap_or_default().to_owned();
+            let robots_minimum = if spec.obey_robots {
+                robot_cache
+                    .get(&url.origin().ascii_serialization())
+                    .and_then(Option::as_ref)
+                    .map(|policy| policy.minimum_delay)
+                    .unwrap_or_default()
+            } else {
+                Duration::ZERO
+            };
+            let host_clock = if spec.delay_ms > 0 || spec.auto_throttle || !robots_minimum.is_zero()
+            {
+                let host = url.origin().ascii_serialization();
                 let initial = Duration::from_millis(if spec.auto_throttle {
                     spec.delay_ms.max(100)
                 } else {
                     spec.delay_ms
-                });
+                })
+                .max(robots_minimum);
                 Some(Arc::clone(site_clock.entry(host).or_insert_with(|| {
                     Arc::new(tokio::sync::Mutex::new(HostThrottle::new(initial)))
                 })))
             } else {
                 None
             };
-            let minimum = Duration::from_millis(spec.delay_ms.max(100));
+            let minimum = Duration::from_millis(if spec.auto_throttle {
+                spec.delay_ms.max(100)
+            } else {
+                spec.delay_ms
+            })
+            .max(robots_minimum);
             let auto_throttle = spec.auto_throttle;
             let backend = Arc::clone(&fetcher);
             batch.push(async move {
@@ -1142,6 +1219,89 @@ mod tests {
         assert!(robots_permitted(&policy, "/public"));
         assert!(!robots_permitted(&policy, "/search?private=true"));
         assert!(robots_permitted(&policy, "/search?private=false"));
+    }
+
+    #[test]
+    fn robots_pacing_merges_matching_groups_and_ignores_other_agents() {
+        let policy = parse_robots_policy(
+            "User-agent: *\nDisallow: /everything\nCrawl-delay: 10\n\
+             User-agent: RustScrapling\nAllow: /public\nCrawl-delay: 0.15\n\
+             User-agent: RustScrapling\nDisallow: /private\nRequest-rate: 2/0.8\n\
+             User-agent: OtherBot\nDisallow: /public\nCrawl-delay: 100",
+        );
+        assert_eq!(policy.minimum_delay, Duration::from_millis(400));
+        assert!(!robots_permitted(&policy.rules, "/private/a"));
+        assert!(robots_permitted(&policy.rules, "/everything"));
+        assert!(robots_permitted(&policy.rules, "/public"));
+        let general = parse_robots_policy(
+            "User-agent: *\nDisallow: /private\nCrawl-delay: 0.25\nRequest-rate: 2/0.8",
+        );
+        assert_eq!(general.minimum_delay, Duration::from_millis(400));
+        assert!(!robots_permitted(&general.rules, "/private"));
+    }
+
+    #[test]
+    fn robots_invalid_pacing_values_cannot_panic_or_stall_crawler() {
+        for invalid in ["NaN", "inf", "-1", "1e300", "86401", "abcd"] {
+            assert_eq!(robots_seconds(invalid), None, "{invalid}");
+        }
+        for invalid in ["0/5", "2/NaN", "-5/10", "5/999999", "oops"] {
+            assert_eq!(robots_request_rate(invalid), None, "{invalid}");
+        }
+        assert_eq!(
+            robots_request_rate("3/1"),
+            Some(Duration::from_nanos(333_333_334))
+        );
+    }
+
+    struct RobotPacingFetcher(Mutex<Vec<Instant>>);
+
+    impl Fetcher for RobotPacingFetcher {
+        fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
+            Box::pin(async move {
+                if url.ends_with("/robots.txt") {
+                    return Ok(FetchPage {
+                        status: 200,
+                        url: url.to_owned(),
+                        content_type: "text/plain".into(),
+                        body: "User-agent: *\nAllow: /\nCrawl-delay: 0.04\nRequest-rate: 1/0.12"
+                            .into(),
+                    });
+                }
+                self.0.lock().unwrap().push(Instant::now());
+                Ok(FetchPage {
+                    status: 200,
+                    url: url.into(),
+                    content_type: "text/plain".into(),
+                    body: String::new(),
+                })
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn robots_request_rate_is_enforced_without_other_delay() {
+        let fetcher = Arc::new(RobotPacingFetcher(Mutex::new(Vec::new())));
+        let spec = CrawlSpec {
+            start_urls: vec![
+                "https://example.com/one".into(),
+                "https://example.com/two".into(),
+                "https://example.com/three".into(),
+            ],
+            max_depth: 0,
+            concurrency: 3,
+            obey_robots: true,
+            delay_ms: 0,
+            auto_throttle: false,
+            ..CrawlSpec::default()
+        };
+        let summary = crawl(&spec, fetcher.clone(), |_| Ok(())).await.unwrap();
+        assert_eq!(summary.successful, 3);
+        let starts = fetcher.0.lock().unwrap();
+        assert_eq!(starts.len(), 3);
+        for pair in starts.windows(2) {
+            assert!(pair[1].duration_since(pair[0]) >= Duration::from_millis(95));
+        }
     }
 
     struct RobotFetcher;
