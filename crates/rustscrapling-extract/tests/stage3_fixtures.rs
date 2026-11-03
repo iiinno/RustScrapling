@@ -191,3 +191,64 @@ fn credential_bearing_urls_are_not_emitted_in_article_or_canonical_metadata() {
     assert!(!with_bad_base.html.contains("password@"));
     assert_eq!(with_bad_base.metadata.canonical_url, None);
 }
+
+#[test]
+fn schema_graph_resolves_author_references_and_full_type_urls() {
+    let output = extract(
+        r##"<html><head><script type="application/ld+json">
+        {
+          "@context":"https://schema.org",
+          "@graph":[
+            {
+              "@id":"https://example.org/stories/1#article",
+              "@type":["https://schema.org/NewsArticle","CreativeWork"],
+              "headline":"Graph article headline",
+              "datePublished":"2026-11-03",
+              "author":[
+                {"@id":"https://example.org/stories/1#ada"},
+                {"name":"Bob Author"}
+              ]
+            },
+            {
+              "@id":"https://example.org/stories/1#ada",
+              "@type":"Person",
+              "name":"Ada Researcher"
+            }
+          ]
+        }
+        </script></head>
+        <body><main><p>The report contains enough readable text to be extracted.</p></main></body></html>"##,
+        ExtractOptions::default(),
+    )
+    .unwrap();
+    assert_eq!(
+        output.metadata.title.as_deref(),
+        Some("Graph article headline")
+    );
+    assert_eq!(
+        output.metadata.author.as_deref(),
+        Some("Ada Researcher, Bob Author")
+    );
+    assert_eq!(output.metadata.published_at.as_deref(), Some("2026-11-03"));
+    assert!(!output.metadata.author.unwrap().contains("https://"));
+}
+
+#[test]
+fn jsonld_author_cycle_or_unresolved_reference_does_not_leak_ids() {
+    let output = extract(
+        r##"<html><head><script type="application/ld+json">
+        {"@graph":[
+          {"@type":"Article", "headline":"Cycle article", "author":[
+            {"@id":"https://example.org/#cycle-a"},
+            {"@id":"https://example.org/#unresolved"}
+          ]},
+          {"@id":"https://example.org/#cycle-a", "@id2":"noise", "name2":"not a name",
+           "@type":"Person", "other":"plain", "name":""}
+        ]}
+        </script></head><body><main><p>This article provides an ordinary visible paragraph.</p></main></body></html>"##,
+        ExtractOptions::default(),
+    )
+    .unwrap();
+    assert_eq!(output.metadata.title.as_deref(), Some("Cycle article"));
+    assert_eq!(output.metadata.author, None);
+}

@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use rustscrapling_dom::Dom;
 use serde::Serialize;
@@ -107,6 +107,10 @@ pub(crate) fn extract_metadata(dom: &Dom, page_url: Option<&str>) -> Metadata {
         }
     }
 
+    // JSON-LD commonly stores authors as references to Person nodes inside
+    // @graph, rather than embedding their names in the article itself.
+    // Index only nodes in the current document: never fetch an untrusted @id.
+    let graph_refs = graph_references(&metadata.json_ld);
     let structured = metadata
         .json_ld
         .iter()
@@ -139,7 +143,7 @@ pub(crate) fn extract_metadata(dom: &Dom, page_url: Option<&str>) -> Metadata {
     .or_else(|| {
         structured
             .iter()
-            .find_map(|o| o.get("author").and_then(author_name))
+            .find_map(|o| o.get("author").and_then(|v| author_name(v, &graph_refs)))
     });
     metadata.published_at = get(
         &named,
@@ -198,16 +202,85 @@ fn json_text(value: &Value, names: &[&str]) -> Option<String> {
     })
 }
 
-fn author_name(value: &Value) -> Option<String> {
-    match value {
-        Value::String(name) => non_empty(normalize(name)),
-        Value::Object(_) => json_text(value, &["name", "@id"]),
-        Value::Array(authors) => {
-            let names = authors.iter().filter_map(author_name).collect::<Vec<_>>();
-            (!names.is_empty()).then_some(names.join(", "))
+fn graph_references(values: &[Value]) -> BTreeMap<&str, &Value> {
+    fn collect<'a>(value: &'a Value, refs: &mut BTreeMap<&'a str, &'a Value>) {
+        match value {
+            Value::Object(map) => {
+                if let Some(id) = map.get("@id").and_then(Value::as_str) {
+                    refs.entry(id).or_insert(value);
+                }
+                if let Some(graph) = map.get("@graph") {
+                    collect(graph, refs);
+                }
+            }
+            Value::Array(items) => {
+                for item in items {
+                    collect(item, refs);
+                }
+            }
+            _ => {}
         }
-        _ => None,
     }
+
+    let mut refs = BTreeMap::new();
+    for value in values {
+        collect(value, &mut refs);
+    }
+    refs
+}
+
+fn author_name(value: &Value, graph_refs: &BTreeMap<&str, &Value>) -> Option<String> {
+    fn resolve<'a>(
+        value: &Value,
+        refs: &BTreeMap<&'a str, &'a Value>,
+        visiting: &mut BTreeSet<&'a str>,
+        depth: usize,
+    ) -> Option<String> {
+        // Bound hostile cyclic and heavily nested structured data.
+        if depth > 16 {
+            return None;
+        }
+        match value {
+            Value::String(name) => non_empty(normalize(name)),
+            Value::Object(_) => json_text(value, &["name"]).or_else(|| {
+                let id = value.get("@id")?.as_str()?;
+                let (&key, &referenced) = refs.get_key_value(id)?;
+                if !visiting.insert(key) {
+                    return None;
+                }
+                let name = resolve(referenced, refs, visiting, depth + 1);
+                visiting.remove(key);
+                name
+            }),
+            Value::Array(authors) => {
+                let names = authors
+                    .iter()
+                    .filter_map(|author| resolve(author, refs, visiting, depth + 1))
+                    .collect::<Vec<_>>();
+                (!names.is_empty()).then_some(names.join(", "))
+            }
+            _ => None,
+        }
+    }
+
+    resolve(value, graph_refs, &mut BTreeSet::new(), 0)
+}
+
+fn is_article_type(value: &str) -> bool {
+    let kind = value
+        .strip_prefix("https://schema.org/")
+        .or_else(|| value.strip_prefix("http://schema.org/"))
+        .unwrap_or(value);
+    matches!(
+        kind,
+        "Article"
+            | "NewsArticle"
+            | "BlogPosting"
+            | "TechArticle"
+            | "Report"
+            | "ScholarlyArticle"
+            | "WebPage"
+    )
 }
 
 fn article_objects(value: &Value) -> Vec<&Value> {
@@ -216,21 +289,9 @@ fn article_objects(value: &Value) -> Vec<&Value> {
         match value {
             Value::Object(map) => {
                 let is_article = map.get("@type").is_some_and(|kind| {
-                    let allowed = |value: &str| {
-                        matches!(
-                            value,
-                            "Article"
-                                | "NewsArticle"
-                                | "BlogPosting"
-                                | "TechArticle"
-                                | "Report"
-                                | "ScholarlyArticle"
-                                | "WebPage"
-                        )
-                    };
-                    kind.as_str().is_some_and(allowed)
+                    kind.as_str().is_some_and(is_article_type)
                         || kind.as_array().is_some_and(|items| {
-                            items.iter().filter_map(Value::as_str).any(allowed)
+                            items.iter().filter_map(Value::as_str).any(is_article_type)
                         })
                 });
                 if is_article || map.contains_key("headline") {
