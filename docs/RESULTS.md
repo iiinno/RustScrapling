@@ -1,5 +1,16 @@
 # RESULTS.md: 測定と検証の結果
 
+## 2026-11-03 VPS移管後の取得漏れ修正・チェックポイント保護・実機検証
+
+- 負荷の高いRustビルド/試験をWindows PCからUbuntu VPS `inouemasaki-ai` の `~/Project/RustScrapling` に移管。VPSでRust 1.95.0を1.99.1に更新した。Tailscale SSHによるGit同期を用い、ビルド/試験はVPSの `systemd-run --user --scope` で `MemoryMax=2600M`（全体試験は3000～3200M）、`MemorySwapMax=0`、`CARGO_BUILD_JOBS=2`、低優先度 `nice -n 12` を指定。PCのWSLで追加ビルドは実施していない。
+- クローラ: 先頭に大量の対象外ドメイン/既訪問リンクがあるページで、`max_pages`分だけ先にリンクを切り捨てると有効リンクが消える不具合を修正。初期seedの重複/フラグメント違いによるページ上限の誤消費も修正。未処理URLに秘密のクエリが含まれる可能性を踏まえ、Unixチェックポイントをmode 0600、新規専用ディレクトリをmode 0700で作成し、旧state権限移行・symlink拒否・排他作成の一時ファイルを導入。`cargo test -p rustscrapling-spider --locked --offline` 14件PASS。
+- 全ワークスペース: VPS Ubuntu Rust1.99.1で `cargo test --workspace --lib --tests --locked --offline -- --skip local_browser_navigation_reuse_external_connection_and_shadow_dom --skip browser_get_and_session_if_chrome_is_available` は**83件PASS、終了コード0**。これにはdaemonのクロスプロセスCLI E2EとMCP mock CDP E2Eを含む。Chrome実機依存2件は明示的に除外しており、全テスト無条件PASSの意味ではない。
+- VPSのGoogle Chrome 155を使ったlocalhost実機E2Eは失敗。CDPで`Target.attachToTarget`/`Page.enable`/`Network.enable`は成功するが、`Page.navigate`が断続的に20秒タイムアウト。ローカルHTTPサーバのヘッダ読み取りを完結させる修正とテスト用プロキシ無効化で一度はページ遷移、DOM/Shadow DOM取得、明示evaluateまで成功したが、Chrome終了時プロファイル削除と子プロセスの競合が発生。削除は有界リトライに修正。再実行で遷移タイムアウトが再現したため、Chrome実機E2Eの安定通過は**未検証・未達**。サンドボックス無効化は明示指定したlocalhostテストに限定し、通常のブラウザ起動の安全性を弱めていない。CDPトレースは環境変数指定時にコマンド名/IDだけを出す（URLや資格情報は出さない）。
+- 切り分け: 同じVPSのChrome155をRustScrapling/CDPを介さず、`--headless=new --dump-dom http://127.0.0.1:18763/`（専用一時プロファイル、プロキシ無効）で起動しても17秒でタイムアウト。Python HTTPサーバはcurlのHEADには応答するがChromeからのHTTP要求本文は到達しなかった。Chromeの`about:blank`と`data:`ページは単体で正常表示した。Chrome netlog上はloopback TCP接続済みだがURL requestが実際のHTTP送信まで進んでいない。VPS Chrome/ホスト環境側の問題も強く疑われるが原因確定ではない。ChromeのLocal Network Accessチェック無効化を試してもタイムアウトは改善しなかった。環境を変えた実Chrome E2Eと外部サイト実測が必要。
+- CDPで応答がない場合、従来の`Page.navigate`コマンドは呼び出し側`navigation_timeout`(標準15秒)に先立ち固定20秒待つ可能性があった。コマンド応答とページロードを**同一のnavigation deadline**に束ね、無応答CDPモックで150ms期限のテストを追加。VPS `cargo test -p rustscrapling-browser --test navigation_timeout --locked --offline` は1/1 PASS（0.16秒）。`cargo fmt --all --check`および`cargo clippy --workspace --all-targets --locked --offline -- -D warnings`はVPSで終了コード0。
+- 上記CDP期限修正とCLI strict Clippy修正（`bd79dd4`）を含むVPS最終検査: `cargo test --workspace --lib --tests --locked --offline -- --skip local_browser_navigation_reuse_external_connection_and_shadow_dom --skip browser_get_and_session_if_chrome_is_available` が**84 PASS、2件明示除外、終了コード0**。`cargo fmt --all --check`と`cargo clippy --workspace --all-targets --locked --offline -- -D warnings`はともに終了コード0。VPSでは2ジョブ、3GB前後のcgroup上限・スワップ追加割当なし・nice低優先度を維持。実Chromeの2件を含めた全件成功と混同しない。
+- VPS側でこの版の約200実サイト比較・24時間耐久試験・Chrome実機でのlocalStorage往復の通過確認はしていない。旧WSLの150ページ負荷測定をVPSの新しい速度結果として扱わない。
+
 ## 2026-11-03 継続開発・追加機能の統合再検証
 
 - 統合ブランチ `integration/plan-v2-recovered` に HTTP入力検査、ExtractのURL credential秘匿、crawler大量リンク上限/HTML base URL、daemon CLI再起動E2E、BrowserState v2(現行トップレベルoriginのlocalStorage) を統合。WSL2 Ubuntu 24.04 / Rust 1.99.1 / Debug test / `CARGO_BUILD_JOBS=2`で `cargo test --workspace --lib --tests --locked --offline` の**終了コード0**を確認。ビルド時に一度見つかったbrowser stateファイル書込関数の型推論エラーを修正してから再実行した結果。
