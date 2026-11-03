@@ -3037,7 +3037,7 @@
         },
         {
           "crate": "rustscrapling-http",
-          "line": 70,
+          "line": 69,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-http/src/quic.rs"
         }
@@ -3093,7 +3093,7 @@
         },
         {
           "crate": "rustscrapling-http",
-          "line": 70,
+          "line": 69,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-http/src/quic.rs"
         }
@@ -3364,7 +3364,7 @@
         },
         {
           "crate": "rustscrapling-http",
-          "line": 70,
+          "line": 69,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-http/src/quic.rs"
         }
@@ -4622,7 +4622,7 @@
         },
         {
           "crate": "rustscrapling-http",
-          "line": 70,
+          "line": 69,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-http/src/quic.rs"
         }
@@ -5157,7 +5157,7 @@
         },
         {
           "crate": "rustscrapling-http",
-          "line": 70,
+          "line": 69,
           "qualified_symbol_unknown": true,
           "source": "crates/rustscrapling-http/src/quic.rs"
         }
