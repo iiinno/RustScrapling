@@ -1,0 +1,11 @@
+<!doctype html><html><body>
+<h1>Shadow</h1>
+<x-card></x-card>
+<div contenteditable="true">Editable</div>
+<div role="dialog" aria-label="Settings"><button>OK</button></div>
+<script>
+customElements.define('x-card', class extends HTMLElement {
+  constructor() { super(); this.attachShadow({mode:'open'}).innerHTML = '<section aria-label="Card"><h2>Card title</h2><slot></slot><button>Inner</button></section>'; }
+});
+</script>
+</body></html>

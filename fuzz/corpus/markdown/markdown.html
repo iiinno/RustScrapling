@@ -1,0 +1,41 @@
+<!doctype html>
+<html><head><title>Markdown edge cases</title></head>
+<body>
+<article>
+<h1>  Spaced   heading </h1>
+<h2>Second <em>level</em></h2>
+<h3>Third
+ line</h3>
+<h6>Six</h6>
+<p>Text with *stars* and _underscores_ and <strong> spaced strong </strong>and<em>tight</em>.</p>
+<p>Autolink <a href="https://example.com">https://example.com</a>, titled <a href="/t" title='He said "hi"'>link</a>, empty <a href="">x</a>, none <a>y</a>.</p>
+<p>Line one<br>Line two<br/>Line three</p>
+<blockquote><p>Quote para</p><blockquote><p>Nested quote</p></blockquote></blockquote>
+<ul><li>Top<ul><li>Child<ul><li>Grandchild</li></ul></li></ul></li><li>Second top</li></ul>
+<ol start="3"><li>Three</li><li>Four<p>Para in li</p></li></ol>
+<p>After list</p>
+<pre>
+  indented code
+  with *stars*
+</pre>
+<p>Inline <code>a`b</code> and <code>plain</code> and <kbd>Ctrl</kbd> and <samp>out</samp>.</p>
+<table>
+<thead><tr><th>H1</th><th colspan="2">Wide</th></tr></thead>
+<tbody><tr><td>a</td><td>b<br>c</td><td><img src="i.png" alt="img alt"></td></tr>
+<tr><td colspan="3">span</td></tr></tbody>
+</table>
+<table><tr><td>no</td><td>head</td></tr><tr><td>r2</td><td>x</td></tr></table>
+<dl><dt>Term
+ one</dt><dd>Definition
+line</dd></dl>
+<p>Image <img src="/a.png" alt="Alt" title="Title"> inline.</p>
+<p><del>gone</del> <s>struck</s> H<sub>2</sub>O x<sup>2</sup> <q>quoted</q> <b>bold</b> <i>it</i></p>
+<figure><img src="f.png" alt="fig"><figcaption>Caption text</figcaption></figure>
+<div>Div <div>nested div</div> tail</div>
+<section>Section text</section>
+<video src="v.mp4" poster="p.png">Video</video>
+<hr>
+<p>&nbsp;</p>
+<p>Ends here &amp; &lt;tag&gt;</p>
+</article>
+</body></html>

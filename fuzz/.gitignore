@@ -1,0 +1,7 @@
+/target
+/artifacts
+/coverage
+# Generated corpus entries; the seed files are committed explicitly.
+/corpus/*/*
+!/corpus/*/*.html
+!/corpus/selectors/seed*

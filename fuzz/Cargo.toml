@@ -1,0 +1,52 @@
+# Fuzz targets for Plan G-09 (HTML parser, CSS/XPath, adaptive, Markdown).
+# Separate workspace so the main build never needs nightly or libFuzzer.
+#   cargo +nightly fuzz run <target> -- -max_total_time=3600
+[package]
+name = "rustscrapling-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+rustscrapling-dom = { path = "../crates/rustscrapling-dom" }
+rustscrapling-select = { path = "../crates/rustscrapling-select" }
+rustscrapling-adaptive = { path = "../crates/rustscrapling-adaptive" }
+rustscrapling-extract = { path = "../crates/rustscrapling-extract" }
+
+[workspace]
+members = ["."]
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "html_parse"
+path = "fuzz_targets/html_parse.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "selectors"
+path = "fuzz_targets/selectors.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "adaptive"
+path = "fuzz_targets/adaptive.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "markdown"
+path = "fuzz_targets/markdown.rs"
+test = false
+doc = false
+bench = false

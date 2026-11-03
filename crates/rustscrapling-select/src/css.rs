@@ -398,7 +398,9 @@ impl<'a> Parser<'a> {
             if c.is_ascii_alphanumeric() || c == b'-' || c == b'_' || c >= 0x80 || c == b'\\' {
                 self.pos += 1;
                 if c == b'\\' {
-                    self.pos += 1; // escaped char, kept verbatim; rare in tests
+                    // Escaped char, kept verbatim. A trailing backslash must
+                    // not move past the end of the selector (found by fuzzing).
+                    self.pos = (self.pos + 1).min(self.src.len());
                 }
             } else {
                 break;
