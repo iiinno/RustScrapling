@@ -15,6 +15,7 @@ import re
 from pathlib import Path
 
 from inventory_upstream import UPSTREAM_SHA
+from rust_api_index import index_rust_functions, same_name_candidates
 
 
 CLASS_CRATE = {
@@ -135,7 +136,8 @@ def executor_action_branches(backend: str) -> set[str]:
     return set(re.findall(r'^\s*"([a-z_]+)"\s*=>\s*\{', after[match:stop], re.MULTILINE))
 
 
-def audit(api: dict, mcp: dict, rust_catalog: list[dict], catalog_bytes: bytes, backend_bytes: bytes) -> dict:
+def audit(api: dict, mcp: dict, rust_catalog: list[dict], catalog_bytes: bytes, backend_bytes: bytes, rust_symbols: dict | None = None) -> dict:
+    rust_symbols = rust_symbols or {}
     if api["upstream_sha"] != UPSTREAM_SHA or mcp["upstream_sha"] != UPSTREAM_SHA:
         raise ValueError("Wrong upstream SHA in inventory")
     tools = {tool["name"]: tool for tool in rust_catalog}
@@ -167,6 +169,7 @@ def audit(api: dict, mcp: dict, rust_catalog: list[dict], catalog_bytes: bytes, 
         rows.append({
             "id": method["id"], "source": method["source"], "line": method["line"],
             "rust_crate_candidate": CLASS_CRATE.get(cls), "rust_entrypoint": None,
+            "same_name_candidates": same_name_candidates(method, rust_symbols, CLASS_CRATE.get(cls)),
             "test_ids": [], "status": "unverified",
         })
     inherited_rows = []
@@ -176,11 +179,13 @@ def audit(api: dict, mcp: dict, rust_catalog: list[dict], catalog_bytes: bytes, 
             "id": method["id"], "declared_in": method["declared_in"],
             "via_base": method["via_base"], "source": method["source"], "line": method["line"],
             "rust_crate_candidate": CLASS_CRATE.get(cls), "rust_entrypoint": None,
+            "same_name_candidates": same_name_candidates(method, rust_symbols, CLASS_CRATE.get(cls)),
             "test_ids": [], "status": "unverified",
         })
     module_rows = [{
         "id": item["id"], "source": item["source"], "line": item["line"],
         "explicit_export": item["exported_via_all"], "rust_entrypoint": None,
+        "same_name_candidates": same_name_candidates(item, rust_symbols, None),
         "test_ids": [], "status": "unverified",
     } for item in api["module_functions"]]
     cli_rows = []
@@ -198,6 +203,7 @@ def audit(api: dict, mcp: dict, rust_catalog: list[dict], catalog_bytes: bytes, 
             "Selected classes and public-by-convention module functions are inventoried; built-in/external inherited APIs and dynamic exports still need review.",
             "Known Click decorator factories are expanded statically; Click runtime/schema validation remains necessary.",
             "All runtime statuses deliberately remain unverified until evidence links to passing tests.",
+            "Rust same-name candidates use a lexical regex of pub fn declarations, not a Rust parser or module visibility analysis.",
         ],
         "methods": rows, "inherited_methods": inherited_rows, "module_functions": module_rows, "exported_aliases": api["exported_aliases"],
         "cli": cli_rows, "mcp": mcp_rows, "actions": action_rows,
@@ -224,6 +230,7 @@ def markdown(report: dict) -> str:
         f"- export alias: **{len(report['exported_aliases'])}件**",
         f"- CLIのコマンド関数: **{len(report['cli'])}件**（既知の共通decoratorはAST展開済み。Click実行時のschemaは未検証）",
         f"- MCP: **{len(mcp)}ツール**、BrowserAction: **{len(actions)}種**",
+        f"- Rust公開宣言の同名候補がある直接メソッド: **{sum(bool(m['same_name_candidates']) for m in methods)}件**（同名候補であり実装・互換の証明ではない）",
         "- 本家のメソッド/引数/デコレーターは `UPSTREAM_API_V05.json` と `MCP_ACTIONS_V05.json` に固定。ここではRust側の名前・静的schemaのみ比較。",
         "", "## 1. MCPツールの静的schema差分", "",
         "| Tool | 上流引数 | Rust属性 | Rustにない引数 | Rust固有引数 | 既定値差 | 説明一致 | 実動検証 |",
@@ -245,9 +252,12 @@ def markdown(report: dict) -> str:
         if row["inherited_options_unresolved"]:
             decorators += " / 未解析: " + ", ".join(row["inherited_options_unresolved"])
         lines.append(f"| `{row['id']}` | `{row['source']}:{row['line']}` | {row['static_options_count']} | {decorators} | 未検証 |")
-    lines += ["", "## 4. 公開クラスのメソッド別追跡", "", "| 上流API | ソース | 対応クレート候補 | Rustの実entrypoint・テスト |", "| --- | --- | --- | --- |"]
+    lines += ["", "## 4. 公開クラスのメソッド別追跡", "", "| 上流API | ソース | 対応クレート候補 | Rustの同名候補 | 実動テスト |", "| --- | --- | --- | --- | --- |"]
     for row in methods:
-        lines.append(f"| `{row['id']}` | `{row['source']}:{row['line']}` | `{row['rust_crate_candidate'] or '未分類'}` | 未対応付け・未検証 |")
+        candidate = ", ".join(f"`{c['source']}:{c['line']}`" for c in row['same_name_candidates'][:3]) or "—"
+        if len(row['same_name_candidates']) > 3:
+            candidate += " (ほか)"
+        lines.append(f"| `{row['id']}` | `{row['source']}:{row['line']}` | `{row['rust_crate_candidate'] or '未分類'}` | {candidate} | 未検証 |")
     lines += ["", "## 5. 継承・エクスポートalias", "", "| 継承API | 宣言元 | 対応クレート候補 | 実動作 |", "| --- | --- | --- | --- |"]
     for row in inherited:
         lines.append(f"| `{row['id']}` | `{row['declared_in']}` via `{row['via_base']}` | `{row['rust_crate_candidate'] or '未分類'}` | 未検証 |")
@@ -271,12 +281,13 @@ def main() -> None:
     p.add_argument("--inventory-dir", type=Path, default=Path("docs/compat"))
     p.add_argument("--rust-tools", type=Path, default=Path("crates/rustscrapling-mcp/src/tools.json"))
     p.add_argument("--rust-backend", type=Path, default=Path("crates/rustscrapling-mcp/src/backend.rs"))
+    p.add_argument("--rust-root", type=Path, default=Path("."))
     p.add_argument("--check", action="store_true")
     args = p.parse_args()
     api = json.loads((args.inventory_dir / "UPSTREAM_API_V05.json").read_text(encoding="utf-8"))
     mcp = json.loads((args.inventory_dir / "MCP_ACTIONS_V05.json").read_text(encoding="utf-8"))
     raw = args.rust_tools.read_bytes()
-    report = audit(api, mcp, json.loads(raw), raw, args.rust_backend.read_bytes())
+    report = audit(api, mcp, json.loads(raw), raw, args.rust_backend.read_bytes(), index_rust_functions(args.rust_root))
     files = {
         args.inventory_dir / "PARITY_AUDIT.json": json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         args.inventory_dir / "PARITY_MATRIX.md": markdown(report),

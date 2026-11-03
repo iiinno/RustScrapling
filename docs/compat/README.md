@@ -44,6 +44,10 @@ The public method listing includes `@overload` declarations as individual
 source rows (`@overload:LINE`), distinct from runtime implementations. It also
 tracks exposed methods on project-owned bases (`Selector`, `Response`, spider
 template inheritance) without treating the same inherited code as new work.
+The audit also records **same-name candidate** `pub fn` declarations in Rust
+`crates/*/src/**/*.rs`. This is lexical matching only: private modules,
+associated methods, macros, traits and different names require human review.
+It is deliberately never counted as verified parity.
 
 ## Critical findings and next steps
 

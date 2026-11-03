@@ -30,9 +30,17 @@ from inventory_upstream import (  # noqa: E402
     parameters,
     typed_dict_classes,
 )
+from rust_api_index import PUBLIC_FUNCTION, index_rust_functions, same_name_candidates  # noqa: E402
 
 
 class InventoryAstTests(unittest.TestCase):
+    def test_rust_function_scan_is_only_an_unverified_candidate(self) -> None:
+        example = 'pub fn css(input: &str) -> String { todo!() }\n pub(crate) async fn get() {}\nfn hidden() {}\npub async fn fetch<T>(x: T) {}'
+        self.assertEqual(PUBLIC_FUNCTION.findall(example), ["css", "get", "fetch"])
+        symbols = {"css": [{"crate": "rustscrapling-select", "source": "src/x.rs", "line": 3}]}
+        self.assertEqual(len(same_name_candidates({"id": "Selector.css"}, symbols, "rustscrapling-select")), 1)
+        self.assertEqual(same_name_candidates({"id": "Selector.other"}, symbols, None), [])
+
     def test_preserves_argument_kinds_defaults_and_unpack(self) -> None:
         fn = ast.parse("def f(a, /, b: int = 2, *args, flag=False, **kw: Unpack[Opts]): pass").body[0]
         items = parameters(fn)
@@ -152,7 +160,7 @@ class PinnedSnapshotTests(unittest.TestCase):
     def test_rust_catalog_and_rust_backend_unchanged(self) -> None:
         tool_bytes = (ROOT / "crates" / "rustscrapling-mcp" / "src" / "tools.json").read_bytes()
         backend_bytes = (ROOT / "crates" / "rustscrapling-mcp" / "src" / "backend.rs").read_bytes()
-        current = audit(self.api, self.mcp, json.loads(tool_bytes), tool_bytes, backend_bytes)
+        current = audit(self.api, self.mcp, json.loads(tool_bytes), tool_bytes, backend_bytes, index_rust_functions(ROOT))
         self.assertEqual(current, self.report)
         self.assertEqual((self.root / "PARITY_MATRIX.md").read_text(encoding="utf-8"), markdown(current))
 

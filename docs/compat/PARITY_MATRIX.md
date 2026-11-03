@@ -10,6 +10,7 @@
 - export alias: **1件**
 - CLIのコマンド関数: **10件**（既知の共通decoratorはAST展開済み。Click実行時のschemaは未検証）
 - MCP: **16ツール**、BrowserAction: **12種**
+- Rust公開宣言の同名候補がある直接メソッド: **48件**（同名候補であり実装・互換の証明ではない）
 - 本家のメソッド/引数/デコレーターは `UPSTREAM_API_V05.json` と `MCP_ACTIONS_V05.json` に固定。ここではRust側の名前・静的schemaのみ比較。
 
 ## 1. MCPツールの静的schema差分
@@ -67,204 +68,204 @@
 
 ## 4. 公開クラスのメソッド別追跡
 
-| 上流API | ソース | 対応クレート候補 | Rustの実entrypoint・テスト |
-| --- | --- | --- | --- |
-| `TextHandler.__getitem__` | `scrapling/core/custom_types.py:34` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.split` | `scrapling/core/custom_types.py:38` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.strip` | `scrapling/core/custom_types.py:41` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.lstrip` | `scrapling/core/custom_types.py:44` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.rstrip` | `scrapling/core/custom_types.py:47` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.capitalize` | `scrapling/core/custom_types.py:50` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.casefold` | `scrapling/core/custom_types.py:53` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.center` | `scrapling/core/custom_types.py:56` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.expandtabs` | `scrapling/core/custom_types.py:59` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.format` | `scrapling/core/custom_types.py:62` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.format_map` | `scrapling/core/custom_types.py:65` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.join` | `scrapling/core/custom_types.py:68` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.ljust` | `scrapling/core/custom_types.py:71` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.rjust` | `scrapling/core/custom_types.py:74` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.swapcase` | `scrapling/core/custom_types.py:77` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.title` | `scrapling/core/custom_types.py:80` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.translate` | `scrapling/core/custom_types.py:83` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.zfill` | `scrapling/core/custom_types.py:86` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.replace` | `scrapling/core/custom_types.py:89` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.upper` | `scrapling/core/custom_types.py:92` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.lower` | `scrapling/core/custom_types.py:95` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.sort` | `scrapling/core/custom_types.py:100` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.clean` | `scrapling/core/custom_types.py:104` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.get` | `scrapling/core/custom_types.py:112` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.getall` | `scrapling/core/custom_types.py:115` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.json` | `scrapling/core/custom_types.py:121` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.re@overload:128` | `scrapling/core/custom_types.py:128` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.re@overload:139` | `scrapling/core/custom_types.py:139` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.re` | `scrapling/core/custom_types.py:148` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandler.re_first` | `scrapling/core/custom_types.py:184` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandlers.__getitem__@overload:218` | `scrapling/core/custom_types.py:218` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandlers.__getitem__@overload:222` | `scrapling/core/custom_types.py:222` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandlers.__getitem__` | `scrapling/core/custom_types.py:225` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandlers.re` | `scrapling/core/custom_types.py:231` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandlers.re_first` | `scrapling/core/custom_types.py:249` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandlers.get` | `scrapling/core/custom_types.py:272` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `TextHandlers.extract` | `scrapling/core/custom_types.py:278` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `AttributesHandler.__init__` | `scrapling/core/custom_types.py:292` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `AttributesHandler.get` | `scrapling/core/custom_types.py:307` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `AttributesHandler.search_values` | `scrapling/core/custom_types.py:311` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `AttributesHandler.json_string` | `scrapling/core/custom_types.py:325` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `AttributesHandler.__getitem__` | `scrapling/core/custom_types.py:329` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `AttributesHandler.__iter__` | `scrapling/core/custom_types.py:332` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `AttributesHandler.__len__` | `scrapling/core/custom_types.py:335` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `AttributesHandler.__contains__` | `scrapling/core/custom_types.py:344` | `rustscrapling-dom` | 未対応付け・未検証 |
-| `SelectorsGeneration.generate_css_selector` | `scrapling/core/mixins.py:66` | `rustscrapling-select` | 未対応付け・未検証 |
-| `SelectorsGeneration.generate_full_css_selector` | `scrapling/core/mixins.py:73` | `rustscrapling-select` | 未対応付け・未検証 |
-| `SelectorsGeneration.generate_xpath_selector` | `scrapling/core/mixins.py:80` | `rustscrapling-select` | 未対応付け・未検証 |
-| `SelectorsGeneration.generate_full_xpath_selector` | `scrapling/core/mixins.py:87` | `rustscrapling-select` | 未対応付け・未検証 |
-| `StealthySession.__init__` | `scrapling/engines/_browsers/_stealth.py:39` | `rustscrapling-browser` | 未対応付け・未検証 |
-| `StealthySession.start` | `scrapling/engines/_browsers/_stealth.py:83` | `rustscrapling-browser` | 未対応付け・未検証 |
-| `StealthySession.fetch` | `scrapling/engines/_browsers/_stealth.py:231` | `rustscrapling-browser` | 未対応付け・未検証 |
-| `AsyncStealthySession.__init__` | `scrapling/engines/_browsers/_stealth.py:356` | `rustscrapling-browser` | 未対応付け・未検証 |
-| `AsyncStealthySession.start` | `scrapling/engines/_browsers/_stealth.py:401` | `rustscrapling-browser` | 未対応付け・未検証 |
-| `AsyncStealthySession.fetch` | `scrapling/engines/_browsers/_stealth.py:553` | `rustscrapling-browser` | 未対応付け・未検証 |
-| `FetcherSession.__init__` | `scrapling/engines/static.py:678` | `rustscrapling-http` | 未対応付け・未検証 |
-| `Response.__init__` | `scrapling/engines/toolbelt/custom.py:44` | `rustscrapling-fetch` | 未対応付け・未検証 |
-| `Response.body` | `scrapling/engines/toolbelt/custom.py:88` | `rustscrapling-fetch` | 未対応付け・未検証 |
-| `Response.markdown` | `scrapling/engines/toolbelt/custom.py:92` | `rustscrapling-fetch` | 未対応付け・未検証 |
-| `Response.follow` | `scrapling/engines/toolbelt/custom.py:108` | `rustscrapling-fetch` | 未対応付け・未検証 |
-| `BaseFetcher.__init__` | `scrapling/engines/toolbelt/custom.py:193` | `rustscrapling-fetch` | 未対応付け・未検証 |
-| `BaseFetcher.display_config` | `scrapling/engines/toolbelt/custom.py:206` | `rustscrapling-fetch` | 未対応付け・未検証 |
-| `BaseFetcher.configure` | `scrapling/engines/toolbelt/custom.py:217` | `rustscrapling-fetch` | 未対応付け・未検証 |
-| `Fetcher.get` | `scrapling/fetchers/requests.py:32` | `rustscrapling-http` | 未対応付け・未検証 |
-| `Fetcher.post` | `scrapling/fetchers/requests.py:36` | `rustscrapling-http` | 未対応付け・未検証 |
-| `Fetcher.put` | `scrapling/fetchers/requests.py:40` | `rustscrapling-http` | 未対応付け・未検証 |
-| `Fetcher.delete` | `scrapling/fetchers/requests.py:44` | `rustscrapling-http` | 未対応付け・未検証 |
-| `AsyncFetcher.get` | `scrapling/fetchers/requests.py:52` | `rustscrapling-http` | 未対応付け・未検証 |
-| `AsyncFetcher.post` | `scrapling/fetchers/requests.py:56` | `rustscrapling-http` | 未対応付け・未検証 |
-| `AsyncFetcher.put` | `scrapling/fetchers/requests.py:60` | `rustscrapling-http` | 未対応付け・未検証 |
-| `AsyncFetcher.delete` | `scrapling/fetchers/requests.py:64` | `rustscrapling-http` | 未対応付け・未検証 |
-| `StealthyFetcher.fetch` | `scrapling/fetchers/stealth_chrome.py:14` | `rustscrapling-browser` | 未対応付け・未検証 |
-| `StealthyFetcher.async_fetch` | `scrapling/fetchers/stealth_chrome.py:67` | `rustscrapling-browser` | 未対応付け・未検証 |
-| `Selector.__init__` | `scrapling/parser.py:92` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.__getitem__` | `scrapling/parser.py:191` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.__contains__` | `scrapling/parser.py:196` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.tag` | `scrapling/parser.py:265` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.text` | `scrapling/parser.py:274` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.get_all_text` | `scrapling/parser.py:284` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.urljoin` | `scrapling/parser.py:334` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.attrib` | `scrapling/parser.py:339` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.html_content` | `scrapling/parser.py:348` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.body` | `scrapling/parser.py:358` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.prettify` | `scrapling/parser.py:364` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.has_class` | `scrapling/parser.py:379` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.parent` | `scrapling/parser.py:389` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.below_elements` | `scrapling/parser.py:395` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.children` | `scrapling/parser.py:403` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.siblings` | `scrapling/parser.py:414` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.iterancestors` | `scrapling/parser.py:420` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.find_ancestor` | `scrapling/parser.py:427` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.path` | `scrapling/parser.py:438` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.next` | `scrapling/parser.py:444` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.previous` | `scrapling/parser.py:456` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.get` | `scrapling/parser.py:467` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.getall` | `scrapling/parser.py:476` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.relocate@overload:513` | `scrapling/parser.py:513` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.relocate@overload:518` | `scrapling/parser.py:518` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.relocate` | `scrapling/parser.py:522` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.css` | `scrapling/parser.py:571` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.xpath` | `scrapling/parser.py:631` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.find_all` | `scrapling/parser.py:701` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.find` | `scrapling/parser.py:799` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.save` | `scrapling/parser.py:888` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.retrieve` | `scrapling/parser.py:909` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.json` | `scrapling/parser.py:924` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.re` | `scrapling/parser.py:940` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.re_first` | `scrapling/parser.py:956` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.find_similar` | `scrapling/parser.py:1022` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.find_by_text@overload:1084` | `scrapling/parser.py:1084` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.find_by_text@overload:1094` | `scrapling/parser.py:1094` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.find_by_text` | `scrapling/parser.py:1103` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.find_by_regex@overload:1152` | `scrapling/parser.py:1152` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.find_by_regex@overload:1161` | `scrapling/parser.py:1161` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selector.find_by_regex` | `scrapling/parser.py:1169` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selectors.__getitem__@overload:1217` | `scrapling/parser.py:1217` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selectors.__getitem__@overload:1221` | `scrapling/parser.py:1221` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selectors.__getitem__` | `scrapling/parser.py:1224` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selectors.xpath` | `scrapling/parser.py:1231` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selectors.css` | `scrapling/parser.py:1262` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selectors.re` | `scrapling/parser.py:1290` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selectors.re_first` | `scrapling/parser.py:1308` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selectors.search` | `scrapling/parser.py:1330` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selectors.filter` | `scrapling/parser.py:1340` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selectors.get@overload:1348` | `scrapling/parser.py:1348` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selectors.get@overload:1351` | `scrapling/parser.py:1351` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selectors.get` | `scrapling/parser.py:1353` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selectors.getall` | `scrapling/parser.py:1361` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selectors.first` | `scrapling/parser.py:1369` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selectors.last` | `scrapling/parser.py:1374` | `rustscrapling-select` | 未対応付け・未検証 |
-| `Selectors.length` | `scrapling/parser.py:1379` | `rustscrapling-select` | 未対応付け・未検証 |
-| `CrawlerEngine.__init__` | `scrapling/spiders/engine.py:32` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `CrawlerEngine.request_pause` | `scrapling/spiders/engine.py:280` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `CrawlerEngine.crawl` | `scrapling/spiders/engine.py:356` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `CrawlerEngine.items` | `scrapling/spiders/engine.py:456` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `LinkExtractor.__init__` | `scrapling/spiders/links.py:194` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `LinkExtractor.extract` | `scrapling/spiders/links.py:226` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `LinkExtractor.matches` | `scrapling/spiders/links.py:272` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Request.__init__` | `scrapling/spiders/request.py:34` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Request.copy` | `scrapling/spiders/request.py:55` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Request.domain` | `scrapling/spiders/request.py:69` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Request.update_fingerprint` | `scrapling/spiders/request.py:72` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `CrawlResult.completed` | `scrapling/spiders/result.py:207` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `CrawlResult.__len__` | `scrapling/spiders/result.py:211` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `CrawlResult.__iter__` | `scrapling/spiders/result.py:214` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Scheduler.__init__` | `scrapling/spiders/scheduler.py:21` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Scheduler.enqueue` | `scrapling/spiders/scheduler.py:41` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Scheduler.dequeue` | `scrapling/spiders/scheduler.py:58` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Scheduler.complete` | `scrapling/spiders/scheduler.py:64` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Scheduler.__len__` | `scrapling/spiders/scheduler.py:74` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Scheduler.is_empty` | `scrapling/spiders/scheduler.py:78` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Scheduler.snapshot` | `scrapling/spiders/scheduler.py:81` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Scheduler.restore` | `scrapling/spiders/scheduler.py:87` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `SessionManager.__init__` | `scrapling/spiders/session.py:15` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `SessionManager.add` | `scrapling/spiders/session.py:22` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `SessionManager.remove` | `scrapling/spiders/session.py:43` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `SessionManager.pop` | `scrapling/spiders/session.py:50` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `SessionManager.default_session_id` | `scrapling/spiders/session.py:68` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `SessionManager.session_ids` | `scrapling/spiders/session.py:74` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `SessionManager.get` | `scrapling/spiders/session.py:77` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `SessionManager.start` | `scrapling/spiders/session.py:83` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `SessionManager.close` | `scrapling/spiders/session.py:94` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `SessionManager.fetch` | `scrapling/spiders/session.py:103` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `SessionManager.__contains__` | `scrapling/spiders/session.py:146` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `SessionManager.__len__` | `scrapling/spiders/session.py:150` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Spider.__init__` | `scrapling/spiders/spider.py:106` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Spider.start_requests` | `scrapling/spiders/spider.py:155` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Spider.parse` | `scrapling/spiders/spider.py:173` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Spider.on_start` | `scrapling/spiders/spider.py:178` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Spider.on_close` | `scrapling/spiders/spider.py:188` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Spider.on_error` | `scrapling/spiders/spider.py:192` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Spider.on_scraped_item` | `scrapling/spiders/spider.py:200` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Spider.is_blocked` | `scrapling/spiders/spider.py:204` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Spider.retry_blocked_request` | `scrapling/spiders/spider.py:210` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Spider.configure_sessions` | `scrapling/spiders/spider.py:218` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Spider.pause` | `scrapling/spiders/spider.py:232` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Spider.start` | `scrapling/spiders/spider.py:278` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Spider.stream` | `scrapling/spiders/spider.py:304` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `Spider.stats` | `scrapling/spiders/spider.py:326` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `CrawlSpider.rules` | `scrapling/spiders/templates/crawler.py:63` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `CrawlSpider.parse` | `scrapling/spiders/templates/crawler.py:67` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `XMLFeedSpider.parse` | `scrapling/spiders/templates/feed.py:48` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `XMLFeedSpider.parse_node` | `scrapling/spiders/templates/feed.py:67` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `CSVFeedSpider.parse` | `scrapling/spiders/templates/feed.py:120` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `CSVFeedSpider.parse_row` | `scrapling/spiders/templates/feed.py:136` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `ShopifySpider.__init__` | `scrapling/spiders/templates/shopify.py:39` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `ShopifySpider.start_requests` | `scrapling/spiders/templates/shopify.py:47` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `ShopifySpider.parse` | `scrapling/spiders/templates/shopify.py:54` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `ShopifySpider.parse_collection` | `scrapling/spiders/templates/shopify.py:96` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `ContentSpider.__init__` | `scrapling/spiders/templates/site_to_markdown.py:51` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `ContentSpider.rules` | `scrapling/spiders/templates/site_to_markdown.py:60` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `ContentSpider.parse` | `scrapling/spiders/templates/site_to_markdown.py:64` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `ContentSpider.on_scraped_item` | `scrapling/spiders/templates/site_to_markdown.py:78` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `SitemapSpider.rules` | `scrapling/spiders/templates/sitemap.py:61` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `SitemapSpider.start_requests` | `scrapling/spiders/templates/sitemap.py:65` | `rustscrapling-spider` | 未対応付け・未検証 |
-| `SitemapSpider.parse` | `scrapling/spiders/templates/sitemap.py:73` | `rustscrapling-spider` | 未対応付け・未検証 |
+| 上流API | ソース | 対応クレート候補 | Rustの同名候補 | 実動テスト |
+| --- | --- | --- | --- | --- |
+| `TextHandler.__getitem__` | `scrapling/core/custom_types.py:34` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.split` | `scrapling/core/custom_types.py:38` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.strip` | `scrapling/core/custom_types.py:41` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.lstrip` | `scrapling/core/custom_types.py:44` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.rstrip` | `scrapling/core/custom_types.py:47` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.capitalize` | `scrapling/core/custom_types.py:50` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.casefold` | `scrapling/core/custom_types.py:53` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.center` | `scrapling/core/custom_types.py:56` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.expandtabs` | `scrapling/core/custom_types.py:59` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.format` | `scrapling/core/custom_types.py:62` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.format_map` | `scrapling/core/custom_types.py:65` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.join` | `scrapling/core/custom_types.py:68` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.ljust` | `scrapling/core/custom_types.py:71` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.rjust` | `scrapling/core/custom_types.py:74` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.swapcase` | `scrapling/core/custom_types.py:77` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.title` | `scrapling/core/custom_types.py:80` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.translate` | `scrapling/core/custom_types.py:83` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.zfill` | `scrapling/core/custom_types.py:86` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.replace` | `scrapling/core/custom_types.py:89` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.upper` | `scrapling/core/custom_types.py:92` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.lower` | `scrapling/core/custom_types.py:95` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.sort` | `scrapling/core/custom_types.py:100` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.clean` | `scrapling/core/custom_types.py:104` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.get` | `scrapling/core/custom_types.py:112` | `rustscrapling-dom` | `crates/rustscrapling-browser/src/lib.rs:426`, `crates/rustscrapling-daemon/src/protocol.rs:34`, `crates/rustscrapling-http/src/lib.rs:232` (ほか) | 未検証 |
+| `TextHandler.getall` | `scrapling/core/custom_types.py:115` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.json` | `scrapling/core/custom_types.py:121` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.re@overload:128` | `scrapling/core/custom_types.py:128` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.re@overload:139` | `scrapling/core/custom_types.py:139` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.re` | `scrapling/core/custom_types.py:148` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandler.re_first` | `scrapling/core/custom_types.py:184` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandlers.__getitem__@overload:218` | `scrapling/core/custom_types.py:218` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandlers.__getitem__@overload:222` | `scrapling/core/custom_types.py:222` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandlers.__getitem__` | `scrapling/core/custom_types.py:225` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandlers.re` | `scrapling/core/custom_types.py:231` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandlers.re_first` | `scrapling/core/custom_types.py:249` | `rustscrapling-dom` | — | 未検証 |
+| `TextHandlers.get` | `scrapling/core/custom_types.py:272` | `rustscrapling-dom` | `crates/rustscrapling-browser/src/lib.rs:426`, `crates/rustscrapling-daemon/src/protocol.rs:34`, `crates/rustscrapling-http/src/lib.rs:232` (ほか) | 未検証 |
+| `TextHandlers.extract` | `scrapling/core/custom_types.py:278` | `rustscrapling-dom` | `crates/rustscrapling-extract/src/lib.rs:40` | 未検証 |
+| `AttributesHandler.__init__` | `scrapling/core/custom_types.py:292` | `rustscrapling-dom` | — | 未検証 |
+| `AttributesHandler.get` | `scrapling/core/custom_types.py:307` | `rustscrapling-dom` | `crates/rustscrapling-browser/src/lib.rs:426`, `crates/rustscrapling-daemon/src/protocol.rs:34`, `crates/rustscrapling-http/src/lib.rs:232` (ほか) | 未検証 |
+| `AttributesHandler.search_values` | `scrapling/core/custom_types.py:311` | `rustscrapling-dom` | — | 未検証 |
+| `AttributesHandler.json_string` | `scrapling/core/custom_types.py:325` | `rustscrapling-dom` | — | 未検証 |
+| `AttributesHandler.__getitem__` | `scrapling/core/custom_types.py:329` | `rustscrapling-dom` | — | 未検証 |
+| `AttributesHandler.__iter__` | `scrapling/core/custom_types.py:332` | `rustscrapling-dom` | — | 未検証 |
+| `AttributesHandler.__len__` | `scrapling/core/custom_types.py:335` | `rustscrapling-dom` | — | 未検証 |
+| `AttributesHandler.__contains__` | `scrapling/core/custom_types.py:344` | `rustscrapling-dom` | — | 未検証 |
+| `SelectorsGeneration.generate_css_selector` | `scrapling/core/mixins.py:66` | `rustscrapling-select` | `crates/rustscrapling-select/src/generate.rs:81` | 未検証 |
+| `SelectorsGeneration.generate_full_css_selector` | `scrapling/core/mixins.py:73` | `rustscrapling-select` | `crates/rustscrapling-select/src/generate.rs:85` | 未検証 |
+| `SelectorsGeneration.generate_xpath_selector` | `scrapling/core/mixins.py:80` | `rustscrapling-select` | `crates/rustscrapling-select/src/generate.rs:89` | 未検証 |
+| `SelectorsGeneration.generate_full_xpath_selector` | `scrapling/core/mixins.py:87` | `rustscrapling-select` | `crates/rustscrapling-select/src/generate.rs:93` | 未検証 |
+| `StealthySession.__init__` | `scrapling/engines/_browsers/_stealth.py:39` | `rustscrapling-browser` | — | 未検証 |
+| `StealthySession.start` | `scrapling/engines/_browsers/_stealth.py:83` | `rustscrapling-browser` | `crates/rustscrapling-daemon/src/service.rs:474` | 未検証 |
+| `StealthySession.fetch` | `scrapling/engines/_browsers/_stealth.py:231` | `rustscrapling-browser` | `crates/rustscrapling-daemon/src/service.rs:826`, `crates/rustscrapling-fetch/src/lib.rs:187`, `crates/rustscrapling-http/src/quic.rs:70` | 未検証 |
+| `AsyncStealthySession.__init__` | `scrapling/engines/_browsers/_stealth.py:356` | `rustscrapling-browser` | — | 未検証 |
+| `AsyncStealthySession.start` | `scrapling/engines/_browsers/_stealth.py:401` | `rustscrapling-browser` | `crates/rustscrapling-daemon/src/service.rs:474` | 未検証 |
+| `AsyncStealthySession.fetch` | `scrapling/engines/_browsers/_stealth.py:553` | `rustscrapling-browser` | `crates/rustscrapling-daemon/src/service.rs:826`, `crates/rustscrapling-fetch/src/lib.rs:187`, `crates/rustscrapling-http/src/quic.rs:70` | 未検証 |
+| `FetcherSession.__init__` | `scrapling/engines/static.py:678` | `rustscrapling-http` | — | 未検証 |
+| `Response.__init__` | `scrapling/engines/toolbelt/custom.py:44` | `rustscrapling-fetch` | — | 未検証 |
+| `Response.body` | `scrapling/engines/toolbelt/custom.py:88` | `rustscrapling-fetch` | `crates/rustscrapling-http/src/lib.rs:249` | 未検証 |
+| `Response.markdown` | `scrapling/engines/toolbelt/custom.py:92` | `rustscrapling-fetch` | `crates/rustscrapling-extract/src/lib.rs:80` | 未検証 |
+| `Response.follow` | `scrapling/engines/toolbelt/custom.py:108` | `rustscrapling-fetch` | — | 未検証 |
+| `BaseFetcher.__init__` | `scrapling/engines/toolbelt/custom.py:193` | `rustscrapling-fetch` | — | 未検証 |
+| `BaseFetcher.display_config` | `scrapling/engines/toolbelt/custom.py:206` | `rustscrapling-fetch` | — | 未検証 |
+| `BaseFetcher.configure` | `scrapling/engines/toolbelt/custom.py:217` | `rustscrapling-fetch` | — | 未検証 |
+| `Fetcher.get` | `scrapling/fetchers/requests.py:32` | `rustscrapling-http` | `crates/rustscrapling-http/src/lib.rs:232`, `crates/rustscrapling-http/src/lib.rs:425`, `crates/rustscrapling-browser/src/lib.rs:426` (ほか) | 未検証 |
+| `Fetcher.post` | `scrapling/fetchers/requests.py:36` | `rustscrapling-http` | — | 未検証 |
+| `Fetcher.put` | `scrapling/fetchers/requests.py:40` | `rustscrapling-http` | — | 未検証 |
+| `Fetcher.delete` | `scrapling/fetchers/requests.py:44` | `rustscrapling-http` | — | 未検証 |
+| `AsyncFetcher.get` | `scrapling/fetchers/requests.py:52` | `rustscrapling-http` | `crates/rustscrapling-http/src/lib.rs:232`, `crates/rustscrapling-http/src/lib.rs:425`, `crates/rustscrapling-browser/src/lib.rs:426` (ほか) | 未検証 |
+| `AsyncFetcher.post` | `scrapling/fetchers/requests.py:56` | `rustscrapling-http` | — | 未検証 |
+| `AsyncFetcher.put` | `scrapling/fetchers/requests.py:60` | `rustscrapling-http` | — | 未検証 |
+| `AsyncFetcher.delete` | `scrapling/fetchers/requests.py:64` | `rustscrapling-http` | — | 未検証 |
+| `StealthyFetcher.fetch` | `scrapling/fetchers/stealth_chrome.py:14` | `rustscrapling-browser` | `crates/rustscrapling-daemon/src/service.rs:826`, `crates/rustscrapling-fetch/src/lib.rs:187`, `crates/rustscrapling-http/src/quic.rs:70` | 未検証 |
+| `StealthyFetcher.async_fetch` | `scrapling/fetchers/stealth_chrome.py:67` | `rustscrapling-browser` | — | 未検証 |
+| `Selector.__init__` | `scrapling/parser.py:92` | `rustscrapling-select` | — | 未検証 |
+| `Selector.__getitem__` | `scrapling/parser.py:191` | `rustscrapling-select` | — | 未検証 |
+| `Selector.__contains__` | `scrapling/parser.py:196` | `rustscrapling-select` | — | 未検証 |
+| `Selector.tag` | `scrapling/parser.py:265` | `rustscrapling-select` | — | 未検証 |
+| `Selector.text` | `scrapling/parser.py:274` | `rustscrapling-select` | `crates/rustscrapling-dom/src/lib.rs:247` | 未検証 |
+| `Selector.get_all_text` | `scrapling/parser.py:284` | `rustscrapling-select` | — | 未検証 |
+| `Selector.urljoin` | `scrapling/parser.py:334` | `rustscrapling-select` | — | 未検証 |
+| `Selector.attrib` | `scrapling/parser.py:339` | `rustscrapling-select` | — | 未検証 |
+| `Selector.html_content` | `scrapling/parser.py:348` | `rustscrapling-select` | — | 未検証 |
+| `Selector.body` | `scrapling/parser.py:358` | `rustscrapling-select` | `crates/rustscrapling-http/src/lib.rs:249` | 未検証 |
+| `Selector.prettify` | `scrapling/parser.py:364` | `rustscrapling-select` | — | 未検証 |
+| `Selector.has_class` | `scrapling/parser.py:379` | `rustscrapling-select` | — | 未検証 |
+| `Selector.parent` | `scrapling/parser.py:389` | `rustscrapling-select` | `crates/rustscrapling-dom/src/lib.rs:195` | 未検証 |
+| `Selector.below_elements` | `scrapling/parser.py:395` | `rustscrapling-select` | — | 未検証 |
+| `Selector.children` | `scrapling/parser.py:403` | `rustscrapling-select` | `crates/rustscrapling-dom/src/lib.rs:199` | 未検証 |
+| `Selector.siblings` | `scrapling/parser.py:414` | `rustscrapling-select` | — | 未検証 |
+| `Selector.iterancestors` | `scrapling/parser.py:420` | `rustscrapling-select` | — | 未検証 |
+| `Selector.find_ancestor` | `scrapling/parser.py:427` | `rustscrapling-select` | — | 未検証 |
+| `Selector.path` | `scrapling/parser.py:438` | `rustscrapling-select` | — | 未検証 |
+| `Selector.next` | `scrapling/parser.py:444` | `rustscrapling-select` | — | 未検証 |
+| `Selector.previous` | `scrapling/parser.py:456` | `rustscrapling-select` | — | 未検証 |
+| `Selector.get` | `scrapling/parser.py:467` | `rustscrapling-select` | `crates/rustscrapling-select/src/lib.rs:23`, `crates/rustscrapling-browser/src/lib.rs:426`, `crates/rustscrapling-daemon/src/protocol.rs:34` (ほか) | 未検証 |
+| `Selector.getall` | `scrapling/parser.py:476` | `rustscrapling-select` | — | 未検証 |
+| `Selector.relocate@overload:513` | `scrapling/parser.py:513` | `rustscrapling-select` | `crates/rustscrapling-adaptive/src/scoring.rs:332` | 未検証 |
+| `Selector.relocate@overload:518` | `scrapling/parser.py:518` | `rustscrapling-select` | `crates/rustscrapling-adaptive/src/scoring.rs:332` | 未検証 |
+| `Selector.relocate` | `scrapling/parser.py:522` | `rustscrapling-select` | `crates/rustscrapling-adaptive/src/scoring.rs:332` | 未検証 |
+| `Selector.css` | `scrapling/parser.py:571` | `rustscrapling-select` | `crates/rustscrapling-select/src/css.rs:92` | 未検証 |
+| `Selector.xpath` | `scrapling/parser.py:631` | `rustscrapling-select` | `crates/rustscrapling-select/src/xpath.rs:839` | 未検証 |
+| `Selector.find_all` | `scrapling/parser.py:701` | `rustscrapling-select` | — | 未検証 |
+| `Selector.find` | `scrapling/parser.py:799` | `rustscrapling-select` | — | 未検証 |
+| `Selector.save` | `scrapling/parser.py:888` | `rustscrapling-select` | — | 未検証 |
+| `Selector.retrieve` | `scrapling/parser.py:909` | `rustscrapling-select` | `crates/rustscrapling-adaptive/src/storage.rs:87` | 未検証 |
+| `Selector.json` | `scrapling/parser.py:924` | `rustscrapling-select` | — | 未検証 |
+| `Selector.re` | `scrapling/parser.py:940` | `rustscrapling-select` | — | 未検証 |
+| `Selector.re_first` | `scrapling/parser.py:956` | `rustscrapling-select` | — | 未検証 |
+| `Selector.find_similar` | `scrapling/parser.py:1022` | `rustscrapling-select` | `crates/rustscrapling-adaptive/src/scoring.rs:432` | 未検証 |
+| `Selector.find_by_text@overload:1084` | `scrapling/parser.py:1084` | `rustscrapling-select` | `crates/rustscrapling-select/src/text_search.rs:116` | 未検証 |
+| `Selector.find_by_text@overload:1094` | `scrapling/parser.py:1094` | `rustscrapling-select` | `crates/rustscrapling-select/src/text_search.rs:116` | 未検証 |
+| `Selector.find_by_text` | `scrapling/parser.py:1103` | `rustscrapling-select` | `crates/rustscrapling-select/src/text_search.rs:116` | 未検証 |
+| `Selector.find_by_regex@overload:1152` | `scrapling/parser.py:1152` | `rustscrapling-select` | `crates/rustscrapling-select/src/text_search.rs:171` | 未検証 |
+| `Selector.find_by_regex@overload:1161` | `scrapling/parser.py:1161` | `rustscrapling-select` | `crates/rustscrapling-select/src/text_search.rs:171` | 未検証 |
+| `Selector.find_by_regex` | `scrapling/parser.py:1169` | `rustscrapling-select` | `crates/rustscrapling-select/src/text_search.rs:171` | 未検証 |
+| `Selectors.__getitem__@overload:1217` | `scrapling/parser.py:1217` | `rustscrapling-select` | — | 未検証 |
+| `Selectors.__getitem__@overload:1221` | `scrapling/parser.py:1221` | `rustscrapling-select` | — | 未検証 |
+| `Selectors.__getitem__` | `scrapling/parser.py:1224` | `rustscrapling-select` | — | 未検証 |
+| `Selectors.xpath` | `scrapling/parser.py:1231` | `rustscrapling-select` | `crates/rustscrapling-select/src/xpath.rs:839` | 未検証 |
+| `Selectors.css` | `scrapling/parser.py:1262` | `rustscrapling-select` | `crates/rustscrapling-select/src/css.rs:92` | 未検証 |
+| `Selectors.re` | `scrapling/parser.py:1290` | `rustscrapling-select` | — | 未検証 |
+| `Selectors.re_first` | `scrapling/parser.py:1308` | `rustscrapling-select` | — | 未検証 |
+| `Selectors.search` | `scrapling/parser.py:1330` | `rustscrapling-select` | — | 未検証 |
+| `Selectors.filter` | `scrapling/parser.py:1340` | `rustscrapling-select` | — | 未検証 |
+| `Selectors.get@overload:1348` | `scrapling/parser.py:1348` | `rustscrapling-select` | `crates/rustscrapling-select/src/lib.rs:23`, `crates/rustscrapling-browser/src/lib.rs:426`, `crates/rustscrapling-daemon/src/protocol.rs:34` (ほか) | 未検証 |
+| `Selectors.get@overload:1351` | `scrapling/parser.py:1351` | `rustscrapling-select` | `crates/rustscrapling-select/src/lib.rs:23`, `crates/rustscrapling-browser/src/lib.rs:426`, `crates/rustscrapling-daemon/src/protocol.rs:34` (ほか) | 未検証 |
+| `Selectors.get` | `scrapling/parser.py:1353` | `rustscrapling-select` | `crates/rustscrapling-select/src/lib.rs:23`, `crates/rustscrapling-browser/src/lib.rs:426`, `crates/rustscrapling-daemon/src/protocol.rs:34` (ほか) | 未検証 |
+| `Selectors.getall` | `scrapling/parser.py:1361` | `rustscrapling-select` | — | 未検証 |
+| `Selectors.first` | `scrapling/parser.py:1369` | `rustscrapling-select` | — | 未検証 |
+| `Selectors.last` | `scrapling/parser.py:1374` | `rustscrapling-select` | — | 未検証 |
+| `Selectors.length` | `scrapling/parser.py:1379` | `rustscrapling-select` | — | 未検証 |
+| `CrawlerEngine.__init__` | `scrapling/spiders/engine.py:32` | `rustscrapling-spider` | — | 未検証 |
+| `CrawlerEngine.request_pause` | `scrapling/spiders/engine.py:280` | `rustscrapling-spider` | — | 未検証 |
+| `CrawlerEngine.crawl` | `scrapling/spiders/engine.py:356` | `rustscrapling-spider` | `crates/rustscrapling-spider/src/lib.rs:815` | 未検証 |
+| `CrawlerEngine.items` | `scrapling/spiders/engine.py:456` | `rustscrapling-spider` | — | 未検証 |
+| `LinkExtractor.__init__` | `scrapling/spiders/links.py:194` | `rustscrapling-spider` | — | 未検証 |
+| `LinkExtractor.extract` | `scrapling/spiders/links.py:226` | `rustscrapling-spider` | `crates/rustscrapling-extract/src/lib.rs:40` | 未検証 |
+| `LinkExtractor.matches` | `scrapling/spiders/links.py:272` | `rustscrapling-spider` | — | 未検証 |
+| `Request.__init__` | `scrapling/spiders/request.py:34` | `rustscrapling-spider` | — | 未検証 |
+| `Request.copy` | `scrapling/spiders/request.py:55` | `rustscrapling-spider` | — | 未検証 |
+| `Request.domain` | `scrapling/spiders/request.py:69` | `rustscrapling-spider` | — | 未検証 |
+| `Request.update_fingerprint` | `scrapling/spiders/request.py:72` | `rustscrapling-spider` | — | 未検証 |
+| `CrawlResult.completed` | `scrapling/spiders/result.py:207` | `rustscrapling-spider` | — | 未検証 |
+| `CrawlResult.__len__` | `scrapling/spiders/result.py:211` | `rustscrapling-spider` | — | 未検証 |
+| `CrawlResult.__iter__` | `scrapling/spiders/result.py:214` | `rustscrapling-spider` | — | 未検証 |
+| `Scheduler.__init__` | `scrapling/spiders/scheduler.py:21` | `rustscrapling-spider` | — | 未検証 |
+| `Scheduler.enqueue` | `scrapling/spiders/scheduler.py:41` | `rustscrapling-spider` | — | 未検証 |
+| `Scheduler.dequeue` | `scrapling/spiders/scheduler.py:58` | `rustscrapling-spider` | — | 未検証 |
+| `Scheduler.complete` | `scrapling/spiders/scheduler.py:64` | `rustscrapling-spider` | — | 未検証 |
+| `Scheduler.__len__` | `scrapling/spiders/scheduler.py:74` | `rustscrapling-spider` | — | 未検証 |
+| `Scheduler.is_empty` | `scrapling/spiders/scheduler.py:78` | `rustscrapling-spider` | `crates/rustscrapling-http/src/lib.rs:168` | 未検証 |
+| `Scheduler.snapshot` | `scrapling/spiders/scheduler.py:81` | `rustscrapling-spider` | — | 未検証 |
+| `Scheduler.restore` | `scrapling/spiders/scheduler.py:87` | `rustscrapling-spider` | — | 未検証 |
+| `SessionManager.__init__` | `scrapling/spiders/session.py:15` | `rustscrapling-spider` | — | 未検証 |
+| `SessionManager.add` | `scrapling/spiders/session.py:22` | `rustscrapling-spider` | — | 未検証 |
+| `SessionManager.remove` | `scrapling/spiders/session.py:43` | `rustscrapling-spider` | — | 未検証 |
+| `SessionManager.pop` | `scrapling/spiders/session.py:50` | `rustscrapling-spider` | — | 未検証 |
+| `SessionManager.default_session_id` | `scrapling/spiders/session.py:68` | `rustscrapling-spider` | — | 未検証 |
+| `SessionManager.session_ids` | `scrapling/spiders/session.py:74` | `rustscrapling-spider` | — | 未検証 |
+| `SessionManager.get` | `scrapling/spiders/session.py:77` | `rustscrapling-spider` | `crates/rustscrapling-browser/src/lib.rs:426`, `crates/rustscrapling-daemon/src/protocol.rs:34`, `crates/rustscrapling-http/src/lib.rs:232` (ほか) | 未検証 |
+| `SessionManager.start` | `scrapling/spiders/session.py:83` | `rustscrapling-spider` | `crates/rustscrapling-daemon/src/service.rs:474` | 未検証 |
+| `SessionManager.close` | `scrapling/spiders/session.py:94` | `rustscrapling-spider` | `crates/rustscrapling-browser/src/lib.rs:1401` | 未検証 |
+| `SessionManager.fetch` | `scrapling/spiders/session.py:103` | `rustscrapling-spider` | `crates/rustscrapling-daemon/src/service.rs:826`, `crates/rustscrapling-fetch/src/lib.rs:187`, `crates/rustscrapling-http/src/quic.rs:70` | 未検証 |
+| `SessionManager.__contains__` | `scrapling/spiders/session.py:146` | `rustscrapling-spider` | — | 未検証 |
+| `SessionManager.__len__` | `scrapling/spiders/session.py:150` | `rustscrapling-spider` | — | 未検証 |
+| `Spider.__init__` | `scrapling/spiders/spider.py:106` | `rustscrapling-spider` | — | 未検証 |
+| `Spider.start_requests` | `scrapling/spiders/spider.py:155` | `rustscrapling-spider` | — | 未検証 |
+| `Spider.parse` | `scrapling/spiders/spider.py:173` | `rustscrapling-spider` | — | 未検証 |
+| `Spider.on_start` | `scrapling/spiders/spider.py:178` | `rustscrapling-spider` | — | 未検証 |
+| `Spider.on_close` | `scrapling/spiders/spider.py:188` | `rustscrapling-spider` | — | 未検証 |
+| `Spider.on_error` | `scrapling/spiders/spider.py:192` | `rustscrapling-spider` | — | 未検証 |
+| `Spider.on_scraped_item` | `scrapling/spiders/spider.py:200` | `rustscrapling-spider` | — | 未検証 |
+| `Spider.is_blocked` | `scrapling/spiders/spider.py:204` | `rustscrapling-spider` | — | 未検証 |
+| `Spider.retry_blocked_request` | `scrapling/spiders/spider.py:210` | `rustscrapling-spider` | — | 未検証 |
+| `Spider.configure_sessions` | `scrapling/spiders/spider.py:218` | `rustscrapling-spider` | — | 未検証 |
+| `Spider.pause` | `scrapling/spiders/spider.py:232` | `rustscrapling-spider` | — | 未検証 |
+| `Spider.start` | `scrapling/spiders/spider.py:278` | `rustscrapling-spider` | `crates/rustscrapling-daemon/src/service.rs:474` | 未検証 |
+| `Spider.stream` | `scrapling/spiders/spider.py:304` | `rustscrapling-spider` | — | 未検証 |
+| `Spider.stats` | `scrapling/spiders/spider.py:326` | `rustscrapling-spider` | — | 未検証 |
+| `CrawlSpider.rules` | `scrapling/spiders/templates/crawler.py:63` | `rustscrapling-spider` | — | 未検証 |
+| `CrawlSpider.parse` | `scrapling/spiders/templates/crawler.py:67` | `rustscrapling-spider` | — | 未検証 |
+| `XMLFeedSpider.parse` | `scrapling/spiders/templates/feed.py:48` | `rustscrapling-spider` | — | 未検証 |
+| `XMLFeedSpider.parse_node` | `scrapling/spiders/templates/feed.py:67` | `rustscrapling-spider` | — | 未検証 |
+| `CSVFeedSpider.parse` | `scrapling/spiders/templates/feed.py:120` | `rustscrapling-spider` | — | 未検証 |
+| `CSVFeedSpider.parse_row` | `scrapling/spiders/templates/feed.py:136` | `rustscrapling-spider` | — | 未検証 |
+| `ShopifySpider.__init__` | `scrapling/spiders/templates/shopify.py:39` | `rustscrapling-spider` | — | 未検証 |
+| `ShopifySpider.start_requests` | `scrapling/spiders/templates/shopify.py:47` | `rustscrapling-spider` | — | 未検証 |
+| `ShopifySpider.parse` | `scrapling/spiders/templates/shopify.py:54` | `rustscrapling-spider` | — | 未検証 |
+| `ShopifySpider.parse_collection` | `scrapling/spiders/templates/shopify.py:96` | `rustscrapling-spider` | — | 未検証 |
+| `ContentSpider.__init__` | `scrapling/spiders/templates/site_to_markdown.py:51` | `rustscrapling-spider` | — | 未検証 |
+| `ContentSpider.rules` | `scrapling/spiders/templates/site_to_markdown.py:60` | `rustscrapling-spider` | — | 未検証 |
+| `ContentSpider.parse` | `scrapling/spiders/templates/site_to_markdown.py:64` | `rustscrapling-spider` | — | 未検証 |
+| `ContentSpider.on_scraped_item` | `scrapling/spiders/templates/site_to_markdown.py:78` | `rustscrapling-spider` | — | 未検証 |
+| `SitemapSpider.rules` | `scrapling/spiders/templates/sitemap.py:61` | `rustscrapling-spider` | — | 未検証 |
+| `SitemapSpider.start_requests` | `scrapling/spiders/templates/sitemap.py:65` | `rustscrapling-spider` | — | 未検証 |
+| `SitemapSpider.parse` | `scrapling/spiders/templates/sitemap.py:73` | `rustscrapling-spider` | — | 未検証 |
 
 ## 5. 継承・エクスポートalias
 

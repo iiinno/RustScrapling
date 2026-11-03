@@ -278,6 +278,7 @@
       "line": 193,
       "rust_crate_candidate": "rustscrapling-http",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/custom.py",
       "status": "unverified",
       "test_ids": [],
@@ -289,6 +290,7 @@
       "line": 217,
       "rust_crate_candidate": "rustscrapling-http",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/custom.py",
       "status": "unverified",
       "test_ids": [],
@@ -300,6 +302,7 @@
       "line": 206,
       "rust_crate_candidate": "rustscrapling-http",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/custom.py",
       "status": "unverified",
       "test_ids": [],
@@ -311,6 +314,7 @@
       "line": 106,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -322,6 +326,7 @@
       "line": 218,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -333,6 +338,7 @@
       "line": 204,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -344,6 +350,7 @@
       "line": 188,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -355,6 +362,7 @@
       "line": 192,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -366,6 +374,7 @@
       "line": 200,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -377,6 +386,7 @@
       "line": 178,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -388,6 +398,7 @@
       "line": 232,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -399,6 +410,7 @@
       "line": 210,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -410,6 +422,14 @@
       "line": 278,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 474,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/service.rs"
+        }
+      ],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -421,6 +441,7 @@
       "line": 155,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -432,6 +453,7 @@
       "line": 326,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -443,6 +465,7 @@
       "line": 304,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -454,6 +477,7 @@
       "line": 218,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -465,6 +489,7 @@
       "line": 204,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -476,6 +501,7 @@
       "line": 188,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -487,6 +513,7 @@
       "line": 192,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -498,6 +525,7 @@
       "line": 178,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -509,6 +537,7 @@
       "line": 232,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -520,6 +549,7 @@
       "line": 210,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -531,6 +561,14 @@
       "line": 278,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 474,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/service.rs"
+        }
+      ],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -542,6 +580,7 @@
       "line": 155,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -553,6 +592,7 @@
       "line": 326,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -564,6 +604,7 @@
       "line": 304,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -575,6 +616,7 @@
       "line": 106,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -586,6 +628,7 @@
       "line": 218,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -597,6 +640,7 @@
       "line": 204,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -608,6 +652,7 @@
       "line": 188,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -619,6 +664,7 @@
       "line": 192,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -630,6 +676,7 @@
       "line": 200,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -641,6 +688,7 @@
       "line": 178,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -652,6 +700,7 @@
       "line": 232,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -663,6 +712,7 @@
       "line": 210,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -674,6 +724,14 @@
       "line": 278,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 474,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/service.rs"
+        }
+      ],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -685,6 +743,7 @@
       "line": 155,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -696,6 +755,7 @@
       "line": 326,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -707,6 +767,7 @@
       "line": 304,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -718,6 +779,7 @@
       "line": 193,
       "rust_crate_candidate": "rustscrapling-http",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/custom.py",
       "status": "unverified",
       "test_ids": [],
@@ -729,6 +791,7 @@
       "line": 217,
       "rust_crate_candidate": "rustscrapling-http",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/custom.py",
       "status": "unverified",
       "test_ids": [],
@@ -740,6 +803,7 @@
       "line": 206,
       "rust_crate_candidate": "rustscrapling-http",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/custom.py",
       "status": "unverified",
       "test_ids": [],
@@ -751,6 +815,7 @@
       "line": 196,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -762,6 +827,7 @@
       "line": 191,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -773,6 +839,7 @@
       "line": 339,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -784,6 +851,7 @@
       "line": 395,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -795,6 +863,14 @@
       "line": 403,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-dom",
+          "line": 199,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-dom/src/lib.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -806,6 +882,14 @@
       "line": 571,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 92,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/css.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -817,6 +901,7 @@
       "line": 799,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -828,6 +913,7 @@
       "line": 701,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -839,6 +925,7 @@
       "line": 427,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -850,6 +937,14 @@
       "line": 1169,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 171,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/text_search.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -861,6 +956,14 @@
       "line": 1152,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 171,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/text_search.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -872,6 +975,14 @@
       "line": 1161,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 171,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/text_search.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -883,6 +994,14 @@
       "line": 1103,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 116,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/text_search.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -894,6 +1013,14 @@
       "line": 1084,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 116,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/text_search.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -905,6 +1032,14 @@
       "line": 1094,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 116,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/text_search.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -916,6 +1051,14 @@
       "line": 1022,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-adaptive",
+          "line": 432,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-adaptive/src/scoring.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -927,6 +1070,14 @@
       "line": 66,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 81,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/generate.rs"
+        }
+      ],
       "source": "scrapling/core/mixins.py",
       "status": "unverified",
       "test_ids": [],
@@ -938,6 +1089,14 @@
       "line": 73,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 85,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/generate.rs"
+        }
+      ],
       "source": "scrapling/core/mixins.py",
       "status": "unverified",
       "test_ids": [],
@@ -949,6 +1108,14 @@
       "line": 87,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 93,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/generate.rs"
+        }
+      ],
       "source": "scrapling/core/mixins.py",
       "status": "unverified",
       "test_ids": [],
@@ -960,6 +1127,14 @@
       "line": 80,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 89,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/generate.rs"
+        }
+      ],
       "source": "scrapling/core/mixins.py",
       "status": "unverified",
       "test_ids": [],
@@ -971,6 +1146,38 @@
       "line": 467,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-browser",
+          "line": 426,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-browser/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 34,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/protocol.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 232,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 425,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-select",
+          "line": 23,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/lib.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -982,6 +1189,7 @@
       "line": 284,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -993,6 +1201,7 @@
       "line": 476,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1004,6 +1213,7 @@
       "line": 379,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1015,6 +1225,7 @@
       "line": 348,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1026,6 +1237,7 @@
       "line": 420,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1037,6 +1249,7 @@
       "line": 924,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1048,6 +1261,7 @@
       "line": 444,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1059,6 +1273,14 @@
       "line": 389,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-dom",
+          "line": 195,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-dom/src/lib.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1070,6 +1292,7 @@
       "line": 438,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1081,6 +1304,7 @@
       "line": 364,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1092,6 +1316,7 @@
       "line": 456,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1103,6 +1328,7 @@
       "line": 940,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1114,6 +1340,7 @@
       "line": 956,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1125,6 +1352,14 @@
       "line": 522,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-adaptive",
+          "line": 332,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-adaptive/src/scoring.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1136,6 +1371,14 @@
       "line": 513,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-adaptive",
+          "line": 332,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-adaptive/src/scoring.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1147,6 +1390,14 @@
       "line": 518,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-adaptive",
+          "line": 332,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-adaptive/src/scoring.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1158,6 +1409,14 @@
       "line": 909,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-adaptive",
+          "line": 87,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-adaptive/src/storage.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1169,6 +1428,7 @@
       "line": 888,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1180,6 +1440,7 @@
       "line": 414,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1191,6 +1452,7 @@
       "line": 265,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1202,6 +1464,14 @@
       "line": 274,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-dom",
+          "line": 247,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-dom/src/lib.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1213,6 +1483,7 @@
       "line": 334,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1224,6 +1495,14 @@
       "line": 631,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 839,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/xpath.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": [],
@@ -1235,6 +1514,14 @@
       "line": 66,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 81,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/generate.rs"
+        }
+      ],
       "source": "scrapling/core/mixins.py",
       "status": "unverified",
       "test_ids": [],
@@ -1246,6 +1533,14 @@
       "line": 73,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 85,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/generate.rs"
+        }
+      ],
       "source": "scrapling/core/mixins.py",
       "status": "unverified",
       "test_ids": [],
@@ -1257,6 +1552,14 @@
       "line": 87,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 93,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/generate.rs"
+        }
+      ],
       "source": "scrapling/core/mixins.py",
       "status": "unverified",
       "test_ids": [],
@@ -1268,6 +1571,14 @@
       "line": 80,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 89,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/generate.rs"
+        }
+      ],
       "source": "scrapling/core/mixins.py",
       "status": "unverified",
       "test_ids": [],
@@ -1279,6 +1590,7 @@
       "line": 218,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1290,6 +1602,7 @@
       "line": 204,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1301,6 +1614,7 @@
       "line": 188,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1312,6 +1626,7 @@
       "line": 192,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1323,6 +1638,7 @@
       "line": 200,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1334,6 +1650,7 @@
       "line": 178,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1345,6 +1662,7 @@
       "line": 232,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1356,6 +1674,7 @@
       "line": 210,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1367,6 +1686,14 @@
       "line": 278,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 474,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/service.rs"
+        }
+      ],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1378,6 +1705,7 @@
       "line": 326,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1389,6 +1717,7 @@
       "line": 304,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1400,6 +1729,7 @@
       "line": 106,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1411,6 +1741,7 @@
       "line": 218,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1422,6 +1753,7 @@
       "line": 204,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1433,6 +1765,7 @@
       "line": 188,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1444,6 +1777,7 @@
       "line": 192,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1455,6 +1789,7 @@
       "line": 200,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1466,6 +1801,7 @@
       "line": 178,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1477,6 +1813,7 @@
       "line": 232,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1488,6 +1825,7 @@
       "line": 210,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1499,6 +1837,14 @@
       "line": 278,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 474,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/service.rs"
+        }
+      ],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1510,6 +1856,7 @@
       "line": 326,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1521,6 +1868,7 @@
       "line": 304,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1532,6 +1880,7 @@
       "line": 193,
       "rust_crate_candidate": "rustscrapling-browser",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/custom.py",
       "status": "unverified",
       "test_ids": [],
@@ -1543,6 +1892,7 @@
       "line": 217,
       "rust_crate_candidate": "rustscrapling-browser",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/custom.py",
       "status": "unverified",
       "test_ids": [],
@@ -1554,6 +1904,7 @@
       "line": 206,
       "rust_crate_candidate": "rustscrapling-browser",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/custom.py",
       "status": "unverified",
       "test_ids": [],
@@ -1565,6 +1916,7 @@
       "line": 106,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1576,6 +1928,7 @@
       "line": 218,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1587,6 +1940,7 @@
       "line": 204,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1598,6 +1952,7 @@
       "line": 188,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1609,6 +1964,7 @@
       "line": 192,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1620,6 +1976,7 @@
       "line": 200,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1631,6 +1988,7 @@
       "line": 178,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1642,6 +2000,7 @@
       "line": 232,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1653,6 +2012,7 @@
       "line": 210,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1664,6 +2024,14 @@
       "line": 278,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 474,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/service.rs"
+        }
+      ],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1675,6 +2043,7 @@
       "line": 155,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1686,6 +2055,7 @@
       "line": 326,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1697,6 +2067,7 @@
       "line": 304,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": [],
@@ -1707,7 +2078,8 @@
     "Audit compares source-level MCP arguments and schemas, not actual Pydantic runtime schema, description serialization or executor semantics.",
     "Selected classes and public-by-convention module functions are inventoried; built-in/external inherited APIs and dynamic exports still need review.",
     "Known Click decorator factories are expanded statically; Click runtime/schema validation remains necessary.",
-    "All runtime statuses deliberately remain unverified until evidence links to passing tests."
+    "All runtime statuses deliberately remain unverified until evidence links to passing tests.",
+    "Rust same-name candidates use a lexical regex of pub fn declarations, not a Rust parser or module visibility analysis."
   ],
   "mcp": [
     {
@@ -1957,6 +2329,7 @@
       "line": 34,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -1966,6 +2339,7 @@
       "line": 38,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -1975,6 +2349,7 @@
       "line": 41,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -1984,6 +2359,7 @@
       "line": 44,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -1993,6 +2369,7 @@
       "line": 47,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2002,6 +2379,7 @@
       "line": 50,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2011,6 +2389,7 @@
       "line": 53,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2020,6 +2399,7 @@
       "line": 56,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2029,6 +2409,7 @@
       "line": 59,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2038,6 +2419,7 @@
       "line": 62,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2047,6 +2429,7 @@
       "line": 65,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2056,6 +2439,7 @@
       "line": 68,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2065,6 +2449,7 @@
       "line": 71,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2074,6 +2459,7 @@
       "line": 74,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2083,6 +2469,7 @@
       "line": 77,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2092,6 +2479,7 @@
       "line": 80,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2101,6 +2489,7 @@
       "line": 83,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2110,6 +2499,7 @@
       "line": 86,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2119,6 +2509,7 @@
       "line": 89,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2128,6 +2519,7 @@
       "line": 92,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2137,6 +2529,7 @@
       "line": 95,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2146,6 +2539,7 @@
       "line": 100,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2155,6 +2549,7 @@
       "line": 104,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2164,6 +2559,38 @@
       "line": 112,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-browser",
+          "line": 426,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-browser/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 34,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/protocol.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 232,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 425,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-select",
+          "line": 23,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/lib.rs"
+        }
+      ],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2173,6 +2600,7 @@
       "line": 115,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2182,6 +2610,7 @@
       "line": 121,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2191,6 +2620,7 @@
       "line": 128,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2200,6 +2630,7 @@
       "line": 139,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2209,6 +2640,7 @@
       "line": 148,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2218,6 +2650,7 @@
       "line": 184,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2227,6 +2660,7 @@
       "line": 218,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2236,6 +2670,7 @@
       "line": 222,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2245,6 +2680,7 @@
       "line": 225,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2254,6 +2690,7 @@
       "line": 231,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2263,6 +2700,7 @@
       "line": 249,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2272,6 +2710,38 @@
       "line": 272,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-browser",
+          "line": 426,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-browser/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 34,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/protocol.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 232,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 425,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-select",
+          "line": 23,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/lib.rs"
+        }
+      ],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2281,6 +2751,14 @@
       "line": 278,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-extract",
+          "line": 40,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-extract/src/lib.rs"
+        }
+      ],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2290,6 +2768,7 @@
       "line": 292,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2299,6 +2778,38 @@
       "line": 307,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-browser",
+          "line": 426,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-browser/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 34,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/protocol.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 232,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 425,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-select",
+          "line": 23,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/lib.rs"
+        }
+      ],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2308,6 +2819,7 @@
       "line": 311,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2317,6 +2829,7 @@
       "line": 325,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2326,6 +2839,7 @@
       "line": 329,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2335,6 +2849,7 @@
       "line": 332,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2344,6 +2859,7 @@
       "line": 335,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2353,6 +2869,7 @@
       "line": 344,
       "rust_crate_candidate": "rustscrapling-dom",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/custom_types.py",
       "status": "unverified",
       "test_ids": []
@@ -2362,6 +2879,14 @@
       "line": 66,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 81,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/generate.rs"
+        }
+      ],
       "source": "scrapling/core/mixins.py",
       "status": "unverified",
       "test_ids": []
@@ -2371,6 +2896,14 @@
       "line": 73,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 85,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/generate.rs"
+        }
+      ],
       "source": "scrapling/core/mixins.py",
       "status": "unverified",
       "test_ids": []
@@ -2380,6 +2913,14 @@
       "line": 80,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 89,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/generate.rs"
+        }
+      ],
       "source": "scrapling/core/mixins.py",
       "status": "unverified",
       "test_ids": []
@@ -2389,6 +2930,14 @@
       "line": 87,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 93,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/generate.rs"
+        }
+      ],
       "source": "scrapling/core/mixins.py",
       "status": "unverified",
       "test_ids": []
@@ -2398,6 +2947,7 @@
       "line": 39,
       "rust_crate_candidate": "rustscrapling-browser",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/_browsers/_stealth.py",
       "status": "unverified",
       "test_ids": []
@@ -2407,6 +2957,14 @@
       "line": 83,
       "rust_crate_candidate": "rustscrapling-browser",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 474,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/service.rs"
+        }
+      ],
       "source": "scrapling/engines/_browsers/_stealth.py",
       "status": "unverified",
       "test_ids": []
@@ -2416,6 +2974,26 @@
       "line": 231,
       "rust_crate_candidate": "rustscrapling-browser",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 826,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/service.rs"
+        },
+        {
+          "crate": "rustscrapling-fetch",
+          "line": 187,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-fetch/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 70,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/quic.rs"
+        }
+      ],
       "source": "scrapling/engines/_browsers/_stealth.py",
       "status": "unverified",
       "test_ids": []
@@ -2425,6 +3003,7 @@
       "line": 356,
       "rust_crate_candidate": "rustscrapling-browser",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/_browsers/_stealth.py",
       "status": "unverified",
       "test_ids": []
@@ -2434,6 +3013,14 @@
       "line": 401,
       "rust_crate_candidate": "rustscrapling-browser",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 474,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/service.rs"
+        }
+      ],
       "source": "scrapling/engines/_browsers/_stealth.py",
       "status": "unverified",
       "test_ids": []
@@ -2443,6 +3030,26 @@
       "line": 553,
       "rust_crate_candidate": "rustscrapling-browser",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 826,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/service.rs"
+        },
+        {
+          "crate": "rustscrapling-fetch",
+          "line": 187,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-fetch/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 70,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/quic.rs"
+        }
+      ],
       "source": "scrapling/engines/_browsers/_stealth.py",
       "status": "unverified",
       "test_ids": []
@@ -2452,6 +3059,7 @@
       "line": 678,
       "rust_crate_candidate": "rustscrapling-http",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/static.py",
       "status": "unverified",
       "test_ids": []
@@ -2461,6 +3069,7 @@
       "line": 44,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/custom.py",
       "status": "unverified",
       "test_ids": []
@@ -2470,6 +3079,14 @@
       "line": 88,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-http",
+          "line": 249,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        }
+      ],
       "source": "scrapling/engines/toolbelt/custom.py",
       "status": "unverified",
       "test_ids": []
@@ -2479,6 +3096,14 @@
       "line": 92,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-extract",
+          "line": 80,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-extract/src/lib.rs"
+        }
+      ],
       "source": "scrapling/engines/toolbelt/custom.py",
       "status": "unverified",
       "test_ids": []
@@ -2488,6 +3113,7 @@
       "line": 108,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/custom.py",
       "status": "unverified",
       "test_ids": []
@@ -2497,6 +3123,7 @@
       "line": 193,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/custom.py",
       "status": "unverified",
       "test_ids": []
@@ -2506,6 +3133,7 @@
       "line": 206,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/custom.py",
       "status": "unverified",
       "test_ids": []
@@ -2515,6 +3143,7 @@
       "line": 217,
       "rust_crate_candidate": "rustscrapling-fetch",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/custom.py",
       "status": "unverified",
       "test_ids": []
@@ -2524,6 +3153,38 @@
       "line": 32,
       "rust_crate_candidate": "rustscrapling-http",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-http",
+          "line": 232,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 425,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-browser",
+          "line": 426,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-browser/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 34,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/protocol.rs"
+        },
+        {
+          "crate": "rustscrapling-select",
+          "line": 23,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/lib.rs"
+        }
+      ],
       "source": "scrapling/fetchers/requests.py",
       "status": "unverified",
       "test_ids": []
@@ -2533,6 +3194,7 @@
       "line": 36,
       "rust_crate_candidate": "rustscrapling-http",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/fetchers/requests.py",
       "status": "unverified",
       "test_ids": []
@@ -2542,6 +3204,7 @@
       "line": 40,
       "rust_crate_candidate": "rustscrapling-http",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/fetchers/requests.py",
       "status": "unverified",
       "test_ids": []
@@ -2551,6 +3214,7 @@
       "line": 44,
       "rust_crate_candidate": "rustscrapling-http",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/fetchers/requests.py",
       "status": "unverified",
       "test_ids": []
@@ -2560,6 +3224,38 @@
       "line": 52,
       "rust_crate_candidate": "rustscrapling-http",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-http",
+          "line": 232,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 425,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-browser",
+          "line": 426,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-browser/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 34,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/protocol.rs"
+        },
+        {
+          "crate": "rustscrapling-select",
+          "line": 23,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/lib.rs"
+        }
+      ],
       "source": "scrapling/fetchers/requests.py",
       "status": "unverified",
       "test_ids": []
@@ -2569,6 +3265,7 @@
       "line": 56,
       "rust_crate_candidate": "rustscrapling-http",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/fetchers/requests.py",
       "status": "unverified",
       "test_ids": []
@@ -2578,6 +3275,7 @@
       "line": 60,
       "rust_crate_candidate": "rustscrapling-http",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/fetchers/requests.py",
       "status": "unverified",
       "test_ids": []
@@ -2587,6 +3285,7 @@
       "line": 64,
       "rust_crate_candidate": "rustscrapling-http",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/fetchers/requests.py",
       "status": "unverified",
       "test_ids": []
@@ -2596,6 +3295,26 @@
       "line": 14,
       "rust_crate_candidate": "rustscrapling-browser",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 826,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/service.rs"
+        },
+        {
+          "crate": "rustscrapling-fetch",
+          "line": 187,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-fetch/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 70,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/quic.rs"
+        }
+      ],
       "source": "scrapling/fetchers/stealth_chrome.py",
       "status": "unverified",
       "test_ids": []
@@ -2605,6 +3324,7 @@
       "line": 67,
       "rust_crate_candidate": "rustscrapling-browser",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/fetchers/stealth_chrome.py",
       "status": "unverified",
       "test_ids": []
@@ -2614,6 +3334,7 @@
       "line": 92,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2623,6 +3344,7 @@
       "line": 191,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2632,6 +3354,7 @@
       "line": 196,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2641,6 +3364,7 @@
       "line": 265,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2650,6 +3374,14 @@
       "line": 274,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-dom",
+          "line": 247,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-dom/src/lib.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2659,6 +3391,7 @@
       "line": 284,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2668,6 +3401,7 @@
       "line": 334,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2677,6 +3411,7 @@
       "line": 339,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2686,6 +3421,7 @@
       "line": 348,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2695,6 +3431,14 @@
       "line": 358,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-http",
+          "line": 249,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2704,6 +3448,7 @@
       "line": 364,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2713,6 +3458,7 @@
       "line": 379,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2722,6 +3468,14 @@
       "line": 389,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-dom",
+          "line": 195,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-dom/src/lib.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2731,6 +3485,7 @@
       "line": 395,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2740,6 +3495,14 @@
       "line": 403,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-dom",
+          "line": 199,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-dom/src/lib.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2749,6 +3512,7 @@
       "line": 414,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2758,6 +3522,7 @@
       "line": 420,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2767,6 +3532,7 @@
       "line": 427,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2776,6 +3542,7 @@
       "line": 438,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2785,6 +3552,7 @@
       "line": 444,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2794,6 +3562,7 @@
       "line": 456,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2803,6 +3572,38 @@
       "line": 467,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 23,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-browser",
+          "line": 426,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-browser/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 34,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/protocol.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 232,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 425,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2812,6 +3613,7 @@
       "line": 476,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2821,6 +3623,14 @@
       "line": 513,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-adaptive",
+          "line": 332,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-adaptive/src/scoring.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2830,6 +3640,14 @@
       "line": 518,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-adaptive",
+          "line": 332,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-adaptive/src/scoring.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2839,6 +3657,14 @@
       "line": 522,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-adaptive",
+          "line": 332,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-adaptive/src/scoring.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2848,6 +3674,14 @@
       "line": 571,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 92,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/css.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2857,6 +3691,14 @@
       "line": 631,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 839,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/xpath.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2866,6 +3708,7 @@
       "line": 701,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2875,6 +3718,7 @@
       "line": 799,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2884,6 +3728,7 @@
       "line": 888,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2893,6 +3738,14 @@
       "line": 909,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-adaptive",
+          "line": 87,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-adaptive/src/storage.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2902,6 +3755,7 @@
       "line": 924,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2911,6 +3765,7 @@
       "line": 940,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2920,6 +3775,7 @@
       "line": 956,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2929,6 +3785,14 @@
       "line": 1022,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-adaptive",
+          "line": 432,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-adaptive/src/scoring.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2938,6 +3802,14 @@
       "line": 1084,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 116,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/text_search.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2947,6 +3819,14 @@
       "line": 1094,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 116,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/text_search.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2956,6 +3836,14 @@
       "line": 1103,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 116,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/text_search.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2965,6 +3853,14 @@
       "line": 1152,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 171,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/text_search.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2974,6 +3870,14 @@
       "line": 1161,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 171,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/text_search.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2983,6 +3887,14 @@
       "line": 1169,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 171,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/text_search.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -2992,6 +3904,7 @@
       "line": 1217,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -3001,6 +3914,7 @@
       "line": 1221,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -3010,6 +3924,7 @@
       "line": 1224,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -3019,6 +3934,14 @@
       "line": 1231,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 839,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/xpath.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -3028,6 +3951,14 @@
       "line": 1262,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 92,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/css.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -3037,6 +3968,7 @@
       "line": 1290,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -3046,6 +3978,7 @@
       "line": 1308,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -3055,6 +3988,7 @@
       "line": 1330,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -3064,6 +3998,7 @@
       "line": 1340,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -3073,6 +4008,38 @@
       "line": 1348,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 23,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-browser",
+          "line": 426,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-browser/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 34,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/protocol.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 232,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 425,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -3082,6 +4049,38 @@
       "line": 1351,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 23,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-browser",
+          "line": 426,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-browser/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 34,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/protocol.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 232,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 425,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -3091,6 +4090,38 @@
       "line": 1353,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 23,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-browser",
+          "line": 426,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-browser/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 34,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/protocol.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 232,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 425,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        }
+      ],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -3100,6 +4131,7 @@
       "line": 1361,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -3109,6 +4141,7 @@
       "line": 1369,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -3118,6 +4151,7 @@
       "line": 1374,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -3127,6 +4161,7 @@
       "line": 1379,
       "rust_crate_candidate": "rustscrapling-select",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/parser.py",
       "status": "unverified",
       "test_ids": []
@@ -3136,6 +4171,7 @@
       "line": 32,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/engine.py",
       "status": "unverified",
       "test_ids": []
@@ -3145,6 +4181,7 @@
       "line": 280,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/engine.py",
       "status": "unverified",
       "test_ids": []
@@ -3154,6 +4191,14 @@
       "line": 356,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-spider",
+          "line": 815,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-spider/src/lib.rs"
+        }
+      ],
       "source": "scrapling/spiders/engine.py",
       "status": "unverified",
       "test_ids": []
@@ -3163,6 +4208,7 @@
       "line": 456,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/engine.py",
       "status": "unverified",
       "test_ids": []
@@ -3172,6 +4218,7 @@
       "line": 194,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/links.py",
       "status": "unverified",
       "test_ids": []
@@ -3181,6 +4228,14 @@
       "line": 226,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-extract",
+          "line": 40,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-extract/src/lib.rs"
+        }
+      ],
       "source": "scrapling/spiders/links.py",
       "status": "unverified",
       "test_ids": []
@@ -3190,6 +4245,7 @@
       "line": 272,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/links.py",
       "status": "unverified",
       "test_ids": []
@@ -3199,6 +4255,7 @@
       "line": 34,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/request.py",
       "status": "unverified",
       "test_ids": []
@@ -3208,6 +4265,7 @@
       "line": 55,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/request.py",
       "status": "unverified",
       "test_ids": []
@@ -3217,6 +4275,7 @@
       "line": 69,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/request.py",
       "status": "unverified",
       "test_ids": []
@@ -3226,6 +4285,7 @@
       "line": 72,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/request.py",
       "status": "unverified",
       "test_ids": []
@@ -3235,6 +4295,7 @@
       "line": 207,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/result.py",
       "status": "unverified",
       "test_ids": []
@@ -3244,6 +4305,7 @@
       "line": 211,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/result.py",
       "status": "unverified",
       "test_ids": []
@@ -3253,6 +4315,7 @@
       "line": 214,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/result.py",
       "status": "unverified",
       "test_ids": []
@@ -3262,6 +4325,7 @@
       "line": 21,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/scheduler.py",
       "status": "unverified",
       "test_ids": []
@@ -3271,6 +4335,7 @@
       "line": 41,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/scheduler.py",
       "status": "unverified",
       "test_ids": []
@@ -3280,6 +4345,7 @@
       "line": 58,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/scheduler.py",
       "status": "unverified",
       "test_ids": []
@@ -3289,6 +4355,7 @@
       "line": 64,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/scheduler.py",
       "status": "unverified",
       "test_ids": []
@@ -3298,6 +4365,7 @@
       "line": 74,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/scheduler.py",
       "status": "unverified",
       "test_ids": []
@@ -3307,6 +4375,14 @@
       "line": 78,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-http",
+          "line": 168,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        }
+      ],
       "source": "scrapling/spiders/scheduler.py",
       "status": "unverified",
       "test_ids": []
@@ -3316,6 +4392,7 @@
       "line": 81,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/scheduler.py",
       "status": "unverified",
       "test_ids": []
@@ -3325,6 +4402,7 @@
       "line": 87,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/scheduler.py",
       "status": "unverified",
       "test_ids": []
@@ -3334,6 +4412,7 @@
       "line": 15,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/session.py",
       "status": "unverified",
       "test_ids": []
@@ -3343,6 +4422,7 @@
       "line": 22,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/session.py",
       "status": "unverified",
       "test_ids": []
@@ -3352,6 +4432,7 @@
       "line": 43,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/session.py",
       "status": "unverified",
       "test_ids": []
@@ -3361,6 +4442,7 @@
       "line": 50,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/session.py",
       "status": "unverified",
       "test_ids": []
@@ -3370,6 +4452,7 @@
       "line": 68,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/session.py",
       "status": "unverified",
       "test_ids": []
@@ -3379,6 +4462,7 @@
       "line": 74,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/session.py",
       "status": "unverified",
       "test_ids": []
@@ -3388,6 +4472,38 @@
       "line": 77,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-browser",
+          "line": 426,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-browser/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 34,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/protocol.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 232,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 425,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-select",
+          "line": 23,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/lib.rs"
+        }
+      ],
       "source": "scrapling/spiders/session.py",
       "status": "unverified",
       "test_ids": []
@@ -3397,6 +4513,14 @@
       "line": 83,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 474,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/service.rs"
+        }
+      ],
       "source": "scrapling/spiders/session.py",
       "status": "unverified",
       "test_ids": []
@@ -3406,6 +4530,14 @@
       "line": 94,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-browser",
+          "line": 1401,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-browser/src/lib.rs"
+        }
+      ],
       "source": "scrapling/spiders/session.py",
       "status": "unverified",
       "test_ids": []
@@ -3415,6 +4547,26 @@
       "line": 103,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 826,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/service.rs"
+        },
+        {
+          "crate": "rustscrapling-fetch",
+          "line": 187,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-fetch/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 70,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/quic.rs"
+        }
+      ],
       "source": "scrapling/spiders/session.py",
       "status": "unverified",
       "test_ids": []
@@ -3424,6 +4576,7 @@
       "line": 146,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/session.py",
       "status": "unverified",
       "test_ids": []
@@ -3433,6 +4586,7 @@
       "line": 150,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/session.py",
       "status": "unverified",
       "test_ids": []
@@ -3442,6 +4596,7 @@
       "line": 106,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": []
@@ -3451,6 +4606,7 @@
       "line": 155,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": []
@@ -3460,6 +4616,7 @@
       "line": 173,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": []
@@ -3469,6 +4626,7 @@
       "line": 178,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": []
@@ -3478,6 +4636,7 @@
       "line": 188,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": []
@@ -3487,6 +4646,7 @@
       "line": 192,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": []
@@ -3496,6 +4656,7 @@
       "line": 200,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": []
@@ -3505,6 +4666,7 @@
       "line": 204,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": []
@@ -3514,6 +4676,7 @@
       "line": 210,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": []
@@ -3523,6 +4686,7 @@
       "line": 218,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": []
@@ -3532,6 +4696,7 @@
       "line": 232,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": []
@@ -3541,6 +4706,14 @@
       "line": 278,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 474,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/service.rs"
+        }
+      ],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": []
@@ -3550,6 +4723,7 @@
       "line": 304,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": []
@@ -3559,6 +4733,7 @@
       "line": 326,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/spider.py",
       "status": "unverified",
       "test_ids": []
@@ -3568,6 +4743,7 @@
       "line": 63,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/crawler.py",
       "status": "unverified",
       "test_ids": []
@@ -3577,6 +4753,7 @@
       "line": 67,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/crawler.py",
       "status": "unverified",
       "test_ids": []
@@ -3586,6 +4763,7 @@
       "line": 48,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/feed.py",
       "status": "unverified",
       "test_ids": []
@@ -3595,6 +4773,7 @@
       "line": 67,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/feed.py",
       "status": "unverified",
       "test_ids": []
@@ -3604,6 +4783,7 @@
       "line": 120,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/feed.py",
       "status": "unverified",
       "test_ids": []
@@ -3613,6 +4793,7 @@
       "line": 136,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/feed.py",
       "status": "unverified",
       "test_ids": []
@@ -3622,6 +4803,7 @@
       "line": 39,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/shopify.py",
       "status": "unverified",
       "test_ids": []
@@ -3631,6 +4813,7 @@
       "line": 47,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/shopify.py",
       "status": "unverified",
       "test_ids": []
@@ -3640,6 +4823,7 @@
       "line": 54,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/shopify.py",
       "status": "unverified",
       "test_ids": []
@@ -3649,6 +4833,7 @@
       "line": 96,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/shopify.py",
       "status": "unverified",
       "test_ids": []
@@ -3658,6 +4843,7 @@
       "line": 51,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/site_to_markdown.py",
       "status": "unverified",
       "test_ids": []
@@ -3667,6 +4853,7 @@
       "line": 60,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/site_to_markdown.py",
       "status": "unverified",
       "test_ids": []
@@ -3676,6 +4863,7 @@
       "line": 64,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/site_to_markdown.py",
       "status": "unverified",
       "test_ids": []
@@ -3685,6 +4873,7 @@
       "line": 78,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/site_to_markdown.py",
       "status": "unverified",
       "test_ids": []
@@ -3694,6 +4883,7 @@
       "line": 61,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/sitemap.py",
       "status": "unverified",
       "test_ids": []
@@ -3703,6 +4893,7 @@
       "line": 65,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/sitemap.py",
       "status": "unverified",
       "test_ids": []
@@ -3712,6 +4903,7 @@
       "line": 73,
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/templates/sitemap.py",
       "status": "unverified",
       "test_ids": []
@@ -3723,6 +4915,7 @@
       "id": "scrapling.cli.install",
       "line": 120,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/cli.py",
       "status": "unverified",
       "test_ids": []
@@ -3732,6 +4925,7 @@
       "id": "scrapling.cli.mcp",
       "line": 189,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/cli.py",
       "status": "unverified",
       "test_ids": []
@@ -3741,6 +4935,7 @@
       "id": "scrapling.cli.shell",
       "line": 219,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/cli.py",
       "status": "unverified",
       "test_ids": []
@@ -3750,6 +4945,14 @@
       "id": "scrapling.cli.extract",
       "line": 229,
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-extract",
+          "line": 40,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-extract/src/lib.rs"
+        }
+      ],
       "source": "scrapling/cli.py",
       "status": "unverified",
       "test_ids": []
@@ -3759,6 +4962,38 @@
       "id": "scrapling.cli.get",
       "line": 403,
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-browser",
+          "line": 426,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-browser/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 34,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/protocol.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 232,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 425,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-select",
+          "line": 23,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/lib.rs"
+        }
+      ],
       "source": "scrapling/cli.py",
       "status": "unverified",
       "test_ids": []
@@ -3768,6 +5003,7 @@
       "id": "scrapling.cli.post",
       "line": 439,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/cli.py",
       "status": "unverified",
       "test_ids": []
@@ -3777,6 +5013,7 @@
       "id": "scrapling.cli.put",
       "line": 478,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/cli.py",
       "status": "unverified",
       "test_ids": []
@@ -3786,6 +5023,7 @@
       "id": "scrapling.cli.delete",
       "line": 516,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/cli.py",
       "status": "unverified",
       "test_ids": []
@@ -3795,6 +5033,26 @@
       "id": "scrapling.cli.fetch",
       "line": 609,
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-daemon",
+          "line": 826,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-daemon/src/service.rs"
+        },
+        {
+          "crate": "rustscrapling-fetch",
+          "line": 187,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-fetch/src/lib.rs"
+        },
+        {
+          "crate": "rustscrapling-http",
+          "line": 70,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-http/src/quic.rs"
+        }
+      ],
       "source": "scrapling/cli.py",
       "status": "unverified",
       "test_ids": []
@@ -3804,6 +5062,7 @@
       "id": "scrapling.cli.main",
       "line": 666,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/cli.py",
       "status": "unverified",
       "test_ids": []
@@ -3813,6 +5072,7 @@
       "id": "scrapling.core.shell.show_page_in_browser",
       "line": 416,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/shell.py",
       "status": "unverified",
       "test_ids": []
@@ -3822,6 +5082,7 @@
       "id": "scrapling.core.translator.css_to_xpath",
       "line": 132,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/translator.py",
       "status": "unverified",
       "test_ids": []
@@ -3831,6 +5092,7 @@
       "id": "scrapling.core.utils._utils.setup_logger",
       "line": 20,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/utils/_utils.py",
       "status": "unverified",
       "test_ids": []
@@ -3840,6 +5102,7 @@
       "id": "scrapling.core.utils._utils.set_logger",
       "line": 51,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/utils/_utils.py",
       "status": "unverified",
       "test_ids": []
@@ -3849,6 +5112,7 @@
       "id": "scrapling.core.utils._utils.reset_logger",
       "line": 56,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/utils/_utils.py",
       "status": "unverified",
       "test_ids": []
@@ -3858,6 +5122,7 @@
       "id": "scrapling.core.utils._utils.flatten",
       "line": 61,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/core/utils/_utils.py",
       "status": "unverified",
       "test_ids": []
@@ -3867,6 +5132,14 @@
       "id": "scrapling.core.utils._utils.clean_spaces",
       "line": 118,
       "rust_entrypoint": null,
+      "same_name_candidates": [
+        {
+          "crate": "rustscrapling-select",
+          "line": 21,
+          "qualified_symbol_unknown": true,
+          "source": "crates/rustscrapling-select/src/text_search.rs"
+        }
+      ],
       "source": "scrapling/core/utils/_utils.py",
       "status": "unverified",
       "test_ids": []
@@ -3876,6 +5149,7 @@
       "id": "scrapling.engines._browsers._validators.validate_fetch",
       "line": 179,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/_browsers/_validators.py",
       "status": "unverified",
       "test_ids": []
@@ -3885,6 +5159,7 @@
       "id": "scrapling.engines._browsers._validators.validate",
       "line": 242,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/_browsers/_validators.py",
       "status": "unverified",
       "test_ids": []
@@ -3894,6 +5169,7 @@
       "id": "scrapling.engines._browsers._validators.validate",
       "line": 246,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/_browsers/_validators.py",
       "status": "unverified",
       "test_ids": []
@@ -3903,6 +5179,7 @@
       "id": "scrapling.engines._browsers._validators.validate",
       "line": 249,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/_browsers/_validators.py",
       "status": "unverified",
       "test_ids": []
@@ -3912,6 +5189,7 @@
       "id": "scrapling.engines.toolbelt.fingerprints.get_os_name",
       "line": 25,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/fingerprints.py",
       "status": "unverified",
       "test_ids": []
@@ -3921,6 +5199,7 @@
       "id": "scrapling.engines.toolbelt.fingerprints.driven_browser_version",
       "line": 46,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/fingerprints.py",
       "status": "unverified",
       "test_ids": []
@@ -3930,6 +5209,7 @@
       "id": "scrapling.engines.toolbelt.fingerprints.generate_headers",
       "line": 66,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/fingerprints.py",
       "status": "unverified",
       "test_ids": []
@@ -3939,6 +5219,7 @@
       "id": "scrapling.engines.toolbelt.navigation.create_intercept_handler",
       "line": 43,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/navigation.py",
       "status": "unverified",
       "test_ids": []
@@ -3948,6 +5229,7 @@
       "id": "scrapling.engines.toolbelt.navigation.create_async_intercept_handler",
       "line": 70,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/navigation.py",
       "status": "unverified",
       "test_ids": []
@@ -3957,6 +5239,7 @@
       "id": "scrapling.engines.toolbelt.navigation.construct_proxy_dict",
       "line": 97,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/navigation.py",
       "status": "unverified",
       "test_ids": []
@@ -3966,6 +5249,7 @@
       "id": "scrapling.engines.toolbelt.proxy_rotation.is_proxy_error",
       "line": 27,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/proxy_rotation.py",
       "status": "unverified",
       "test_ids": []
@@ -3975,6 +5259,7 @@
       "id": "scrapling.engines.toolbelt.proxy_rotation.cyclic_rotation",
       "line": 33,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/engines/toolbelt/proxy_rotation.py",
       "status": "unverified",
       "test_ids": []
@@ -3984,6 +5269,7 @@
       "id": "scrapling.integrations.scrapy.convert_response",
       "line": 24,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/integrations/scrapy.py",
       "status": "unverified",
       "test_ids": []
@@ -3993,6 +5279,7 @@
       "id": "scrapling.integrations.scrapy.scrapling_response",
       "line": 59,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/integrations/scrapy.py",
       "status": "unverified",
       "test_ids": []
@@ -4002,6 +5289,7 @@
       "id": "scrapling.spiders.throttle.parse_retry_after",
       "line": 10,
       "rust_entrypoint": null,
+      "same_name_candidates": [],
       "source": "scrapling/spiders/throttle.py",
       "status": "unverified",
       "test_ids": []
