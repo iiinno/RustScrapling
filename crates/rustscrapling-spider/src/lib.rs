@@ -235,16 +235,24 @@ impl HostThrottle {
     }
 }
 
-/// Retry-After's delta-seconds form is reliable across timezones and clock
-/// skew. The HTTP-date form is not yet interpreted (rather than guessed).
-fn retry_after_delta(headers: &BTreeMap<String, String>) -> Option<Duration> {
+/// HTTP Retry-After supports seconds and RFC 7231 HTTP-date. Reject values
+/// beyond 24 hours so an untrusted header cannot stall a crawl indefinitely.
+fn retry_after_value(headers: &BTreeMap<String, String>) -> Option<Duration> {
     let value = headers
         .iter()
         .find(|(name, _)| name.eq_ignore_ascii_case("retry-after"))?
         .1
         .trim();
-    let seconds = value.parse::<u64>().ok()?;
-    (seconds <= 86_400).then(|| Duration::from_secs(seconds))
+    if let Ok(seconds) = value.parse::<u64>() {
+        return (seconds <= 86_400).then(|| Duration::from_secs(seconds));
+    }
+    let deadline = chrono::DateTime::parse_from_rfc2822(value).ok()?;
+    let now: chrono::DateTime<chrono::Utc> = std::time::SystemTime::now().into();
+    let milliseconds = deadline.signed_duration_since(now).num_milliseconds();
+    if milliseconds <= 0 {
+        return Some(Duration::ZERO);
+    }
+    (milliseconds <= 86_400_000).then(|| Duration::from_millis(milliseconds as u64))
 }
 
 fn valid_url(raw: &str) -> Result<Url, String> {
@@ -825,7 +833,7 @@ where
                         let retry_after = result
                             .as_ref()
                             .ok()
-                            .and_then(|response| retry_after_delta(&response.headers));
+                            .and_then(|response| retry_after_value(&response.headers));
                         host_clock.lock().await.observe(
                             status,
                             started.elapsed(),
@@ -1088,14 +1096,23 @@ mod tests {
     }
 
     #[test]
-    fn retry_after_delta_is_case_insensitive_and_bounded() {
+    fn retry_after_seconds_and_http_date_are_bounded() {
         let mut headers = BTreeMap::new();
         headers.insert("rEtRy-AfTeR".into(), " 12 ".into());
-        assert_eq!(retry_after_delta(&headers), Some(Duration::from_secs(12)));
-        for bad in ["NaN", "-1", "86401", "Wed, 21 Oct 2015 07:28:00 GMT"] {
+        assert_eq!(retry_after_value(&headers), Some(Duration::from_secs(12)));
+        for bad in ["NaN", "-1", "86401", "not-a-date"] {
             headers.insert("rEtRy-AfTeR".into(), bad.into());
-            assert_eq!(retry_after_delta(&headers), None, "{bad}");
+            assert_eq!(retry_after_value(&headers), None, "{bad}");
         }
+        let future = std::time::SystemTime::now() + Duration::from_secs(3);
+        let date = chrono::DateTime::<chrono::Utc>::from(future)
+            .format("%a, %d %b %Y %H:%M:%S GMT")
+            .to_string();
+        headers.insert("rEtRy-AfTeR".into(), date);
+        let parsed = retry_after_value(&headers).expect("HTTP-date is supported");
+        assert!(parsed >= Duration::from_secs(1) && parsed <= Duration::from_secs(3));
+        headers.insert("rEtRy-AfTeR".into(), "Wed, 21 Oct 2015 07:28:00 GMT".into());
+        assert_eq!(retry_after_value(&headers), Some(Duration::ZERO));
     }
 
     struct RetryAfterFetcher(Mutex<Vec<Instant>>);
