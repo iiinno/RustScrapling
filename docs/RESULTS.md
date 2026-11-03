@@ -1,5 +1,18 @@
 # RESULTS.md: 測定と検証の結果
 
+## 2026-11-03 後継セッション（続き）: shell/install・Chrome 155/156・セキュリティ・fuzz
+
+環境は前節と同じクラウドLinuxコンテナ（4 vCPU、15GiB、Rust 1.99.1）。外部通信はTLSを終端する中継プロキシ経由（G-04のボット対策比較には使えない）。
+
+| 対象SHA | 内容 | コマンド/結果 |
+| --- | --- | --- |
+| `161b7ae` | C-06 `shell`＋本家`CurlParser`移植 | `oracle/curl_parser_oracle.py`で本家から22ケースの期待値→`cli/tests/shell_command.rs::uncurl_matches_upstream_curl_parser_oracle` **22/22一致**。ループバックE2E（get/post/delete/curl2fetcher/履歴5件/use/md/xpath）PASS、実Chrome `fetch` opt-in PASS |
+| `6ca254e` | C-05 `install` | 実導入：Chrome for Testing 156.0.8078.80 linux64、固定SHA-256 `b711c720…40a7`・サイズ一致、301ファイル、`--version`→`Google Chrome for Testing 156.0.8078.80`、再実行`already_installed`。155.0.8059.84は`--sha256`指定で導入（`checksum_source:"user"`）。ミラー経由の負例（改ざんアーカイブ→checksum error・残骸0、未固定版→unverified）3/3 PASS |
+| `6ca254e`+作業ツリー（`50b6e1c`と同一コード） | G-03 実機マトリクス | `scripts/chrome_e2e_matrix.sh /usr/bin/google-chrome chrome155 chrome156`（root環境のため`--no-sandbox`ラッパー経由）：**153.0.8010.12 / 155.0.8059.84 / 156.0.8078.80 の各版で** browser opt-in 5/5、MCP 16/16、セッション再利用 headless 1/1・headed（Xvfb）1/1、shell fetch 1/1、すべてexit 0 |
+| 修正前（`6ca254e`） | headed再利用の不具合 | Chrome 156 headedで遷移直後の`click`がエラー無しで無効になるラウンドを1件観測（約1/150）。原因：本家が受け取るPlaywright `chromiumSwitches`（`--disable-features=PaintHolding`等）の欠落→`50b6e1c`で修正（D-011）。修正後 155/156 × headed/headless × 150ラウンド＝**600ラウンドで取りこぼし0** |
+| `b6948c0` | G-11 負例追加 | CDP endpoint allowlist（D-012）、state読込`O_NOFOLLOW`、状態ファイル負例2件、daemon IPC負例（誤/空/前方一致/欠落トークン、不正JSON、深いネスト、16MiB超、送信停止）。全workspace **159 PASS・0 FAIL・8 ignored**、strict clippy・fmt・M0 quick checks exit 0。`docs/THREAT_MODEL.md`で7.1の攻撃面→テストを対応付け |
+| `373acff` | CI run 19–23の失敗原因 | すべて`test_rust_catalog_and_rust_backend_unchanged`のみ（監査がRust関数の行番号を索引するため）。Rust/実Chromeジョブは成功。`audit_parity.py`再生成、`scripts/quick_checks.sh`を追加 |
+
 ## 2026-11-03 後継セッション: Issue #1修正・2ブランチ統合・browser_actions全12種
 
 検証環境：claude.ai cloud の隔離Linuxコンテナ（Ubuntu 24.04系、4 vCPU、15GiB RAM、Rust 1.99.1、libxml2 2.9.14、Google Chrome for Testing **153.0.8010.12**、Python 3.13.18）。VPS・Windows/WSLは使用していない。Chrome 155/156ではないため **G-03の合格根拠にはならない**。
