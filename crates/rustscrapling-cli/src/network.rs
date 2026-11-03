@@ -8,6 +8,8 @@ use std::time::Duration;
 use crate::browser_adapter::CdpBackend;
 use crate::daemon;
 use clap::{Args, ValueEnum};
+use std::sync::Arc;
+
 use rustscrapling_daemon::{
     DaemonClient, FetchRequest as DaemonFetchRequest, FetchResult as DaemonFetchResult,
     FetchTier as DaemonTier,
@@ -263,16 +265,24 @@ pub fn run_tier(target: &str, options: &RequestOptions, tier: FetchTier) -> Resu
         let client = HttpClient::new(transport_options(options))
             .map_err(|e| error(e.kind.as_str(), &e.message, "Check network options"))?;
         let mut fetcher = Fetcher::new(client, FetchPolicy::default());
+        let mut launched = None;
         if let Some(backend) = CdpBackend::new(
             options.chrome_path.clone(),
             options.cdp_url.clone(),
             options.proxy.clone(),
         ) {
+            launched = Some(Arc::clone(&backend));
             fetcher = fetcher.with_browser(backend);
         }
-        fetcher
+        let outcome = fetcher
             .fetch(HttpRequest::get(target), tier)
-            .await
+            .await;
+        // Close the browser before the runtime goes away, so its throwaway
+        // profile is deleted while the child handles are still valid.
+        if let Some(backend) = launched {
+            backend.shutdown().await;
+        }
+        outcome
             .map_err(|e| {
                 error(
                     &format!("{:?}", e.kind).to_ascii_lowercase(),

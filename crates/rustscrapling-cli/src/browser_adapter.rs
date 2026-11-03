@@ -19,6 +19,17 @@ pub struct CdpBackend {
 }
 
 impl CdpBackend {
+    /// Close every browser this backend launched, inside the runtime that owns
+    /// it. Relying on `Drop` at process exit left throwaway profiles behind,
+    /// because the drop runs after the runtime and its child handles are gone.
+    pub async fn shutdown(&self) {
+        for slot in [&self.headless, &self.headed] {
+            if let Some(client) = slot.lock().await.take() {
+                let _ = client.shutdown().await;
+            }
+        }
+    }
+
     pub fn new(
         chrome_path: Option<PathBuf>,
         endpoint: Option<String>,
