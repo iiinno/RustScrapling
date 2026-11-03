@@ -1,13 +1,18 @@
-# Plan.md — RustScrapling 最速実運用計画（v4、2026-11-03）
+# Plan.md — RustScrapling 最速実運用計画（v4.1、2026-11-03）
 
-**この文書が現行の計画。** 旧計画（GA受け入れ契約 v3、G-01〜G-13）は `docs/PLAN_GA_CONTRACT.md` に退避し**凍結**した。旧ゲートは「将来公開製品にするなら」の参考であり、今は満たす必要はない。
+**この文書が現行の計画。** 旧計画（GA受け入れ契約 v3、G-01〜G-13）は `docs/PLAN_GA_CONTRACT.md` に退避し**凍結**した。
 
-## 1. 目的と役割
+## 1. 目的と組み込み先（research-stack を読んだ上での確定事項）
 
-- 目的：所有者のリサーチスタック（RustXNG → PageSift / Obscura / RustScrapling ほか、AutoCLI から MCP/CLI で利用、VPS 常駐）に、Scrapling の魂である**検出回避付き取得**を Rust で組み込み、**できるだけ早く実運用に入れる**。
-- RustScrapling の担当範囲：①検出回避付きブラウザ取得（他ツールが弾かれるサイト）、②セッション/ログイン状態と操作（`browser_actions`）、③並列クロール（Spider）と adaptive セレクタ。通常ページの軽い抽出は PageSift 等が担うので、ここで張り合わない。
-- 組み込み口：**`rustscrapling mcp`（本家 Scrapling と同じ16ツール）を第一**、CLI（`extract`/`get`/`fetch`/`crawl`）を第二。Rust ライブラリ API の整備は後回し。
-- 「完成」の定義：下の §3 必須修正が入り、VPS で MCP として常用され、失敗が型付きで返ること。成功率は**運用しながら**上げる（§5）。
+- 組み込み先は `iiinno/research-stack` の **Research Router**（Rust、`router/src/main.rs`、MCP `/mcp` の `research_fetch`）。Router 側 Plan の Phase 6 が **`fetch-v1` アダプタで PageSift → RustScrapling → Obscura の順** に入れる予定。RustScrapling 自身の MCP サーバは当面使わない（Router が唯一のMCP窓口）。
+- 既存 Obscura アダプタ（`browser_fetch()`）が手本：URL を Router の `validate_public_url` で検査 → `systemd-run --user --scope -p MemoryMax=800M -p CPUQuota=100% timeout 25s <bin> fetch URL --dump text` を起動 → stdout を上限付きで読む → `{"provider","url","status":"ok|partial","retrieved_at","truncated","content"}` を返す。SSRF検査は Router が行うので RustScrapling 側の追加ポリシーは不要。
+- **RustScrapling 側の推奨インターフェース**：`rustscrapling auto <URL> --format json --timeout 20 --max-chars N`（HTTP→ブラウザの段階昇格を1コマンドで行い、成功時 stdout に `{"status","url","tier","content":{"markdown",...}}`、失敗時 stderr に `{"error":{"kind":"blocked|timeout|dns|tls|http_status|...","message","hint"}}` と exit 1）。アダプタはこれを Obscura と同じ形で起動し、`content.markdown` を `content` に、`tier` と `status` を付記する。ブラウザは `--chrome-path`（`rustscrapling install` で入れた CfT）を明示。
+- RustScrapling の担当：PageSift が失敗した「難しいページ」（ボット対策・JS描画）を、Obscura より前に救うこと。通常ページは PageSift の仕事。
+- 「完成」の定義：§3 の必須修正が入り、Router の `fetch-v1` から呼ばれ、失敗が型付きで返り、Router 側 Phase 6 の独立回帰試験（重要実サイトの取得件数・エラー率・リソース比較）を通ること。
+
+### 所有者に判断してもらう点（エージェントが勝手に決めない）
+1. **フォールバック条件**：現在の Router `fetch_routed` は PageSift が **4xx（403含む）だと FORBIDDEN を返しフォールバックしない**（BAD_GATEWAY のときだけ Obscura へ）。ボット対策の 403 こそ RustScrapling が救う対象なので、`fetch-v1` では「PageSift の 403/429/空本文 → RustScrapling」を許すか決める必要がある。
+2. **防御回避の方針**：research-stack の Plan には「Cloudflare 403 は防御回避しない」（alphaXiv）、Obscura は `--obey-robots` で動いている。Scrapling の価値は検出回避だが、どこまで使うか（robots.txt を守るか、`solve_cloudflare` 相当を実装・使用するか）は所有者のポリシーとして明文化してから実装する。
 
 ## 2. 凍結すること（やらない）
 
@@ -28,7 +33,7 @@
 2. **一時プロファイルの残留**：1時間 soak で `rustscrapling-cdp-*` 一時ディレクトリが約2個/時残った（daemon 停止・再起動時）。`BrowserClient::launch` の `owned_profile` が `Drop`/強制終了経路で消えていない可能性。`Drop for BrowserClient` でプロセス kill 後にプロファイル削除を試みる＋daemon 起動時に自分のPID以外の古い `rustscrapling-cdp-*`（例：24h超）を掃除。`bench/soak.py --duration 1800` で残留0を確認。
 3. **ブラウザのタブプール（並列利用する場合）**：`BrowserClient::get` は既定ページ1枚を mutex で使い回すため、CLI/daemon のブラウザ取得は**実質直列**。本家 `StealthySession(max_pages=N)` 相当に、1ブラウザ・最大Nタブのプールにする（タブはリクエスト毎に借りて返す、設定は作成時に `apply_settings`）。MCP の `browser_open` セッションはセッション=1タブのままでよい。急がないなら「同時ブラウザ取得は1」と運用で割り切り、後回し可。
 
-## 4. VPS配置（半日）
+## 4. VPS配置（半日）— Router Phase 6 の手順に従う。無断でビルド・起動しない（research-stack の禁止事項）
 
 ```bash
 cargo build --release --locked -p rustscrapling-cli
