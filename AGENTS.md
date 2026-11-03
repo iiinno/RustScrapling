@@ -1,7 +1,7 @@
 # RustScrapling — instructions for coding agents
 
-Read **`Plan.md` first**. It is the acceptance contract, not an inspirational
-roadmap. The pinned Python upstream is `D4Vinci/Scrapling` at
+Read **`Plan.md` first** (v4: fastest path to production use). The former GA
+acceptance contract is frozen in `docs/PLAN_GA_CONTRACT.md`. The pinned Python upstream is `D4Vinci/Scrapling` at
 `95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0` (Scrapling v0.5).
 `HANDOFF.md` describes the current integration state and unmerged branches.
 
@@ -10,7 +10,7 @@ roadmap. The pinned Python upstream is `D4Vinci/Scrapling` at
   Unimplemented options must return typed errors, never fake success.
 - Do not declare features, test suites, parity, performance or release gates
   complete without evidence from the exact integrated SHA. See `G-01`–`G-13`
-  and stage acceptance IDs in `Plan.md`.
+  and stage acceptance IDs in `docs/PLAN_GA_CONTRACT.md` (frozen; not required now).
 - Work in a **separate Git branch/worktree**. Inspect `git status`, `git log`,
   unmerged changes and other active agents before editing or merging. Avoid
   overwriting anybody's local uncommitted files.
