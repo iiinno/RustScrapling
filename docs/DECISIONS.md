@@ -79,3 +79,12 @@ Plan.md の「判断済みの事項」は変えていない。ここには段階
 - 決定：RustScraplingが自ら起動するChromeには`UPSTREAM_LAUNCH_ARGS`（本家`DEFAULT_ARGS`+`STEALTH_ARGS`）を付ける。RustScraplingは常に一時プロファイル（起動ごとに新規作成・終了時削除）を使い、利用者の永続プロファイルを開かないため、basic password storeが既存の資格情報保存を弱めることはない。`cdp_url`で外部ブラウザに接続する場合は本家同様に起動設定を適用しない。headless時のUAは`HeadlessChrome`を`Chrome`に置換（本家は生成UA）。
 - 互換影響：本家と同じフラグ構成になり、取得成功率比較（G-04）の前提が揃う。HTTPSエラー無視（本家`ignore_https_errors=True`）は未採用で、TLS検証は維持（差分としてCOMPATに記録、G-04で影響を測定してから再判断）。
 - 戻し方：`rustscrapling-browser::UPSTREAM_LAUNCH_ARGS`の付与を外す。
+
+## D-011 Playwrightの起動スイッチも本家同様に付与し、機能フラグを統合（2026-11-03、後継セッション）
+
+- 問題：Chrome 156のheaded再利用試験で、遷移直後の`click`が**エラー無しで効かない**ラウンドが約1/150発生した（textboxは成功）。
+- 調査：本家のブラウザプロセスはpatchright-core 1.64の`chromiumSwitches()`（`--disable-features=…,PaintHolding,…`、`--enable-features=CDPScreenshotNewSurface`、`--disable-field-trial-config`等）を**Scraplingの引数より前に**受け取る。PaintHolding（遷移直後に旧フレームを保持し入力を新ページへ届けない）はPlaywrightが自動操作の安定性のため無効化しているが、D-010の`UPSTREAM_LAUNCH_ARGS`はScrapling側の引数のみでこれを欠いていた。Playwrightは`chromiumSandbox`未指定時`--no-sandbox`も付ける。
+- 決定：`upstream_launch_args(headless)`＝Playwright switches＋headless追加分＋`UPSTREAM_LAUNCH_ARGS`をMCPとCLI（fetch tier/shell）の自前起動に付与。Chromeは同名スイッチの最後の値のみ使うため、`--enable-features`/`--disable-features`/`--disable-blink-features`は起動時に和集合の1本へ統合（`merge_feature_switches`）。`--no-sandbox`は**付与しない**（サンドボックス維持、本家との差分）。
+- 証拠：変更後、Chrome 155/156でheaded・headless各150ラウンド（計600）取りこぼし0件。153/155/156で実機E2Eマトリクス全PASS（`scripts/chrome_e2e_matrix.sh`）。
+- 互換影響：本家の実プロセス引数に近づく。Chromeが重複スイッチをどう扱うかに依存せず、Playwright/Scrapling双方の機能指定が有効になる（本家は最後の`--disable-features`のみ有効になっている可能性がある＝差分として記録）。
+- 戻し方：`rustscrapling_browser::upstream_launch_args`を`UPSTREAM_LAUNCH_ARGS`に戻し、`merge_feature_switches`呼び出しを外す。

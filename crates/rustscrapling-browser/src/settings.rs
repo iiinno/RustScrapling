@@ -81,6 +81,101 @@ pub const UPSTREAM_LAUNCH_ARGS: &[&str] = &[
     "--disable-features=AudioServiceOutOfProcess,TranslateUI,BlinkGenPropertyTrees",
 ];
 
+/// Playwright `chromiumSwitches()` (patchright-core 1.64, the driver used by
+/// the pinned upstream): upstream's browser process gets these *before*
+/// Scrapling's own arguments. `--no-sandbox` (Playwright's default unless
+/// `chromiumSandbox`) is deliberately not copied; see DECISIONS D-011.
+pub const PLAYWRIGHT_SWITCHES: &[&str] = &[
+    "--disable-field-trial-config",
+    "--disable-background-networking",
+    "--disable-background-timer-throttling",
+    "--disable-backgrounding-occluded-windows",
+    "--disable-breakpad",
+    "--no-default-browser-check",
+    "--disable-dev-shm-usage",
+    "--disable-edgeupdater",
+    "--disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,AvoidCorsURLLoaderRestartOnRedirect,Translate,AutoDeElevate,OptimizationHints,NetworkTimeServiceQuerying,AimEnabled,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion",
+    "--enable-features=CDPScreenshotNewSurface",
+    "--disable-hang-monitor",
+    "--disable-prompt-on-repost",
+    "--disable-renderer-backgrounding",
+    "--disable-updater-scheduler",
+    "--force-color-profile=srgb",
+    "--no-first-run",
+    "--password-store=basic",
+    "--use-mock-keychain",
+    "--no-service-autorun",
+    "--export-tagged-pdf",
+    "--disable-search-engine-choice-screen",
+    "--edge-skip-compat-layer-relaunch",
+    "--disable-infobars",
+    "--disable-sync",
+    "--disable-blink-features=AutomationControlled",
+];
+
+/// Extra switches Playwright adds for headless launches.
+pub const PLAYWRIGHT_HEADLESS_SWITCHES: &[&str] = &[
+    "--hide-scrollbars",
+    "--mute-audio",
+    "--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4",
+];
+
+/// The argument list upstream's browser process receives: Playwright
+/// switches, headless extras, then Scrapling's `DEFAULT_ARGS` +
+/// `STEALTH_ARGS`. Feature lists are merged by [`merge_feature_switches`]
+/// when the browser is launched.
+pub fn upstream_launch_args(headless: bool) -> Vec<String> {
+    let mut args: Vec<String> = PLAYWRIGHT_SWITCHES
+        .iter()
+        .map(|a| (*a).to_owned())
+        .collect();
+    if headless {
+        args.extend(PLAYWRIGHT_HEADLESS_SWITCHES.iter().map(|a| (*a).to_owned()));
+    }
+    args.extend(UPSTREAM_LAUNCH_ARGS.iter().map(|a| (*a).to_owned()));
+    args
+}
+
+/// Chrome keeps only the last `--enable-features`/`--disable-features`
+/// switch, so repeated lists (Playwright's and Scrapling's) are merged into
+/// one switch each, preserving first-seen order and dropping duplicates.
+/// Exact duplicate plain switches are dropped as well.
+pub fn merge_feature_switches(args: &[String]) -> Vec<String> {
+    const MERGED: [&str; 3] = [
+        "--enable-features=",
+        "--disable-features=",
+        "--disable-blink-features=",
+    ];
+    let mut lists: Vec<Vec<String>> = vec![Vec::new(); MERGED.len()];
+    let mut out: Vec<String> = Vec::new();
+    let mut placed = [false; 3];
+    for arg in args {
+        if let Some(index) = MERGED.iter().position(|prefix| arg.starts_with(prefix)) {
+            for feature in arg[MERGED[index].len()..].split(',') {
+                let feature = feature.trim();
+                if !feature.is_empty() && !lists[index].iter().any(|f| f == feature) {
+                    lists[index].push(feature.to_owned());
+                }
+            }
+            if !placed[index] {
+                placed[index] = true;
+                out.push(MERGED[index].to_owned());
+            }
+        } else if !out.contains(arg) {
+            out.push(arg.clone());
+        }
+    }
+    out.into_iter()
+        .filter_map(
+            |arg| match MERGED.iter().position(|prefix| arg == *prefix) {
+                Some(index) if lists[index].is_empty() => None,
+                Some(index) => Some(format!("{}{}", MERGED[index], lists[index].join(","))),
+                None => Some(arg),
+            },
+        )
+        .collect()
+}
+
 /// Upstream `disable_resources` types (font, image, media, beacon, object,
 /// imageset, texttrack, websocket, csp_report, stylesheet) as CDP
 /// `Network.ResourceType` names.
@@ -293,5 +388,58 @@ impl BrowserPage {
             self.raw("Fetch.disable", json!({})).await?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod launch_arg_tests {
+    use super::*;
+
+    #[test]
+    fn feature_lists_are_merged_into_one_switch_each() {
+        let args = upstream_launch_args(true);
+        let merged = merge_feature_switches(&args);
+        let disable: Vec<&String> = merged
+            .iter()
+            .filter(|a| a.starts_with("--disable-features="))
+            .collect();
+        assert_eq!(disable.len(), 1);
+        for feature in [
+            "PaintHolding",
+            "Translate",
+            "AudioServiceOutOfProcess",
+            "TranslateUI",
+        ] {
+            assert!(
+                disable[0].split(['=', ',']).any(|f| f == feature),
+                "{feature} missing: {}",
+                disable[0]
+            );
+        }
+        let enable: Vec<&String> = merged
+            .iter()
+            .filter(|a| a.starts_with("--enable-features="))
+            .collect();
+        assert_eq!(enable.len(), 1);
+        assert!(
+            enable[0].contains("CDPScreenshotNewSurface") && enable[0].contains("NetworkService,")
+        );
+        assert_eq!(
+            merged
+                .iter()
+                .filter(|a| a.as_str() == "--disable-blink-features=AutomationControlled")
+                .count(),
+            1
+        );
+        assert_eq!(
+            merged
+                .iter()
+                .filter(|a| a.as_str() == "--no-first-run")
+                .count(),
+            1
+        );
+        assert!(!merged.iter().any(|a| a == "--no-sandbox"));
+        assert!(!upstream_launch_args(false).contains(&"--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4".to_owned())
+            || UPSTREAM_LAUNCH_ARGS.iter().any(|a| a.starts_with("--blink-settings=")));
     }
 }

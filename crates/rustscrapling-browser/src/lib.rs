@@ -14,7 +14,10 @@ mod transport;
 pub use actions::{
     ActionError, BrowserAction, ElementState, LoadState, MouseButton, PointerTarget,
 };
-pub use settings::{PageSettings, DISABLED_RESOURCE_TYPES, UPSTREAM_LAUNCH_ARGS};
+pub use settings::{
+    merge_feature_switches, upstream_launch_args, PageSettings, DISABLED_RESOURCE_TYPES,
+    PLAYWRIGHT_HEADLESS_SWITCHES, PLAYWRIGHT_SWITCHES, UPSTREAM_LAUNCH_ARGS,
+};
 pub use transport::{BrowserError, CdpEvent};
 
 use chromiumoxide_cdp::cdp::browser_protocol::{dom, target};
@@ -389,7 +392,7 @@ impl BrowserClient {
         if let Some(proxy) = &options.proxy {
             cmd.arg(format!("--proxy-server={proxy}"));
         }
-        for arg in &options.extra_args {
+        for arg in merge_feature_switches(&options.extra_args) {
             cmd.arg(arg);
         }
         cmd.stdin(std::process::Stdio::null())

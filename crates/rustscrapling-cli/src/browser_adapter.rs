@@ -54,6 +54,7 @@ impl CdpBackend {
                 let mut launch = LaunchOptions::new(path);
                 launch.headless = !headed;
                 launch.proxy = self.proxy.clone();
+                launch.extra_args = rustscrapling_browser::upstream_launch_args(!headed);
                 BrowserClient::launch(launch).await
             }
             .map_err(|e| failed(&format!("Could not initialize CDP browser: {e}")))?;

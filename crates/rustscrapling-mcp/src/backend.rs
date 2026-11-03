@@ -10,7 +10,7 @@ use std::{
 use rmcp::model::{CallToolResult, ContentBlock};
 use rustscrapling_browser::{
     detect_block, BrowserAction, BrowserClient, BrowserPage, ElementState, LaunchOptions,
-    LoadState, MouseButton, NetworkRecord, PageSettings, PointerTarget, UPSTREAM_LAUNCH_ARGS,
+    LoadState, MouseButton, NetworkRecord, PageSettings, PointerTarget,
 };
 use rustscrapling_extract::compat::{convert_content, ContentFormat};
 use rustscrapling_http::{CookieJar, HttpClient, HttpOptions, HttpRequest, HttpResponse};
@@ -610,7 +610,7 @@ impl RuntimeBackend {
         }
         launch
             .extra_args
-            .extend(UPSTREAM_LAUNCH_ARGS.iter().map(|arg| (*arg).to_owned()));
+            .extend(rustscrapling_browser::upstream_launch_args(launch.headless));
         if opt_bool(args, "block_webrtc", false)? {
             launch.extra_args.extend([
                 "--webrtc-ip-handling-policy=disable_non_proxied_udp".to_owned(),
