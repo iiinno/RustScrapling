@@ -937,6 +937,12 @@ impl BrowserPage {
                 json!({"nodeId":root_id,"selector":selector}),
             )
             .await?;
+        if std::env::var_os("RUSTSCRAPLING_TRACE_CDP_METHODS").is_some() {
+            eprintln!(
+                "DOM.querySelector root={root_id}, response nodeId={:?}",
+                queried.get("nodeId")
+            );
+        }
         queried
             .get("nodeId")
             .and_then(Value::as_u64)

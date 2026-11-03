@@ -31,6 +31,7 @@ async fn real_chrome_click_and_unicode_input_without_implicit_runtime() {
         .await
         .unwrap();
     let source = page.source().await.unwrap();
+    eprintln!("real Chrome data fixture source: {source}");
     assert!(
         source.contains("id=\"push\""),
         "fixture HTML not loaded: {source}"
