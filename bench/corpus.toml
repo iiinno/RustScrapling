@@ -1,0 +1,2608 @@
+# Plan 8.2 / G-04 fixed corpus: 200 URLs, 8 categories x 25.
+# Success (both implementations, bench/compare_corpus.py): status in allowed_status,
+# expected_text (case-insensitive) in the whole-page Convertor text, text length >= min_text_chars.
+# allowed_for_testing = false: commercial sites whose terms restrict automated access; skipped
+# (and reported) unless the owner runs with --include-restricted. Do not drop failing URLs:
+# record both implementations on the same day instead (Plan 8.2).
+# validated_2026_11_03: plain curl through a TLS-terminating proxy (status only; not G-04 evidence).
+version = 1
+
+[[entry]]
+id = "docs-01"
+category = "docs"
+url = "https://docs.python.org/3/library/json.html"
+expected_text = "JSON encoder and decoder"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-02"
+category = "docs"
+url = "https://docs.python.org/3/tutorial/index.html"
+expected_text = "The Python Tutorial"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-03"
+category = "docs"
+url = "https://doc.rust-lang.org/book/ch01-00-getting-started.html"
+expected_text = "Getting Started"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-04"
+category = "docs"
+url = "https://doc.rust-lang.org/std/vec/struct.Vec.html"
+expected_text = "contiguous growable array"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-05"
+category = "docs"
+url = "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/article"
+expected_text = "article"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-06"
+category = "docs"
+url = "https://developer.mozilla.org/en-US/docs/Web/CSS/display"
+expected_text = "display"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-07"
+category = "docs"
+url = "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array"
+expected_text = "Array"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-08"
+category = "docs"
+url = "https://www.postgresql.org/docs/current/sql-select.html"
+expected_text = "SELECT"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-09"
+category = "docs"
+url = "https://www.sqlite.org/lang_select.html"
+expected_text = "SELECT"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-10"
+category = "docs"
+url = "https://nodejs.org/api/fs.html"
+expected_text = "File system"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-11"
+category = "docs"
+url = "https://git-scm.com/docs/git-commit"
+expected_text = "git-commit"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-12"
+category = "docs"
+url = "https://www.gnu.org/software/bash/manual/bash.html"
+expected_text = "Bash Reference Manual"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "000"
+
+[[entry]]
+id = "docs-13"
+category = "docs"
+url = "https://kubernetes.io/docs/concepts/overview/"
+expected_text = "Overview"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-14"
+category = "docs"
+url = "https://docs.docker.com/get-started/"
+expected_text = "Get started"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-15"
+category = "docs"
+url = "https://react.dev/learn"
+expected_text = "Quick Start"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-16"
+category = "docs"
+url = "https://go.dev/doc/effective_go"
+expected_text = "Effective Go"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-17"
+category = "docs"
+url = "https://www.typescriptlang.org/docs/handbook/2/basic-types.html"
+expected_text = "The Basics"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-18"
+category = "docs"
+url = "https://docs.djangoproject.com/en/stable/intro/tutorial01/"
+expected_text = "Writing your first Django app"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-19"
+category = "docs"
+url = "https://flask.palletsprojects.com/en/stable/quickstart/"
+expected_text = "Quickstart"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-20"
+category = "docs"
+url = "https://numpy.org/doc/stable/user/absolute_beginners.html"
+expected_text = "NumPy"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-21"
+category = "docs"
+url = "https://pandas.pydata.org/docs/user_guide/10min.html"
+expected_text = "10 minutes to pandas"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-22"
+category = "docs"
+url = "https://tokio.rs/tokio/tutorial"
+expected_text = "Tutorial"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-23"
+category = "docs"
+url = "https://www.w3.org/TR/html52/"
+expected_text = "HTML Standard"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-24"
+category = "docs"
+url = "https://datatracker.ietf.org/doc/html/rfc9110"
+expected_text = "HTTP Semantics"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "docs-25"
+category = "docs"
+url = "https://curl.se/docs/manpage.html"
+expected_text = "curl"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-01"
+category = "academic"
+url = "https://en.wikipedia.org/wiki/Web_scraping"
+expected_text = "Web scraping"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-02"
+category = "academic"
+url = "https://en.wikipedia.org/wiki/Rust_(programming_language)"
+expected_text = "Rust"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-03"
+category = "academic"
+url = "https://en.wikipedia.org/wiki/Python_(programming_language)"
+expected_text = "Python"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-04"
+category = "academic"
+url = "https://en.wikipedia.org/wiki/HTML"
+expected_text = "HyperText Markup Language"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-05"
+category = "academic"
+url = "https://ja.wikipedia.org/wiki/%E6%9D%B1%E4%BA%AC%E9%83%BD"
+expected_text = "東京都"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-06"
+category = "academic"
+url = "https://de.wikipedia.org/wiki/Berlin"
+expected_text = "Berlin"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-07"
+category = "academic"
+url = "https://arxiv.org/abs/1706.03762"
+expected_text = "Attention Is All You Need"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-08"
+category = "academic"
+url = "https://arxiv.org/abs/1810.04805"
+expected_text = "BERT"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-09"
+category = "academic"
+url = "https://arxiv.org/list/cs.CL/recent"
+expected_text = "Computation and Language"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-10"
+category = "academic"
+url = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3159421/"
+expected_text = "PMC"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-11"
+category = "academic"
+url = "https://pubmed.ncbi.nlm.nih.gov/"
+expected_text = "PubMed"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-12"
+category = "academic"
+url = "https://plato.stanford.edu/entries/logic-classical/"
+expected_text = "Classical Logic"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-13"
+category = "academic"
+url = "https://www.nature.com/articles/nature14539"
+expected_text = "Deep learning"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "429"
+
+[[entry]]
+id = "academic-14"
+category = "academic"
+url = "https://scholar.archive.org/"
+expected_text = "scholar"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-15"
+category = "academic"
+url = "https://www.jstor.org/"
+expected_text = "JSTOR"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-16"
+category = "academic"
+url = "https://ocw.mit.edu/"
+expected_text = "MIT OpenCourseWare"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-17"
+category = "academic"
+url = "https://www.khanacademy.org/"
+expected_text = "Khan Academy"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-18"
+category = "academic"
+url = "https://dblp.org/"
+expected_text = "dblp"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "202"
+
+[[entry]]
+id = "academic-19"
+category = "academic"
+url = "https://openalex.org/"
+expected_text = "OpenAlex"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-20"
+category = "academic"
+url = "https://www.semanticscholar.org/"
+expected_text = "Semantic Scholar"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-21"
+category = "academic"
+url = "https://link.springer.com/"
+expected_text = "Springer"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-22"
+category = "academic"
+url = "https://www.biorxiv.org/"
+expected_text = "bioRxiv"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "429"
+
+[[entry]]
+id = "academic-23"
+category = "academic"
+url = "https://www.gutenberg.org/ebooks/1342"
+expected_text = "Pride and Prejudice"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-24"
+category = "academic"
+url = "https://en.wikisource.org/wiki/Main_Page"
+expected_text = "Wikisource"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "academic-25"
+category = "academic"
+url = "https://www.britannica.com/science/physics-science"
+expected_text = "physics"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "government-01"
+category = "government"
+url = "https://www.gov.uk/"
+expected_text = "GOV.UK"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-02"
+category = "government"
+url = "https://www.gov.uk/browse/tax"
+expected_text = "Money and tax"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-03"
+category = "government"
+url = "https://www.usa.gov/"
+expected_text = "USAGov"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-04"
+category = "government"
+url = "https://www.nasa.gov/"
+expected_text = "NASA"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-05"
+category = "government"
+url = "https://www.nih.gov/"
+expected_text = "National Institutes of Health"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "government-06"
+category = "government"
+url = "https://www.cdc.gov/"
+expected_text = "CDC"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "government-07"
+category = "government"
+url = "https://www.whitehouse.gov/"
+expected_text = "White House"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-08"
+category = "government"
+url = "https://www.census.gov/"
+expected_text = "Census"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-09"
+category = "government"
+url = "https://www.data.gov/"
+expected_text = "Data.gov"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-10"
+category = "government"
+url = "https://www.nist.gov/"
+expected_text = "NIST"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-11"
+category = "government"
+url = "https://www.noaa.gov/"
+expected_text = "NOAA"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-12"
+category = "government"
+url = "https://www.weather.gov/"
+expected_text = "National Weather Service"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-13"
+category = "government"
+url = "https://www.canada.ca/en.html"
+expected_text = "Canada"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "000"
+
+[[entry]]
+id = "government-14"
+category = "government"
+url = "https://www.australia.gov.au/"
+expected_text = "australia.gov.au"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-15"
+category = "government"
+url = "https://www.digital.go.jp/"
+expected_text = "デジタル庁"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-16"
+category = "government"
+url = "https://www.kantei.go.jp/"
+expected_text = "首相官邸"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-17"
+category = "government"
+url = "https://www.mhlw.go.jp/"
+expected_text = "厚生労働省"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-18"
+category = "government"
+url = "https://europa.eu/european-union/index_en"
+expected_text = "European Union"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-19"
+category = "government"
+url = "https://www.bundesregierung.de/"
+expected_text = "Bundesregierung"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-20"
+category = "government"
+url = "https://www.service-public.fr/"
+expected_text = "Service-Public"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-21"
+category = "government"
+url = "https://www.govt.nz/"
+expected_text = "New Zealand Government"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-22"
+category = "government"
+url = "https://www.sec.gov/"
+expected_text = "SEC"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "government-23"
+category = "government"
+url = "https://www.irs.gov/"
+expected_text = "IRS"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-24"
+category = "government"
+url = "https://www.loc.gov/"
+expected_text = "Library of Congress"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "government-25"
+category = "government"
+url = "https://www.archives.gov/"
+expected_text = "National Archives"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-01"
+category = "news"
+url = "https://www.bbc.com/news"
+expected_text = "BBC"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-02"
+category = "news"
+url = "https://www.reuters.com/"
+expected_text = "Reuters"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "401"
+
+[[entry]]
+id = "news-03"
+category = "news"
+url = "https://apnews.com/"
+expected_text = "AP News"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "news-04"
+category = "news"
+url = "https://www.theguardian.com/international"
+expected_text = "Guardian"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-05"
+category = "news"
+url = "https://www.npr.org/"
+expected_text = "NPR"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-06"
+category = "news"
+url = "https://www.aljazeera.com/"
+expected_text = "Al Jazeera"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-07"
+category = "news"
+url = "https://www.nytimes.com/"
+expected_text = "New York Times"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "news-08"
+category = "news"
+url = "https://www.washingtonpost.com/"
+expected_text = "Washington Post"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "000"
+
+[[entry]]
+id = "news-09"
+category = "news"
+url = "https://www.cnn.com/"
+expected_text = "CNN"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-10"
+category = "news"
+url = "https://www.nhk.or.jp/"
+expected_text = "NHK"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-11"
+category = "news"
+url = "https://www.asahi.com/"
+expected_text = "朝日新聞"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-12"
+category = "news"
+url = "https://www.lemonde.fr/"
+expected_text = "Le Monde"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-13"
+category = "news"
+url = "https://www.spiegel.de/"
+expected_text = "SPIEGEL"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-14"
+category = "news"
+url = "https://www.theverge.com/"
+expected_text = "The Verge"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-15"
+category = "news"
+url = "https://arstechnica.com/"
+expected_text = "Ars Technica"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-16"
+category = "news"
+url = "https://techcrunch.com/"
+expected_text = "TechCrunch"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-17"
+category = "news"
+url = "https://news.ycombinator.com/"
+expected_text = "Hacker News"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-18"
+category = "news"
+url = "https://lwn.net/"
+expected_text = "LWN"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-19"
+category = "news"
+url = "https://www.economist.com/"
+expected_text = "Economist"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "news-20"
+category = "news"
+url = "https://www.ft.com/"
+expected_text = "Financial Times"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "news-21"
+category = "news"
+url = "https://www.bloomberg.com/"
+expected_text = "Bloomberg"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "news-22"
+category = "news"
+url = "https://www.wired.com/"
+expected_text = "WIRED"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-23"
+category = "news"
+url = "https://www.nikkei.com/"
+expected_text = "日本経済新聞"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-24"
+category = "news"
+url = "https://www.cbc.ca/news"
+expected_text = "CBC"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "news-25"
+category = "news"
+url = "https://www.abc.net.au/news"
+expected_text = "ABC"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-01"
+category = "commerce"
+url = "https://books.toscrape.com/"
+expected_text = "All products"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-02"
+category = "commerce"
+url = "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html"
+expected_text = "A Light in the Attic"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-03"
+category = "commerce"
+url = "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"
+expected_text = "Travel"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-04"
+category = "commerce"
+url = "https://webscraper.io/test-sites/e-commerce/allinone"
+expected_text = "Test Sites"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-05"
+category = "commerce"
+url = "https://webscraper.io/test-sites/e-commerce/static"
+expected_text = "Test Sites"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-06"
+category = "commerce"
+url = "https://www.scrapingcourse.com/ecommerce/"
+expected_text = "Ecommerce"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-07"
+category = "commerce"
+url = "https://www.amazon.com/dp/B08N5WRWNW"
+expected_text = "Amazon"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-08"
+category = "commerce"
+url = "https://www.ebay.com/"
+expected_text = "eBay"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "commerce-09"
+category = "commerce"
+url = "https://www.etsy.com/"
+expected_text = "Etsy"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "commerce-10"
+category = "commerce"
+url = "https://www.walmart.com/"
+expected_text = "Walmart"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-11"
+category = "commerce"
+url = "https://www.target.com/"
+expected_text = "Target"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-12"
+category = "commerce"
+url = "https://www.bestbuy.com/"
+expected_text = "Best Buy"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "000"
+
+[[entry]]
+id = "commerce-13"
+category = "commerce"
+url = "https://www.ikea.com/us/en/"
+expected_text = "IKEA"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-14"
+category = "commerce"
+url = "https://www.rakuten.co.jp/"
+expected_text = "楽天"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-15"
+category = "commerce"
+url = "https://www.mercari.com/"
+expected_text = "Mercari"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "commerce-16"
+category = "commerce"
+url = "https://www.aliexpress.com/"
+expected_text = "AliExpress"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-17"
+category = "commerce"
+url = "https://www.zalando.de/"
+expected_text = "Zalando"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "commerce-18"
+category = "commerce"
+url = "https://www.newegg.com/"
+expected_text = "Newegg"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "commerce-19"
+category = "commerce"
+url = "https://www.costco.com/"
+expected_text = "Costco"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-20"
+category = "commerce"
+url = "https://www.homedepot.com/"
+expected_text = "Home Depot"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-21"
+category = "commerce"
+url = "https://store.steampowered.com/"
+expected_text = "Steam"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-22"
+category = "commerce"
+url = "https://www.apple.com/shop/buy-mac"
+expected_text = "Mac"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-23"
+category = "commerce"
+url = "https://www.nike.com/"
+expected_text = "Nike"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "commerce-24"
+category = "commerce"
+url = "https://www.lego.com/en-us"
+expected_text = "LEGO"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "commerce-25"
+category = "commerce"
+url = "https://www.shopify.com/"
+expected_text = "Shopify"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-01"
+category = "js-rendered"
+url = "https://quotes.toscrape.com/js/"
+expected_text = "Albert Einstein"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-02"
+category = "js-rendered"
+url = "https://quotes.toscrape.com/js-delayed/"
+expected_text = "Albert Einstein"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-03"
+category = "js-rendered"
+url = "https://quotes.toscrape.com/scroll"
+expected_text = "Quotes to Scrape"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-04"
+category = "js-rendered"
+url = "https://webscraper.io/test-sites/e-commerce/ajax"
+expected_text = "Test Sites"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-05"
+category = "js-rendered"
+url = "https://webscraper.io/test-sites/e-commerce/scroll"
+expected_text = "Test Sites"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-06"
+category = "js-rendered"
+url = "https://www.scrapingcourse.com/javascript-rendering"
+expected_text = "Hoodie"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-07"
+category = "js-rendered"
+url = "https://www.scrapingcourse.com/infinite-scrolling"
+expected_text = "Hoodie"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-08"
+category = "js-rendered"
+url = "https://www.scrapingcourse.com/button-click"
+expected_text = "Hoodie"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-09"
+category = "js-rendered"
+url = "https://react.dev/"
+expected_text = "React"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-10"
+category = "js-rendered"
+url = "https://vuejs.org/"
+expected_text = "Vue.js"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-11"
+category = "js-rendered"
+url = "https://angular.dev/"
+expected_text = "Angular"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-12"
+category = "js-rendered"
+url = "https://svelte.dev/"
+expected_text = "Svelte"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-13"
+category = "js-rendered"
+url = "https://nextjs.org/"
+expected_text = "Next.js"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-14"
+category = "js-rendered"
+url = "https://www.youtube.com/"
+expected_text = "YouTube"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-15"
+category = "js-rendered"
+url = "https://x.com/"
+expected_text = "X"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-16"
+category = "js-rendered"
+url = "https://www.reddit.com/r/rust/"
+expected_text = "rust"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-17"
+category = "js-rendered"
+url = "https://github.com/D4Vinci/Scrapling"
+expected_text = "Scrapling"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "js-rendered-18"
+category = "js-rendered"
+url = "https://www.figma.com/"
+expected_text = "Figma"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-19"
+category = "js-rendered"
+url = "https://www.notion.com/"
+expected_text = "Notion"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-20"
+category = "js-rendered"
+url = "https://www.airbnb.com/"
+expected_text = "Airbnb"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-21"
+category = "js-rendered"
+url = "https://www.booking.com/"
+expected_text = "Booking.com"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "202"
+
+[[entry]]
+id = "js-rendered-22"
+category = "js-rendered"
+url = "https://www.google.com/maps"
+expected_text = "Google Maps"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "429"
+
+[[entry]]
+id = "js-rendered-23"
+category = "js-rendered"
+url = "https://www.instagram.com/"
+expected_text = "Instagram"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-24"
+category = "js-rendered"
+url = "https://www.linkedin.com/"
+expected_text = "LinkedIn"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "js-rendered-25"
+category = "js-rendered"
+url = "https://www.spotify.com/"
+expected_text = "Spotify"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "bot-challenge-01"
+category = "bot-challenge"
+url = "https://www.scrapingcourse.com/cloudflare-challenge"
+expected_text = "You bypassed the Cloudflare challenge"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "bot-challenge-02"
+category = "bot-challenge"
+url = "https://www.scrapingcourse.com/antibot-challenge"
+expected_text = "You bypassed the Antibot challenge"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "bot-challenge-03"
+category = "bot-challenge"
+url = "https://www.scrapingcourse.com/login/csrf"
+expected_text = "Login"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "bot-challenge-04"
+category = "bot-challenge"
+url = "https://nowsecure.nl/"
+expected_text = "NOWSECURE by nodriver"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "bot-challenge-05"
+category = "bot-challenge"
+url = "https://bot.sannysoft.com/"
+expected_text = "WebDriver"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "bot-challenge-06"
+category = "bot-challenge"
+url = "https://abrahamjuliot.github.io/creepjs/"
+expected_text = "creep"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "bot-challenge-07"
+category = "bot-challenge"
+url = "https://www.browserscan.net/bot-detection"
+expected_text = "BrowserScan"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "bot-challenge-08"
+category = "bot-challenge"
+url = "https://pixelscan.net/"
+expected_text = "Pixelscan"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "bot-challenge-09"
+category = "bot-challenge"
+url = "https://bot-detector.rebrowser.net/"
+expected_text = "rebrowser"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "bot-challenge-10"
+category = "bot-challenge"
+url = "https://fingerprint.com/products/bot-detection/"
+expected_text = "Bot Detection"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "bot-challenge-11"
+category = "bot-challenge"
+url = "https://www.g2.com/"
+expected_text = "G2"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "bot-challenge-12"
+category = "bot-challenge"
+url = "https://www.zillow.com/"
+expected_text = "Zillow"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "bot-challenge-13"
+category = "bot-challenge"
+url = "https://www.indeed.com/"
+expected_text = "Indeed"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "bot-challenge-14"
+category = "bot-challenge"
+url = "https://www.glassdoor.com/"
+expected_text = "Glassdoor"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "bot-challenge-15"
+category = "bot-challenge"
+url = "https://www.crunchbase.com/"
+expected_text = "Crunchbase"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "bot-challenge-16"
+category = "bot-challenge"
+url = "https://www.tripadvisor.com/"
+expected_text = "Tripadvisor"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "bot-challenge-17"
+category = "bot-challenge"
+url = "https://www.yelp.com/"
+expected_text = "Yelp"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "bot-challenge-18"
+category = "bot-challenge"
+url = "https://www.ticketmaster.com/"
+expected_text = "Ticketmaster"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "bot-challenge-19"
+category = "bot-challenge"
+url = "https://www.stubhub.com/"
+expected_text = "StubHub"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "bot-challenge-20"
+category = "bot-challenge"
+url = "https://www.wayfair.com/"
+expected_text = "Wayfair"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "bot-challenge-21"
+category = "bot-challenge"
+url = "https://www.kayak.com/"
+expected_text = "KAYAK"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "bot-challenge-22"
+category = "bot-challenge"
+url = "https://www.expedia.com/"
+expected_text = "Expedia"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "429"
+
+[[entry]]
+id = "bot-challenge-23"
+category = "bot-challenge"
+url = "https://www.realtor.com/"
+expected_text = "realtor"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "429"
+
+[[entry]]
+id = "bot-challenge-24"
+category = "bot-challenge"
+url = "https://www.medium.com/"
+expected_text = "Medium"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "bot-challenge-25"
+category = "bot-challenge"
+url = "https://www.quora.com/"
+expected_text = "Quora"
+min_text_chars = 200
+allowed_status = [200]
+needs_js = true
+timeout_s = 45
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "other-01"
+category = "other"
+url = "https://example.com/"
+expected_text = "Example Domain"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-02"
+category = "other"
+url = "https://httpbin.org/html"
+expected_text = "Herman Melville"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-03"
+category = "other"
+url = "https://www.iana.org/"
+expected_text = "IANA"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-04"
+category = "other"
+url = "https://www.w3.org/"
+expected_text = "W3C"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-05"
+category = "other"
+url = "https://www.debian.org/"
+expected_text = "Debian"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-06"
+category = "other"
+url = "https://www.kernel.org/"
+expected_text = "Linux Kernel"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-07"
+category = "other"
+url = "https://www.mozilla.org/en-US/"
+expected_text = "Mozilla"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-08"
+category = "other"
+url = "https://www.python.org/"
+expected_text = "Python"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-09"
+category = "other"
+url = "https://www.rust-lang.org/"
+expected_text = "Rust"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-10"
+category = "other"
+url = "https://crates.io/"
+expected_text = "crates.io"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "404"
+
+[[entry]]
+id = "other-11"
+category = "other"
+url = "https://pypi.org/project/scrapling/"
+expected_text = "scrapling"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-12"
+category = "other"
+url = "https://www.npmjs.com/package/react"
+expected_text = "react"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "other-13"
+category = "other"
+url = "https://stackoverflow.com/questions/tagged/rust"
+expected_text = "rust"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "other-14"
+category = "other"
+url = "https://www.openstreetmap.org/"
+expected_text = "OpenStreetMap"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-15"
+category = "other"
+url = "https://archive.org/"
+expected_text = "Internet Archive"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-16"
+category = "other"
+url = "https://www.craigslist.org/about/sites"
+expected_text = "craigslist"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-17"
+category = "other"
+url = "https://www.imdb.com/title/tt0111161/"
+expected_text = "Shawshank"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "202"
+
+[[entry]]
+id = "other-18"
+category = "other"
+url = "https://www.goodreads.com/"
+expected_text = "Goodreads"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "202"
+
+[[entry]]
+id = "other-19"
+category = "other"
+url = "https://www.allrecipes.com/"
+expected_text = "Allrecipes"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "402"
+
+[[entry]]
+id = "other-20"
+category = "other"
+url = "https://www.weather.com/"
+expected_text = "weather"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-21"
+category = "other"
+url = "https://www.speedtest.net/"
+expected_text = "Speedtest"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-22"
+category = "other"
+url = "https://duckduckgo.com/html/?q=scrapling"
+expected_text = "scrapling"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-23"
+category = "other"
+url = "https://lite.duckduckgo.com/lite/?q=rust"
+expected_text = "rust"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = false
+privacy_class = "public"
+validated_2026_11_03 = "200"
+
+[[entry]]
+id = "other-24"
+category = "other"
+url = "https://www.timeanddate.com/worldclock/"
+expected_text = "World Clock"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "403"
+
+[[entry]]
+id = "other-25"
+category = "other"
+url = "https://quotes.toscrape.com/"
+expected_text = "Quotes to Scrape"
+min_text_chars = 100
+allowed_status = [200]
+needs_js = false
+timeout_s = 30
+allowed_for_testing = true
+privacy_class = "public"
+validated_2026_11_03 = "200"

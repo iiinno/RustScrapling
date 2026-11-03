@@ -1,0 +1,86 @@
+name: G-04 corpus comparison (manual)
+
+# Plan G-04: same-day, same-runner success-rate comparison of RustScrapling
+# and the pinned upstream Scrapling v0.5 on bench/corpus.toml. Manual only:
+# it sends a few hundred low-rate requests to public sites. Raw outcomes are
+# uploaded as an artifact; nothing is published elsewhere.
+
+on:
+  # One run per corpus/runner change on the integration branch (restricted
+  # entries excluded); otherwise manual.
+  push:
+    branches: [claude/laughing-clarke-xb55gw]
+    paths: [bench/corpus.toml, bench/compare_corpus.py, .github/workflows/g04-corpus.yml]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "static, browser or both"
+        required: true
+        default: both
+        type: choice
+        options: [static, browser, both]
+      include_restricted:
+        description: "Also fetch entries with allowed_for_testing = false (owner decision)"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact upstream Scrapling v0.5 source
+        uses: actions/checkout@v4
+        with:
+          repository: D4Vinci/Scrapling
+          ref: 95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0
+          path: upstream-scrapling
+          persist-credentials: false
+      - name: Install native dependencies
+        run: sudo apt-get update && sudo apt-get install -y libxml2-dev clang pkg-config
+      - name: Install Rust stable
+        run: rustup toolchain install stable --profile minimal
+      - name: Build RustScrapling release binary
+        run: cargo +stable build --release --locked -p rustscrapling-cli
+      - name: Install upstream into an isolated venv
+        run: |
+          python3 -m venv "$RUNNER_TEMP/upstream-venv"
+          "$RUNNER_TEMP/upstream-venv/bin/pip" install --quiet "./upstream-scrapling[shell]"
+          "$RUNNER_TEMP/upstream-venv/bin/patchright" install --with-deps chromium
+      - name: Record environment
+        run: |
+          uname -a; nproc; free -m
+          /usr/bin/google-chrome --version
+          "$RUNNER_TEMP/upstream-venv/bin/pip" freeze | grep -iE "scrapling|curl.cffi|patchright|playwright"
+      - name: Static mode
+        if: github.event_name == 'push' || inputs.mode != 'browser'
+        run: >
+          python3 bench/compare_corpus.py --mode static
+          --rust target/release/rustscrapling --upstream upstream-scrapling
+          --upstream-python "$RUNNER_TEMP/upstream-venv/bin/python"
+          --out corpus-static.jsonl
+          ${{ inputs.include_restricted && '--include-restricted' || '' }}
+          | tee corpus-static-summary.json
+      - name: Browser mode
+        if: github.event_name == 'push' || inputs.mode != 'static'
+        run: >
+          python3 bench/compare_corpus.py --mode browser --chrome /usr/bin/google-chrome
+          --rust target/release/rustscrapling --upstream upstream-scrapling
+          --upstream-python "$RUNNER_TEMP/upstream-venv/bin/python"
+          --out corpus-browser.jsonl
+          ${{ inputs.include_restricted && '--include-restricted' || '' }}
+          | tee corpus-browser-summary.json
+      - name: Upload raw outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g04-corpus-${{ github.sha }}
+          path: corpus-*.json*
+          retention-days: 30
