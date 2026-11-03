@@ -482,16 +482,14 @@ impl HttpClient {
             .await;
             match result {
                 Ok(Ok(response)) => {
-                    if self.options.protocol == Protocol::Http3Only
+                    if (self.options.protocol == Protocol::Http3Only
                         || !self.options.follow_redirects
-                        || !(300..=399).contains(&response.status)
-                    {
-                        if self.options.protocol == Protocol::Http3Only
+                        || !(300..=399).contains(&response.status))
+                        && (self.options.protocol == Protocol::Http3Only
                             || !retry_allowed
-                            || !matches!(response.status, 408 | 429 | 500 | 502 | 503 | 504)
-                        {
-                            return Ok(response);
-                        }
+                            || !matches!(response.status, 408 | 429 | 500 | 502 | 503 | 504))
+                    {
+                        return Ok(response);
                     }
                 }
                 Ok(Err(error)) if self.options.protocol == Protocol::Http3Only => {

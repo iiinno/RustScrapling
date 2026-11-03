@@ -525,7 +525,6 @@ async fn write_state_file(path: &Path, state: &BrowserState) -> Result<(), Brows
     {
         options.mode(0o600);
     }
-    let path = path.as_ref();
     let mut file = options
         .open(path)
         .await

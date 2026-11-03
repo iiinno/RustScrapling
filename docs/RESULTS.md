@@ -1,5 +1,14 @@
 # RESULTS.md: 測定と検証の結果
 
+## 2026-11-03 継続開発・追加機能の統合再検証
+
+- 統合ブランチ `integration/plan-v2-recovered` に HTTP入力検査、ExtractのURL credential秘匿、crawler大量リンク上限/HTML base URL、daemon CLI再起動E2E、BrowserState v2(現行トップレベルoriginのlocalStorage) を統合。WSL2 Ubuntu 24.04 / Rust 1.99.1 / Debug test / `CARGO_BUILD_JOBS=2`で `cargo test --workspace --lib --tests --locked --offline` の**終了コード0**を確認。ビルド時に一度見つかったbrowser stateファイル書込関数の型推論エラーを修正してから再実行した結果。
+- `cargo test -p rustscrapling-extract --locked --offline` で6件PASS、`cargo test -p rustscrapling-spider --locked --offline` で11件PASS。HttpClientで認証情報を含むURLを拒否、retries>10を拒否するテストを追加。クローラは2,000リンクを含むページでもmax_pages=3の訪問数・キューを守るテスト、およびHTML `<base href>` の相対URL解決試験を追加。
+- daemon CLIは別プロセスから start/get/auto/stop と再起動後SQLite復元/304を試験。MCP mock CDPはcookie/localStorage保存・復元(v1/v2)、別origin拒否とPNG/JPEG撮影を確認。これらはlocalhost/CDPモックの検証であり、外部サイトやChrome実機成功率の証明ではない。
+- `cargo test -p rustscrapling-cli --test daemon_commands --locked --offline` は4/4 PASS、`cargo test -p rustscrapling-mcp --test mock_cdp --locked --offline` は1/1 PASS、`cargo test -p rustscrapling-http --test http_local --locked --offline` は8/8 PASS。前者は実CLIプロセス/localhostサーバを用い、後者はモックCDPとlocalhost HTTPサーバを使う。
+- 最新のDebug CLIを `cargo build -p rustscrapling-cli --locked --offline` でビルド後、`python3 tests/e2e_local.py /root/rustscrapling-target/debug/rustscrapling` は6/6 PASS。`python3 scripts/stress_local.py /root/rustscrapling-target/debug/rustscrapling` はlocalhost固定150ページ、並列8、**0.877秒、最大RSS24.82MiB、チェックポイント再開0.039秒**。Windows 11のWSL2 Ubuntu 24.04、Rust 1.99.1、他の並行作業がありうる環境での1回測定。本家との同条件比較や外部サイトの成功率ではない。
+- 大規模サイト約200件の本家との同条件成功率比較、HTTP3外部接続の定期検証、24時間安定性、実Chromeでの新しいlocalStorage機能E2Eは未実施。旧値0.79秒と新値0.877秒を速度改善/悪化の証明として比較しない。
+
 ## 2026-11-03 引き継ぎ統合後ワークスペース再検証
 
 - `integration/plan-v2-recovered` にクローラ修正、SQLite永続化、MCP Cookie state・CDP screenshotとmock CDP試験を統合した後、WSL2 Ubuntu 24.04（Rust 1.99.1、`CARGO_TARGET_DIR=/root/rustscrapling-target`、`CARGO_BUILD_JOBS=2`）で `cargo test --workspace --lib --tests --locked --offline` を実行し **終了コード0** を確認。既存テストと追加テストを通過した。
