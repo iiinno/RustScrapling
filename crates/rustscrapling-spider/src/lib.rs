@@ -314,6 +314,16 @@ pub fn page_links(base: &str, html: &str) -> Vec<String> {
 /// the crawl queue. A large sitemap-like HTML page can otherwise exhaust
 /// memory even when the crawl specification requests only a few pages.
 fn page_links_limited(base: &str, html: &str, limit: usize) -> Vec<String> {
+    page_links_filtered(base, html, limit, |_| true)
+}
+
+/// Count only eligible new links towards the frontier budget. Applying the
+/// limit before allowed-domain and visited checks can silently discard useful
+/// links when a page starts with navigation to other domains or old pages.
+fn page_links_filtered<F>(base: &str, html: &str, limit: usize, mut eligible: F) -> Vec<String>
+where
+    F: FnMut(&Url) -> bool,
+{
     if limit == 0 {
         return Vec::new();
     }
@@ -352,6 +362,9 @@ fn page_links_limited(base: &str, html: &str, limit: usize) -> Vec<String> {
             continue;
         }
         url.set_fragment(None);
+        if !eligible(&url) {
+            continue;
+        }
         let value = url.to_string();
         if seen.insert(value.clone()) {
             links.push(value);
@@ -543,12 +556,17 @@ where
                         && response.content_type.contains("html")
                         && depth < spec.max_depth
                     {
-                        page_links_limited(
+                        page_links_filtered(
                             &response.url,
                             &response.body,
                             spec.max_pages
                                 .saturating_sub(visited.len())
                                 .saturating_sub(queue.len()),
+                            |candidate| {
+                                host_allowed(spec, candidate)
+                                    && !visited.contains(&key(candidate.as_str()))
+                                    && !queued.contains(&key(candidate.as_str()))
+                            },
                         )
                     } else {
                         Vec::new()
@@ -831,6 +849,55 @@ mod tests {
         assert_eq!(visited.len(), 3);
         assert!(visited[1].ends_with("/page/0"));
         assert!(visited[2].ends_with("/page/1"));
+    }
+
+    struct FrontLoadedNavigation;
+
+    impl Fetcher for FrontLoadedNavigation {
+        fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
+            Box::pin(async move {
+                let body = if url.ends_with("/start") {
+                    let mut links = (0..400)
+                        .map(|id| format!("<a href='https://outside.example/{id}'>external</a>"))
+                        .collect::<String>();
+                    links.push_str(&"<a href='/start'>already visited</a>".repeat(400));
+                    links.push_str("<a href='/target'>wanted link</a>");
+                    links
+                } else {
+                    "<p>target found</p>".to_owned()
+                };
+                Ok(FetchPage {
+                    status: 200,
+                    url: url.to_owned(),
+                    content_type: "text/html".into(),
+                    body,
+                })
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn link_budget_skips_external_and_visited_links_before_counting() {
+        let spec = CrawlSpec {
+            start_urls: vec!["https://example.com/start".into()],
+            max_pages: 2,
+            max_depth: 1,
+            concurrency: 1,
+            ..CrawlSpec::default()
+        };
+        let mut emitted = Vec::new();
+        let result = crawl(&spec, Arc::new(FrontLoadedNavigation), |item| {
+            emitted.push(item.clone());
+            Ok(())
+        })
+        .await
+        .unwrap();
+        assert_eq!(result.successful, 2);
+        assert_eq!(result.visited, 2);
+        assert_eq!(result.remaining, 0);
+        assert_eq!(emitted.len(), 2);
+        assert_eq!(emitted[0].links, vec!["https://example.com/target"]);
+        assert_eq!(emitted[1].url, "https://example.com/target");
     }
 
     #[test]
