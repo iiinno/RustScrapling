@@ -18,6 +18,7 @@ use crate::dict::{py_strip, ElementDict, SibTag};
 use crate::seqmatch::{py_round2, seq_ratio, str_ratio, SequenceMatcher};
 
 type AttrView<'a> = smallvec::SmallVec<[(&'a str, &'a str); 8]>;
+type ParentStats = (f64, f64, Option<f64>, u32);
 
 fn dict_diff_views(dict1: &AttrView, dict2: &AttrView) -> f64 {
     let keys1: smallvec::SmallVec<[&str; 8]> = dict1.iter().map(|(k, _)| *k).collect();
@@ -48,7 +49,7 @@ enum SibRef<'a> {
 pub struct ScoreCaches<'a> {
     /// Parent stage components by candidate-parent node:
     /// (tag ratio, attributes dict diff, parent text ratio, checks).
-    parents: Mutex<HashMap<Option<NodeId>, (f64, f64, Option<f64>, u32)>>,
+    parents: Mutex<HashMap<Option<NodeId>, ParentStats>>,
     /// Siblings ratio by the candidate's sibling list.
     siblings: Mutex<HashMap<Vec<SibRef<'a>>, f64>>,
 }
@@ -95,7 +96,7 @@ fn raw_attr_view<'a>(dom: &'a Dom, id: NodeId) -> AttrView<'a> {
 
 /// element_to_dict's text field as a borrowed slice: the element's own
 /// text stripped, or "" when there is none.
-fn text_view<'a>(dom: &'a Dom, id: NodeId) -> &'a str {
+fn text_view(dom: &Dom, id: NodeId) -> &str {
     match dom.text(id) {
         Some(t) if !t.is_empty() => py_strip(t),
         _ => "",
@@ -378,6 +379,10 @@ fn get_attributes<'a>(dom: &'a Dom, id: NodeId, ignore: &[&str]) -> AttrView<'a>
 }
 
 /// Port of `Selector.__are_alike`.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "preserve upstream similarity scoring inputs without an allocation-heavy context object"
+)]
 fn are_alike<'a>(
     dom: &'a Dom,
     original: NodeId,

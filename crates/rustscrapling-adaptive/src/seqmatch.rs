@@ -20,11 +20,17 @@ use std::hash::Hash;
 
 use smallvec::SmallVec;
 
+type LinearIndex<'a, T> = SmallVec<[(&'a T, SmallVec<[usize; 16]>); 8]>;
+
 /// Index of b's elements. A linear list for small inputs (the common
 /// case in adaptive scoring: attribute values, tag paths), a hash map
 /// for large ones. Lookup results are identical either way.
+#[expect(
+    clippy::large_enum_variant,
+    reason = "inline small-input index avoids heap allocation in the hot similarity path"
+)]
 enum B2J<'a, T> {
-    Linear(SmallVec<[(&'a T, SmallVec<[usize; 16]>); 8]>),
+    Linear(LinearIndex<'a, T>),
     Hashed(HashMap<&'a T, Vec<usize>>),
 }
 
@@ -84,7 +90,7 @@ impl<'a, T: Eq + Hash> SequenceMatcher<'a, T> {
         // Small inputs: build the linear index directly (no hash map
         // round-trip). The purge, when active, drops over-popular keys.
         if b.len() <= 256 {
-            let mut entries: SmallVec<[(&T, SmallVec<[usize; 16]>); 8]> = SmallVec::new();
+            let mut entries: LinearIndex<'_, T> = SmallVec::new();
             for (i, elt) in b.iter().enumerate() {
                 match entries.iter_mut().find(|(k, _)| *k == elt) {
                     Some((_, idxs)) => idxs.push(i),
@@ -176,7 +182,7 @@ impl<'a, T: Eq + Hash> SequenceMatcher<'a, T> {
             (&mut rows_l[0], &mut rows_r[0]);
         let (mut tcur, mut tnxt): (&mut SmallVec<[usize; 64]>, &mut SmallVec<[usize; 64]>) =
             (&mut tch_l[0], &mut tch_r[0]);
-        for i in alo..ahi {
+        for (i, &ch) in a.iter().enumerate().take(ahi).skip(alo) {
             tnxt.clear();
             if let Some(indices) = self.b2j.get(&self.a[i]) {
                 for &j in indices {
@@ -373,7 +379,7 @@ fn tiny_ratio(a: &[char], b: &[char]) -> f64 {
         for i in alo..ahi {
             let ni = 1 - ci;
             ntch[ni] = 0;
-            for &j in find_indices(a[i]) {
+            for &j in find_indices(ch) {
                 if j < blo {
                     continue;
                 }
@@ -390,8 +396,7 @@ fn tiny_ratio(a: &[char], b: &[char]) -> f64 {
                     bestsize = k;
                 }
             }
-            for t in 0..ntch[ci] {
-                let j = tch[ci][t];
+            for &j in tch[ci].iter().take(ntch[ci]) {
                 bufs[ci][j] = 0;
             }
             ci = ni;
