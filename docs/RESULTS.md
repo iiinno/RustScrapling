@@ -15,6 +15,12 @@
 | `29ae0df` | G-05/G-08 150×8 | `bench/compare_local_crawl.py`（本家側`allowed_domains`がポート付きnetloc比較である点を修正後、交互5回）：遅延0/50/200msでRust 0.105/1.097/4.114s・RSS≤18.0MiB、本家0.687/1.692/4.665s・53.9MiB、双方150/150。生データ`bench/results/local_crawl_150x8_29ae0df.json` |
 | `e90421c` | 依存脆弱性 | `cargo audit`（RustSec 1403件）：zip 2.6.1に4件＋rustls-pemfile unmaintained→zip 9.3.0・pki-types PEMへ移行し`--deny warnings`で0件 |
 | `5a6a4c5`（Rust部は`29ae0df`と同一） | release smoke | `scripts/release_smoke.sh`：19サブコマンド`--help`、localhost E2E 6/6、shell・install dry-run、SHA-256 `feb1cefc…40f8`（26,636,920 bytes） |
+| `3885a41` | G-07 抽出品質 | `bench/eval_extraction.py`（自作注釈8ページ）：Rust移植/Rust独自抽出とも評価対象語保持率100%、全ページ文字数≤本家、非表示注入・script混入0（本家は8/8で非表示注入混入→D-013） |
+| `6816226` | 本家`extract` CLI | `oracle/extract_cli_oracle.py`で本家CLIの13出力を記録→`cli/tests/extract_command.rs`で**13/13バイト一致**（初回差分2件＝make_requestの文字列data Content-Typeとcookie順を修正） |
+| `b743194` | MCP streamable-HTTP | `mcp --http`：token必須（本家同文で拒否）、401/WWW-Authenticate、/mcp以外404、Host不一致403、initialize→tools/list(16)→tools/call |
+| `c13af9a` | D-014 SSRF方針 | `mcp/tests/network_policy.rs` PASS。全workspace 166 PASS・0 FAIL・9 ignored（ディスク逼迫で一度ビルド失敗→キャッシュ削除後に再実行） |
+| `77e5339`→`3885a41` CI | chrome-matrix（GitHub runner、非root、Xvfb） | CfT 155/156 とも browser 5/5・MCP 16/16・headless再利用・shell fetchはPASS、**headed再利用がround 1で決定的にFAIL**（clickが無言で無効）。ローカルで非root＋Mesaシェーダキャッシュ消去により3/3再現 |
+| `1ec8557` | D-015 クリック配送確認 | 修正後コールド非root headed 3/3 PASS（各10ラウンド）、全workspace 166 PASS・0 FAIL、Chrome 156マトリクス（headed/headless再利用・extract fetch含む）全PASS。CIでの再確認待ち |
 | `373acff` | CI run 19–23の失敗原因 | すべて`test_rust_catalog_and_rust_backend_unchanged`のみ（監査がRust関数の行番号を索引するため）。Rust/実Chromeジョブは成功。`audit_parity.py`再生成、`scripts/quick_checks.sh`を追加 |
 
 ## 2026-11-03 後継セッション: Issue #1修正・2ブランチ統合・browser_actions全12種
