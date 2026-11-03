@@ -8,6 +8,29 @@ permissions:
   contents: read
 
 jobs:
+  upstream-parity:
+    name: Python v0.5 API and MCP parity snapshots
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout RustScrapling
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact upstream Scrapling v0.5 source
+        uses: actions/checkout@v4
+        with:
+          repository: D4Vinci/Scrapling
+          ref: 95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0
+          path: upstream-scrapling
+          persist-credentials: false
+      - name: Run dependency-free source inventory regression tests
+        run: python3 -m unittest discover -s tests -p test_m0_inventory.py -v
+      - name: Ensure pinned upstream inventory is reproducible
+        run: python3 oracle/inventory_upstream.py --upstream upstream-scrapling --out docs/compat --check
+      - name: Verify Rust API and MCP static audit snapshots
+        run: python3 oracle/audit_parity.py --check
+
   linux:
     name: Rust / Ubuntu 24.04
     runs-on: ubuntu-24.04
