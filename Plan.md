@@ -10,11 +10,23 @@
 - RustScrapling の担当：PageSift が失敗した「難しいページ」（ボット対策・JS描画）を、Obscura より前に救うこと。通常ページは PageSift の仕事。
 - 「完成」の定義：§3 の必須修正が入り、Router の `fetch-v1` から呼ばれ、失敗が型付きで返り、Router 側 Phase 6 の独立回帰試験（重要実サイトの取得件数・エラー率・リソース比較）を通ること。
 
-### 所有者に判断してもらう点（エージェントが勝手に決めない）
-1. **フォールバック条件**：現在の Router `fetch_routed` は PageSift が **4xx（403含む）だと FORBIDDEN を返しフォールバックしない**（BAD_GATEWAY のときだけ Obscura へ）。ボット対策の 403 こそ RustScrapling が救う対象なので、`fetch-v1` では「PageSift の 403/429/空本文 → RustScrapling」を許すか決める必要がある。
-2. **防御回避の方針**：research-stack の Plan には「Cloudflare 403 は防御回避しない」（alphaXiv）、Obscura は `--obey-robots` で動いている。Scrapling の価値は検出回避だが、どこまで使うか（robots.txt を守るか、`solve_cloudflare` 相当を実装・使用するか）は所有者のポリシーとして明文化してから実装する。
+### 所有者の決定（2026-11-03、確定）
+1. **フォールバック条件**：PageSift が **403・429・空本文** のとき RustScrapling へ回す（Router `fetch_routed` の `auto` 分岐を変更：現在は BAD_GATEWAY のみ Obscura へ）。RustScrapling も失敗したら Obscura。
+2. **防御回避は全部やる**：Scrapling の検出回避機能をすべて実装・使用する（robots.txt は本家同様に既定OFF、Cloudflare 等のチャレンジ突破も実装する）。research-stack の Plan.md にある「Cloudflare 403 は防御回避しない」は所有者の方針ではない（別途 research-stack 側も所有者が修正する）。
+   - 実務上の歯止めとして残すもの（倫理ではなく**ブロック・IP凍結を避けるため**）：ドメイン別の同時数・間隔制御、Retry-After 尊重、無限再試行禁止、チャレンジ失敗時は型付き `blocked` で返す。
+   - 評価用 `bench/corpus.toml` の `allowed_for_testing=false`（59件）も `--include-restricted` で含めてよい。
+
+### 検出回避の実装ワークストリーム（必須修正の後、成功率改善の本体）
+本家（`scrapling/engines/_browsers/`、patchright、browserforge）を読み、同等以上を Rust で。優先順：
+1. **`solve_cloudflare`**：本家の Cloudflare 対応（Turnstile/interstitial の検出 → 待機 → チェックボックスのクリック → 通過確認）を移植。現状 MCP/CLI では `unsupported`。`BrowserPage::run_actions` の click（実ポインタ、D-015 の配送確認付き）を使う。
+2. **patchright 相当の痕跡除去**：本家 patchright が当てるパッチ（CDP 由来の検出点：`Runtime.enable` 回避は済、`navigator.webdriver`、utility world 経由の評価、console/Worker 経由の検出など）を一覧化し、未対応分を CDP 側で再現。
+3. **browserforge 相当の指紋整合**：UA・Client Hints・ヘッダー順・画面・ロケール・タイムゾーンの一貫した組を生成し、HTTP（wreq impersonate）とブラウザで揃える。
+4. 計測：`bench/compare_corpus.py --include-restricted`（直接通信環境、GitHub Actions `g04-corpus.yml`）で本家と比較し、bot-challenge/news カテゴリの差を詰める。
 
 ## 2. 凍結すること（やらない）
+
+（注：検出回避は凍結対象ではない。上の「検出回避の実装ワークストリーム」が成功率改善の本体）
+
 
 本家API 394項目の網羅検証（G-01）、24時間耐久（G-10）、SBOM・脅威モデルの拡充、200URL汎用コーパスで本家に勝つこと（G-04）、バイト一致の追加証明。既存の資産（テスト、`docs/RESULTS.md`、`docs/DECISIONS.md`、CI）は維持するが**増やすことを目的にしない**。CIが壊れたら直す、のみ。
 
