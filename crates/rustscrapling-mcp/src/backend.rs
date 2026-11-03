@@ -4,7 +4,7 @@ use std::{
     collections::{BTreeMap, HashMap, VecDeque},
     path::PathBuf,
     sync::Arc,
-    time::Duration,
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use rmcp::model::{CallToolResult, ContentBlock};
@@ -1540,6 +1540,9 @@ async fn fetch_on_page(
                 )
                 .await;
         }
+        if opt_bool(args, "solve_cloudflare", false)? {
+            solve_cloudflare(page, timeout_ms).await?;
+        }
         let wait = number(args, "wait", 0.0)?;
         if wait > 0.0 {
             sleep(Duration::from_millis(wait as u64)).await;
@@ -1972,9 +1975,219 @@ fn check_challenge(body: &str, status: Option<u16>) -> Result<(), BackendError> 
     }
     Ok(())
 }
+/// Upstream `_detect_cloudflare`: the flavour decides which solve path runs, so
+/// it is read from the document rather than from the status code.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum CloudflareChallenge {
+    NonInteractive,
+    Managed,
+    Interactive,
+    Embedded,
+}
+
+impl CloudflareChallenge {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::NonInteractive => "non-interactive",
+            Self::Managed => "managed",
+            Self::Interactive => "interactive",
+            Self::Embedded => "embedded",
+        }
+    }
+}
+
+const CLOUDFLARE_MAX_ATTEMPTS: u32 = 2;
+
+fn detect_cloudflare(html: &str) -> Option<CloudflareChallenge> {
+    for (needle, challenge) in [
+        (
+            "cType: 'non-interactive'",
+            CloudflareChallenge::NonInteractive,
+        ),
+        ("cType: 'managed'", CloudflareChallenge::Managed),
+        ("cType: 'interactive'", CloudflareChallenge::Interactive),
+    ] {
+        if html.contains(needle) {
+            return Some(challenge);
+        }
+    }
+    if html
+        .to_ascii_lowercase()
+        .contains("challenges.cloudflare.com/turnstile/v")
+    {
+        return Some(CloudflareChallenge::Embedded);
+    }
+    None
+}
+
+/// Port of upstream `_cloudflare_solver`. A cleared challenge returns Ok; one
+/// that survives the retries returns a typed `blocked` error, so a challenge
+/// page can never be reported as a successful fetch.
+async fn solve_cloudflare(page: &BrowserPage, timeout_ms: f64) -> Result<(), BackendError> {
+    let mut attempt = 0;
+    loop {
+        let html = page.source_with_shadow(false).await?;
+        let Some(challenge) = detect_cloudflare(&html) else {
+            return Ok(());
+        };
+        if attempt >= CLOUDFLARE_MAX_ATTEMPTS {
+            return Err(BackendError::new(
+                "blocked",
+                format!(
+                    "Cloudflare {} challenge was not cleared",
+                    challenge.as_str()
+                ),
+            ));
+        }
+        attempt += 1;
+        if challenge == CloudflareChallenge::NonInteractive {
+            wait_for_challenge_clear(page).await?;
+            continue;
+        }
+        match cloudflare_widget_corner(page, challenge).await? {
+            Some((x, y)) => {
+                // Upstream presses 26-28 px right and 25-27 px below the box corner.
+                let point = PointerTarget::Point {
+                    x: x + widget_jitter(26.0),
+                    y: y + widget_jitter(25.0),
+                };
+                let _ = page
+                    .run_actions(
+                        &[BrowserAction::Click {
+                            target: point,
+                            timeout_ms,
+                            button: MouseButton::Left,
+                            click_count: 1,
+                            delay_ms: 150.0,
+                        }],
+                        false,
+                    )
+                    .await;
+                let _ = page
+                    .run_actions(
+                        &[BrowserAction::WaitLoad {
+                            state: LoadState::NetworkIdle,
+                            timeout_ms: 5_000.0,
+                        }],
+                        false,
+                    )
+                    .await;
+            }
+            None => sleep(Duration::from_millis(1_000)).await,
+        }
+        wait_for_challenge_clear(page).await?;
+    }
+}
+
+/// Ten seconds of 100 ms polls, matching upstream's clearance wait.
+async fn wait_for_challenge_clear(page: &BrowserPage) -> Result<(), BackendError> {
+    for _ in 0..100 {
+        if detect_cloudflare(&page.source_with_shadow(false).await?).is_none() {
+            return Ok(());
+        }
+        sleep(Duration::from_millis(100)).await;
+    }
+    Ok(())
+}
+
+/// Upstream jitters each click by 0-2 px so repeated solves are not identical.
+fn widget_jitter(base: f64) -> f64 {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|elapsed| elapsed.subsec_nanos())
+        .unwrap_or_default();
+    base + f64::from(nanos % 3)
+}
+
+/// Top-left corner of the clickable widget in viewport pixels. Turnstile lives in
+/// a cross-origin iframe, so its box is measured from the top document, exactly
+/// as upstream's `frame_element().bounding_box()` does.
+async fn cloudflare_widget_corner(
+    page: &BrowserPage,
+    challenge: CloudflareChallenge,
+) -> Result<Option<(f64, f64)>, BackendError> {
+    const SCRIPT: &str = r#"function(options) {
+        const corner = (element) => {
+            if (!element) return null;
+            const rect = element.getBoundingClientRect();
+            if (!rect.width || !rect.height) return null;
+            return { x: rect.x, y: rect.y };
+        };
+        const frames = [...document.querySelectorAll('iframe')];
+        const turnstile = frames.find((frame) =>
+            (frame.src || '').includes('challenges.cloudflare.com/cdn-cgi/challenge-platform/'));
+        const measured = corner(turnstile);
+        if (measured) return measured;
+        if (options.embedded) return null;
+        const boxes = document.querySelectorAll('.main-content p+div>div>div');
+        return corner(boxes[boxes.length - 1]);
+    }"#;
+    let argument = json!({ "embedded": challenge == CloudflareChallenge::Embedded });
+    let measured = page
+        .evaluate_expression(SCRIPT, Some(&argument), true)
+        .await?;
+    let found = measured
+        .get("x")
+        .and_then(Value::as_f64)
+        .zip(measured.get("y").and_then(Value::as_f64));
+    Ok(found)
+}
+
+#[cfg(test)]
+mod cloudflare_tests {
+    use super::{detect_cloudflare, CloudflareChallenge};
+
+    #[test]
+    fn upstream_ctypes_select_the_matching_solve_path() {
+        assert_eq!(
+            detect_cloudflare("<script>window._cf_chl_opt = {cType: 'non-interactive'}</script>"),
+            Some(CloudflareChallenge::NonInteractive)
+        );
+        assert_eq!(
+            detect_cloudflare("<script>{cType: 'managed'}</script>"),
+            Some(CloudflareChallenge::Managed)
+        );
+        assert_eq!(
+            detect_cloudflare("<script>{cType: 'interactive'}</script>"),
+            Some(CloudflareChallenge::Interactive)
+        );
+    }
+
+    #[test]
+    fn turnstile_script_marks_an_embedded_challenge() {
+        assert_eq!(
+            detect_cloudflare(
+                r#"<script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>"#
+            ),
+            Some(CloudflareChallenge::Embedded)
+        );
+    }
+
+    #[test]
+    fn an_ordinary_page_is_not_a_challenge() {
+        assert_eq!(
+            detect_cloudflare("<html><body><h1>ordinary article</h1></body></html>"),
+            None
+        );
+    }
+
+    #[test]
+    fn the_ctypes_win_over_the_turnstile_script() {
+        // An interactive interstitial also loads the Turnstile script, but
+        // upstream checks cType first so it takes the coordinate-click path.
+        assert_eq!(
+            detect_cloudflare(
+                r#"<script>{cType: 'interactive'}</script><script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>"#
+            ),
+            Some(CloudflareChallenge::Interactive)
+        );
+    }
+}
+
 fn browser_options(args: &Map<String, Value>, once: bool) -> Result<(), BackendError> {
     let _ = once;
-    allow_defaults(args, &[("solve_cloudflare", json!(false))])
+    opt_bool(args, "solve_cloudflare", false)?;
+    Ok(())
 }
 fn default_chrome() -> Option<PathBuf> {
     for var in [
