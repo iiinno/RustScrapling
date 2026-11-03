@@ -14,6 +14,11 @@ async fn chrome_data_url_dom_screenshot_and_explicit_evaluation() {
     assert!(chrome.is_file(), "Chrome binary is missing");
     let mut options = LaunchOptions::new(chrome);
     options.extra_args.push("--no-proxy-server".into());
+    // The integration test uses a new temporary profile, not user credentials.
+    // Match the localhost E2E isolation policy: Chrome 155/156 on this VPS
+    // only complete localhost HTTP navigation with --password-store=basic.
+    // This intentionally does not change BrowserClient production defaults.
+    options.extra_args.push("--password-store=basic".into());
     if std::env::var_os("RUSTSCRAPLING_CHROME_TEST_NO_SANDBOX").is_some() {
         // Only for explicitly opted-in CI/VPS runs on restricted kernels.
         options.extra_args.push("--no-sandbox".into());

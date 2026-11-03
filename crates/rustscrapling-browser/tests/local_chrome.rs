@@ -106,6 +106,12 @@ async fn local_browser_navigation_reuse_external_connection_and_shadow_dom() {
     let mut launch = LaunchOptions::new(chrome);
     // Deterministic loopback E2E must not inherit the desktop's proxy policy.
     launch.extra_args.push("--no-proxy-server".into());
+    // Only this test's disposable Chrome profile uses the basic password store.
+    // Chrome 155/156 stall before sending localhost HTTP requests on this VPS
+    // without this flag; the exact desktop-store failure is not yet proven.
+    // Never apply this flag to production or existing user profiles: it avoids
+    // the platform credential-store encryption.
+    launch.extra_args.push("--password-store=basic".into());
     // On locked-down CI/VPS kernels, Chrome's user-namespace sandbox may be
     // unavailable. This opt-in is exclusively for the localhost E2E fixture;
     // production browser sessions must retain Chrome's sandbox by default.
