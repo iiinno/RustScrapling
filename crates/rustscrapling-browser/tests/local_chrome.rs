@@ -59,11 +59,26 @@ async fn local_browser_navigation_reuse_external_connection_and_shadow_dom() {
                 eprintln!("local Chrome E2E fixture accepted a TCP connection");
             }
             tokio::spawn(async move {
-                let mut bytes = vec![0u8; 8192];
-                let Ok(count) = stream.read(&mut bytes).await else {
-                    return;
-                };
-                let req = String::from_utf8_lossy(&bytes[..count]);
+                let mut request = Vec::new();
+                let mut chunk = [0u8; 2048];
+                while request.len() < 8192 && !request.windows(4).any(|b| b == b"\r\n\r\n") {
+                    let Ok(Ok(count)) =
+                        tokio::time::timeout(Duration::from_secs(5), stream.read(&mut chunk)).await
+                    else {
+                        return;
+                    };
+                    if count == 0 {
+                        return;
+                    }
+                    request.extend_from_slice(&chunk[..count]);
+                }
+                let req = String::from_utf8_lossy(&request);
+                if std::env::var_os("RUSTSCRAPLING_TRACE_CDP_METHODS").is_some() {
+                    eprintln!(
+                        "local Chrome E2E received {} bytes of HTTP headers",
+                        request.len()
+                    );
+                }
                 let first = req.starts_with("GET /first ");
                 let second = req.starts_with("GET /second ");
                 let body = if first {
@@ -83,6 +98,7 @@ async fn local_browser_navigation_reuse_external_connection_and_shadow_dom() {
                 let _ = stream.write_all(header.as_bytes()).await;
                 let _ = stream.write_all(body.as_bytes()).await;
                 let _ = stream.flush().await;
+                let _ = stream.shutdown().await;
             });
         }
     });
