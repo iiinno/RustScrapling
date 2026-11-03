@@ -201,7 +201,14 @@ fn hidden_or_noise(dom: &Dom, root: NodeId) -> HashSet<NodeId> {
         if !node.is_element() {
             continue;
         }
-        if NOISE_TAGS.contains(&node.tag.as_str()) || (id != root && is_hidden_element(dom, id)) {
+        // Beyond upstream (D-013): elements with the HTML `hidden` attribute
+        // are not rendered either, so their text (e.g. hidden prompt
+        // injection) is dropped too. Upstream only drops hidden <slot>s.
+        let hidden_attribute = id != root && dom.attr(id, "hidden").is_some();
+        if NOISE_TAGS.contains(&node.tag.as_str())
+            || (id != root && is_hidden_element(dom, id))
+            || hidden_attribute
+        {
             dropped.insert(id);
         }
     }

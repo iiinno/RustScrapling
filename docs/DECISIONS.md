@@ -95,3 +95,11 @@ Plan.md の「判断済みの事項」は変えていない。ここには段階
 - 決定：`BrowserClient::connect`で`ws`/`wss`のみ、URL内資格情報・空白/制御文字を拒否。ホストがloopback（127/8、::1、localhost）でなければ`RUSTSCRAPLING_CDP_ALLOWED_HOSTS`（カンマ区切り、完全一致）に含まれる必要がある。拒否は`invalid_argument`系typed error。
 - 互換影響：本家は任意の`cdp_url`を受け付ける。リモートブラウザを使う利用者は環境変数で明示許可する（COMPATに記録）。
 - 戻し方：`check_cdp_endpoint`呼び出しを外す。
+
+## D-013 `main_content_only`で`hidden`属性の要素も除去（2026-11-03、後継セッション）
+
+- 問題：G-07評価（`fixtures/extraction`、`bench/eval_extraction.py`）で、本家`Convertor._sanitize_for_ai`は`aria-hidden`・CSS非表示・`<template>`・hidden `<slot>`は除くが、HTML`hidden`属性の一般要素（`<p hidden>`）を残すため、**非表示のプロンプト注入文がAI向け本文に混入**することを確認（全8ページ）。Rust移植も本家どおり混入していた。
+- 決定：`main_content_only=True`のときに限り、`hidden`属性（`until-found`を含む）を持つ要素を除去する。全文モード（`main_content_only=False`）は本家どおり。Plan 7.1/E-03（非表示要素・隠し指示の除外）を優先した安全側の差分。
+- 証拠：本家Convertorオラクル240/240は一致のまま（fixtureの`hidden`は`slot`のみ）。G-07評価でRust移植の混入0・保持率100%・全ページ文字数≤本家。
+- 互換影響：`hidden`属性付き要素を含むページで、MCPの`main_content_only`出力が本家より短くなる（COMPATに記録）。
+- 戻し方：`compat.rs::hidden_or_noise`の`hidden_attribute`条件を外す。

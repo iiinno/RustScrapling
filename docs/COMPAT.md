@@ -43,6 +43,8 @@ Plan 7.1節の表が正本。実装が進んだコマンドからここへ実装
 
 - `cdp_url`（MCP `browser_open`/`browser_fetch_once`、CLI `--cdp-url`、shell）は`ws`/`wss`かつloopbackのみ既定で許可。リモートのブラウザへ接続するには`RUSTSCRAPLING_CDP_ALLOWED_HOSTS=host1,host2`で明示許可が必要（本家は無制限、D-012）。
 
+- MCP/shellの`main_content_only=True`出力は本家Convertorとバイト一致（240/240）だが、**HTML `hidden`属性の要素も除去する**点だけ意図的に異なる（本家は`<p hidden>`等の非表示テキストを残し、隠しプロンプト注入がAI向け本文に混入する。D-013）。
+
 ### MCPブラウザ通信と操作（Python v0.5との差、`1a74ab5`時点）
 
 - **CLI daemonの `network search` とMCPの `browser_network_requests` は別のデータ源**。前者は上位Fetch完了のメタデータのみ、後者は同じMCP browser sessionのCDPサブリクエスト（最新128件・session-local単調ID・body合計1MiB）と、`browser_network_request(part="response_body")`によるXHR/Fetchテキスト本文。本家の上限（1000件・20MiB・1件1MiB）とは異なる。URLとJSON機密キーは保守的に伏せるが、アプリ固有情報の完全な秘匿は保証しない。

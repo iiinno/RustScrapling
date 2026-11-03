@@ -1,0 +1,333 @@
+{
+ "pages": [
+  {
+   "page": "article_en.html",
+   "gold_tokens": 114,
+   "eval_tokens": 114,
+   "upstream": {
+    "chars": 1261,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [
+     "HIDDEN-INJECTION-7F3A"
+    ],
+    "boilerplate": [
+     "Copyright 2026 Example Media",
+     "We use cookies",
+     "Ten tips for gardening"
+    ]
+   },
+   "rust-convertor": {
+    "chars": 1183,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [],
+    "boilerplate": [
+     "Copyright 2026 Example Media",
+     "We use cookies",
+     "Ten tips for gardening"
+    ],
+    "chars_le_upstream": true
+   },
+   "rust-extract": {
+    "chars": 893,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [],
+    "boilerplate": [],
+    "chars_le_upstream": true
+   }
+  },
+  {
+   "page": "article_ja.html",
+   "gold_tokens": 188,
+   "eval_tokens": 188,
+   "upstream": {
+    "chars": 602,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [
+     "HIDDEN-INJECTION-7F3A"
+    ],
+    "boilerplate": [
+     "Copyright 2026 Example Media",
+     "We use cookies",
+     "Ten tips for gardening"
+    ]
+   },
+   "rust-convertor": {
+    "chars": 524,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [],
+    "boilerplate": [
+     "Copyright 2026 Example Media",
+     "We use cookies",
+     "Ten tips for gardening"
+    ],
+    "chars_le_upstream": true
+   },
+   "rust-extract": {
+    "chars": 234,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [],
+    "boilerplate": [],
+    "chars_le_upstream": true
+   }
+  },
+  {
+   "page": "forum.html",
+   "gold_tokens": 52,
+   "eval_tokens": 52,
+   "upstream": {
+    "chars": 726,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [
+     "HIDDEN-INJECTION-7F3A"
+    ],
+    "boilerplate": [
+     "Copyright 2026 Example Media",
+     "We use cookies",
+     "Ten tips for gardening"
+    ]
+   },
+   "rust-convertor": {
+    "chars": 648,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [],
+    "boilerplate": [
+     "Copyright 2026 Example Media",
+     "We use cookies",
+     "Ten tips for gardening"
+    ],
+    "chars_le_upstream": true
+   },
+   "rust-extract": {
+    "chars": 358,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [],
+    "boilerplate": [],
+    "chars_le_upstream": true
+   }
+  },
+  {
+   "page": "listing.html",
+   "gold_tokens": 63,
+   "eval_tokens": 63,
+   "upstream": {
+    "chars": 809,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [
+     "HIDDEN-INJECTION-7F3A"
+    ],
+    "boilerplate": [
+     "Copyright 2026 Example Media",
+     "We use cookies",
+     "Ten tips for gardening"
+    ]
+   },
+   "rust-convertor": {
+    "chars": 731,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [],
+    "boilerplate": [
+     "Copyright 2026 Example Media",
+     "We use cookies",
+     "Ten tips for gardening"
+    ],
+    "chars_le_upstream": true
+   },
+   "rust-extract": {
+    "chars": 441,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [],
+    "boilerplate": [],
+    "chars_le_upstream": true
+   }
+  },
+  {
+   "page": "product.html",
+   "gold_tokens": 48,
+   "eval_tokens": 48,
+   "upstream": {
+    "chars": 686,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [
+     "HIDDEN-INJECTION-7F3A"
+    ],
+    "boilerplate": [
+     "Copyright 2026 Example Media",
+     "We use cookies",
+     "Ten tips for gardening"
+    ]
+   },
+   "rust-convertor": {
+    "chars": 608,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [],
+    "boilerplate": [
+     "Copyright 2026 Example Media",
+     "We use cookies",
+     "Ten tips for gardening"
+    ],
+    "chars_le_upstream": true
+   },
+   "rust-extract": {
+    "chars": 318,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [],
+    "boilerplate": [],
+    "chars_le_upstream": true
+   }
+  },
+  {
+   "page": "short_news.html",
+   "gold_tokens": 20,
+   "eval_tokens": 20,
+   "upstream": {
+    "chars": 519,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [
+     "HIDDEN-INJECTION-7F3A"
+    ],
+    "boilerplate": [
+     "Copyright 2026 Example Media",
+     "We use cookies",
+     "Ten tips for gardening"
+    ]
+   },
+   "rust-convertor": {
+    "chars": 441,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [],
+    "boilerplate": [
+     "Copyright 2026 Example Media",
+     "We use cookies",
+     "Ten tips for gardening"
+    ],
+    "chars_le_upstream": true
+   },
+   "rust-extract": {
+    "chars": 151,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [],
+    "boilerplate": [],
+    "chars_le_upstream": true
+   }
+  },
+  {
+   "page": "table.html",
+   "gold_tokens": 42,
+   "eval_tokens": 42,
+   "upstream": {
+    "chars": 638,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [
+     "HIDDEN-INJECTION-7F3A"
+    ],
+    "boilerplate": [
+     "Copyright 2026 Example Media",
+     "We use cookies",
+     "Ten tips for gardening"
+    ]
+   },
+   "rust-convertor": {
+    "chars": 560,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [],
+    "boilerplate": [
+     "Copyright 2026 Example Media",
+     "We use cookies",
+     "Ten tips for gardening"
+    ],
+    "chars_le_upstream": true
+   },
+   "rust-extract": {
+    "chars": 270,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [],
+    "boilerplate": [],
+    "chars_le_upstream": true
+   }
+  },
+  {
+   "page": "techdoc_code.html",
+   "gold_tokens": 61,
+   "eval_tokens": 61,
+   "upstream": {
+    "chars": 869,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [
+     "HIDDEN-INJECTION-7F3A"
+    ],
+    "boilerplate": [
+     "Copyright 2026 Example Media",
+     "We use cookies",
+     "Ten tips for gardening"
+    ]
+   },
+   "rust-convertor": {
+    "chars": 791,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [],
+    "boilerplate": [
+     "Copyright 2026 Example Media",
+     "We use cookies",
+     "Ten tips for gardening"
+    ],
+    "chars_le_upstream": true
+   },
+   "rust-extract": {
+    "chars": 500,
+    "eval_retention": 1.0,
+    "gold_recall": 1.0,
+    "leaks": [],
+    "boilerplate": [],
+    "chars_le_upstream": true
+   }
+  }
+ ],
+ "summary": {
+  "upstream": {
+   "min_eval_retention": 1.0,
+   "mean_gold_recall": 1.0,
+   "total_chars": 6110,
+   "pages_with_leaks": 8,
+   "pages_with_boilerplate": 8
+  },
+  "rust-convertor": {
+   "min_eval_retention": 1.0,
+   "mean_gold_recall": 1.0,
+   "total_chars": 5486,
+   "pages_with_leaks": 0,
+   "pages_with_boilerplate": 8,
+   "pages_chars_le_upstream": 8
+  },
+  "rust-extract": {
+   "min_eval_retention": 1.0,
+   "mean_gold_recall": 1.0,
+   "total_chars": 3165,
+   "pages_with_leaks": 0,
+   "pages_with_boilerplate": 0,
+   "pages_chars_le_upstream": 8
+  }
+ }
+}
