@@ -229,6 +229,45 @@ pub struct CrawlItem {
     pub body: Option<String>,
 }
 
+/// A follow-up URL yielded from a custom spider parser. Relative URLs are
+/// resolved against the final fetched URL; all normal crawl limits apply.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SpiderRequest {
+    pub url: String,
+}
+
+impl SpiderRequest {
+    pub fn new(url: impl Into<String>) -> Self {
+        Self { url: url.into() }
+    }
+}
+
+/// A parser may yield follow-up requests and structured JSON items together.
+#[derive(Clone, Debug, PartialEq)]
+pub enum SpiderOutput {
+    Request(SpiderRequest),
+    Item(serde_json::Value),
+}
+
+pub type ParseFuture<'a> =
+    Pin<Box<dyn Future<Output = Result<Vec<SpiderOutput>, String>> + Send + 'a>>;
+
+/// User-defined asynchronous extraction logic. It runs on successful pages
+/// after fetching, and may use `page.body`, `page.url` and `page.depth`.
+/// Returned requests enter the existing bounded scheduler, including robots,
+/// domain, link-rule and checkpoint handling.
+pub trait SpiderParser: Send + Sync {
+    fn parse<'a>(&'a self, page: &'a CrawlItem) -> ParseFuture<'a>;
+}
+
+/// Events from [`crawl_with_parser`]. `Page` retains the existing crawl
+/// result; `Item` streams a JSON value emitted by the custom parser.
+#[derive(Debug)]
+pub enum SpiderEvent<'a> {
+    Page(&'a CrawlItem),
+    Item(&'a serde_json::Value),
+}
+
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 struct Progress {
     #[serde(default)]
@@ -733,6 +772,38 @@ fn persist(spec: &CrawlSpec, progress: &Progress) -> Result<(), String> {
     }
 }
 
+/// A parser request follows the same frontier controls as discovered links.
+/// Robots checks run when the request is actually dispatched.
+fn enqueue_spider_request(
+    raw: &str,
+    base: &str,
+    depth: usize,
+    spec: &CrawlSpec,
+    rules: &LinkRules,
+    visited: &HashSet<String>,
+    queued: &mut HashSet<String>,
+    queue: &mut VecDeque<(String, usize)>,
+) {
+    if depth >= spec.max_depth || visited.len().saturating_add(queue.len()) >= spec.max_pages {
+        return;
+    }
+    let Ok(base) = valid_url(base) else {
+        return;
+    };
+    let Ok(mut url) = base.join(raw.trim()) else {
+        return;
+    };
+    url.set_fragment(None);
+    if valid_url(url.as_str()).is_err() || !host_allowed(spec, &url) || !rules.permitted(&url) {
+        return;
+    }
+    let normalized = url.to_string();
+    let fingerprint = key(&normalized);
+    if !visited.contains(&fingerprint) && queued.insert(fingerprint) {
+        queue.push_back((normalized, depth + 1));
+    }
+}
+
 /// Crawl using bounded batches of concurrent fetches. The callback is invoked
 /// for each completed response and should stream NDJSON or similar output.
 pub async fn crawl<F>(
@@ -742,6 +813,43 @@ pub async fn crawl<F>(
 ) -> Result<CrawlSummary, String>
 where
     F: FnMut(&CrawlItem) -> Result<(), String>,
+{
+    crawl_inner(spec, fetcher, None, |event| match event {
+        SpiderEvent::Page(page) => emit(page),
+        SpiderEvent::Item(_) => Ok(()),
+    })
+    .await
+}
+
+/// Crawl with a user-supplied asynchronous parser. Successful pages are passed
+/// to `parser`, which yields JSON items and explicit follow-up requests.
+/// The custom parser controls link discovery; default HTML link traversal
+/// remains available through [`crawl`] without a parser.
+///
+/// Follow-up requests share `max_pages`, `max_depth`, domain/link rules,
+/// deduplication, robots policy and checkpoints with the normal crawl.
+/// `emit` receives pages and yielded items as they are completed, without
+/// retaining them for the entire crawl.
+pub async fn crawl_with_parser<F>(
+    spec: &CrawlSpec,
+    fetcher: Arc<dyn Fetcher>,
+    parser: &dyn SpiderParser,
+    emit: F,
+) -> Result<CrawlSummary, String>
+where
+    F: for<'a> FnMut(SpiderEvent<'a>) -> Result<(), String>,
+{
+    crawl_inner(spec, fetcher, Some(parser), emit).await
+}
+
+async fn crawl_inner<F>(
+    spec: &CrawlSpec,
+    fetcher: Arc<dyn Fetcher>,
+    parser: Option<&dyn SpiderParser>,
+    mut emit: F,
+) -> Result<CrawlSummary, String>
+where
+    F: for<'a> FnMut(SpiderEvent<'a>) -> Result<(), String>,
 {
     spec.validate()?;
     let link_rules = LinkRules::compile(spec)?;
@@ -813,14 +921,14 @@ where
             }
             if spec.obey_robots && !robots_allowed(&url, &fetcher, &mut robot_cache).await {
                 summary.failed += 1;
-                emit(&CrawlItem {
+                emit(SpiderEvent::Page(&CrawlItem {
                     url: raw,
                     depth,
                     status: None,
                     links: Vec::new(),
                     error: Some("blocked by robots.txt policy".into()),
                     body: None,
-                })?;
+                }))?;
                 continue;
             }
             let robots_minimum = if spec.obey_robots {
@@ -906,9 +1014,11 @@ where
             });
         }
         while let Some((url, depth, result)) = batch.next().await {
-            let item = match result {
+            let (item, response_base) = match result {
                 Ok(response) => {
-                    let links = if spec.template.follows_links()
+                    let response_base = parser.map(|_| response.url.clone());
+                    let links = if parser.is_none()
+                        && spec.template.follows_links()
                         && response.content_type.contains("html")
                         && depth < spec.max_depth
                     {
@@ -933,25 +1043,31 @@ where
                     } else {
                         summary.failed += 1;
                     }
-                    CrawlItem {
-                        url,
-                        depth,
-                        status: Some(response.status),
-                        links,
-                        error: None,
-                        body: Some(response.body),
-                    }
+                    (
+                        CrawlItem {
+                            url,
+                            depth,
+                            status: Some(response.status),
+                            links,
+                            error: None,
+                            body: Some(response.body),
+                        },
+                        response_base,
+                    )
                 }
                 Err(err) => {
                     summary.failed += 1;
-                    CrawlItem {
-                        url,
-                        depth,
-                        status: None,
-                        links: Vec::new(),
-                        error: Some(err),
-                        body: None,
-                    }
+                    (
+                        CrawlItem {
+                            url,
+                            depth,
+                            status: None,
+                            links: Vec::new(),
+                            error: Some(err),
+                            body: None,
+                        },
+                        None,
+                    )
                 }
             };
             for link in &item.links {
@@ -964,7 +1080,31 @@ where
                     }
                 }
             }
-            emit(&item)?;
+            emit(SpiderEvent::Page(&item))?;
+            if let Some(parser) = parser {
+                // Failure pages do not run application parsing, matching the
+                // default successful-response parse behavior of Scrapling.
+                if item
+                    .status
+                    .is_some_and(|status| (200..300).contains(&status))
+                {
+                    for output in parser.parse(&item).await? {
+                        match output {
+                            SpiderOutput::Request(request) => enqueue_spider_request(
+                                &request.url,
+                                response_base.as_deref().unwrap_or(&item.url),
+                                depth,
+                                spec,
+                                &link_rules,
+                                &visited,
+                                &mut queued,
+                                &mut queue,
+                            ),
+                            SpiderOutput::Item(value) => emit(SpiderEvent::Item(&value))?,
+                        }
+                    }
+                }
+            }
         }
         let mut fingerprints: Vec<String> = visited.iter().cloned().collect();
         fingerprints.sort();
@@ -1765,6 +1905,214 @@ mod tests {
         assert_eq!(
             std::fs::read(&unrelated).unwrap(),
             b"not a crawl checkpoint"
+        );
+    }
+
+    struct CallbackFixture(Mutex<Vec<String>>);
+
+    impl Fetcher for CallbackFixture {
+        fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
+            Box::pin(async move {
+                self.0.lock().unwrap().push(url.to_owned());
+                Ok(FetchPage {
+                    headers: Default::default(),
+                    status: 200,
+                    url: url.to_owned(),
+                    content_type: "text/html".into(),
+                    body: if url.ends_with("/robots.txt") {
+                        "User-agent: *\nDisallow: /blocked\n".into()
+                    } else {
+                        "<a href='/html-only'>Do not follow automatically</a>".into()
+                    },
+                })
+            })
+        }
+    }
+
+    struct FollowUpParser;
+
+    impl SpiderParser for FollowUpParser {
+        fn parse<'a>(&'a self, page: &'a CrawlItem) -> ParseFuture<'a> {
+            Box::pin(async move {
+                tokio::task::yield_now().await;
+                let mut outputs = vec![SpiderOutput::Item(serde_json::json!({
+                    "page": page.url,
+                    "depth": page.depth,
+                }))];
+                if page.url.ends_with("/start") {
+                    for next in [
+                        "#self",
+                        "/next#one",
+                        "https://example.com/next#two",
+                        "https://example.com/denied",
+                        "https://elsewhere.example/escape",
+                        "https://name:secret@example.com/private",
+                        "file:///local/private",
+                        "/blocked",
+                        "/overflow",
+                    ] {
+                        outputs.push(SpiderOutput::Request(SpiderRequest::new(next)));
+                    }
+                } else {
+                    outputs.push(SpiderOutput::Request(SpiderRequest::new("/too-deep")));
+                }
+                Ok(outputs)
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn custom_parser_streams_items_and_routes_requests_through_frontier_guards() {
+        let fetcher = Arc::new(CallbackFixture(Mutex::new(Vec::new())));
+        let spec = CrawlSpec {
+            start_urls: vec!["https://example.com/start".into()],
+            max_pages: 3,
+            max_depth: 1,
+            concurrency: 1,
+            obey_robots: true,
+            link_deny: vec!["/denied".into()],
+            ..CrawlSpec::default()
+        };
+        let mut page_urls = Vec::new();
+        let mut emitted_items = Vec::new();
+        let summary = crawl_with_parser(&spec, fetcher.clone(), &FollowUpParser, |event| {
+            match event {
+                SpiderEvent::Page(page) => page_urls.push((page.url.clone(), page.error.clone())),
+                SpiderEvent::Item(item) => emitted_items.push(item.clone()),
+            }
+            Ok(())
+        })
+        .await
+        .unwrap();
+
+        assert_eq!(summary.visited, 3);
+        assert_eq!(summary.successful, 2);
+        assert_eq!(summary.failed, 1); // blocked by robots
+        assert_eq!(summary.remaining, 0);
+        assert_eq!(page_urls.len(), 3);
+        assert_eq!(page_urls[0].0, "https://example.com/start");
+        assert_eq!(page_urls[1].0, "https://example.com/next");
+        assert_eq!(page_urls[2].0, "https://example.com/blocked");
+        assert!(page_urls[2].1.as_ref().unwrap().contains("robots"));
+        assert_eq!(
+            emitted_items,
+            [
+                serde_json::json!({"page": "https://example.com/start", "depth": 0}),
+                serde_json::json!({"page": "https://example.com/next", "depth": 1}),
+            ]
+        );
+        let fetched = fetcher.0.lock().unwrap();
+        assert_eq!(
+            fetched
+                .iter()
+                .filter(|url| url.ends_with("/robots.txt"))
+                .count(),
+            1
+        );
+        assert!(!fetched.iter().any(|url| url.ends_with("/blocked")));
+        assert!(!fetched.iter().any(|url| url.ends_with("/html-only")));
+        assert!(!fetched.iter().any(|url| url.ends_with("/too-deep")));
+        assert!(!fetched.iter().any(|url| url.ends_with("/denied")));
+        assert!(!fetched.iter().any(|url| url.contains("elsewhere.example")));
+    }
+
+    #[tokio::test]
+    async fn custom_parser_respects_max_pages_and_legacy_checkpoint_resume() {
+        let directory = tempfile::tempdir().unwrap();
+        let spec = CrawlSpec {
+            start_urls: vec!["https://example.com/start".into()],
+            max_pages: 2,
+            max_depth: 2,
+            crawldir: Some(directory.path().to_path_buf()),
+            ..CrawlSpec::default()
+        };
+        let first = crawl_with_parser(
+            &spec,
+            Arc::new(CallbackFixture(Mutex::new(Vec::new()))),
+            &FollowUpParser,
+            |_| Ok(()),
+        )
+        .await
+        .unwrap();
+        assert_eq!(first.successful, 2);
+        assert_eq!(first.visited, 2);
+        assert_eq!(first.remaining, 0);
+        let restored = restore(&spec).unwrap().unwrap();
+        assert_eq!(restored.visited_hashes.len(), 2);
+        assert!(restored.queue.is_empty());
+        // Both crawl variants use the original checkpoint format and spec hash.
+        let second = crawl(&spec, Arc::new(Mock), |_| panic!("must not refetch"))
+            .await
+            .unwrap();
+        assert_eq!(second.visited, 2);
+        assert_eq!(second.successful, 0);
+        let third = crawl_with_parser(&spec, Arc::new(Mock), &FollowUpParser, |_| {
+            panic!("must not parse or refetch")
+        })
+        .await
+        .unwrap();
+        assert_eq!(third.visited, 2);
+    }
+
+    struct RedirectFixture;
+
+    impl Fetcher for RedirectFixture {
+        fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
+            Box::pin(async move {
+                Ok(FetchPage {
+                    headers: Default::default(),
+                    status: 200,
+                    url: if url.ends_with("/start") {
+                        "https://example.com/final/sub/page".into()
+                    } else {
+                        url.into()
+                    },
+                    content_type: "text/plain".into(),
+                    body: "ok".into(),
+                })
+            })
+        }
+    }
+
+    struct RelativeParser;
+
+    impl SpiderParser for RelativeParser {
+        fn parse<'a>(&'a self, page: &'a CrawlItem) -> ParseFuture<'a> {
+            Box::pin(async move {
+                if page.depth == 0 {
+                    Ok(vec![SpiderOutput::Request(SpiderRequest::new("child"))])
+                } else {
+                    Ok(Vec::new())
+                }
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn relative_parser_requests_resolve_from_redirect_destination() {
+        let spec = CrawlSpec {
+            start_urls: vec!["https://example.com/start".into()],
+            max_pages: 2,
+            max_depth: 1,
+            link_allow: vec!["/final/sub/child".into()],
+            ..CrawlSpec::default()
+        };
+        let mut pages = Vec::new();
+        let summary = crawl_with_parser(&spec, Arc::new(RedirectFixture), &RelativeParser, |e| {
+            if let SpiderEvent::Page(page) = e {
+                pages.push(page.url.clone());
+            }
+            Ok(())
+        })
+        .await
+        .unwrap();
+        assert_eq!(summary.visited, 2);
+        assert_eq!(
+            pages,
+            [
+                "https://example.com/start",
+                "https://example.com/final/sub/child"
+            ]
         );
     }
 }
