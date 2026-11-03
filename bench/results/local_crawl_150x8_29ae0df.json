@@ -1,0 +1,273 @@
+{
+ "git_sha": "29ae0df",
+ "upstream_sha": "95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0",
+ "datetime_utc": "2026-11-03T11:40Z",
+ "host": "claude.ai cloud Linux container, Intel Xeon 2.10GHz, 4 vCPU, 15 GiB, kernel 6.18",
+ "rust": "1.99.1 --release (lto)",
+ "python": "3.13.18 isolated venv",
+ "command": "python3 bench/compare_local_crawl.py target/release/rustscrapling --upstream ../scrapling-v05-reference --upstream-python <venv>/bin/python --iterations 5 --latency-ms {0,50,200}",
+ "note": "Loopback site, 150 pages x ~24 KiB, concurrency 8, no delay, robots off; wall time of the whole process (incl. startup); RSS = peak process-tree RSS (no Chrome).",
+ "results": {
+  "50": {
+   "pages": 150,
+   "concurrency": 8,
+   "latency_ms": 50.0,
+   "runs": {
+    "rust": [
+     {
+      "iteration": 0,
+      "seconds": 1.091,
+      "peak_rss_mib": 17.7,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 1,
+      "seconds": 1.097,
+      "peak_rss_mib": 17.6,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 2,
+      "seconds": 1.093,
+      "peak_rss_mib": 17.8,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 3,
+      "seconds": 1.108,
+      "peak_rss_mib": 17.5,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 4,
+      "seconds": 1.106,
+      "peak_rss_mib": 18.0,
+      "successful_pages": 150
+     }
+    ],
+    "upstream": [
+     {
+      "iteration": 0,
+      "seconds": 1.646,
+      "peak_rss_mib": 53.9,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 1,
+      "seconds": 2.007,
+      "peak_rss_mib": 53.9,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 2,
+      "seconds": 1.69,
+      "peak_rss_mib": 53.9,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 3,
+      "seconds": 1.692,
+      "peak_rss_mib": 53.9,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 4,
+      "seconds": 1.738,
+      "peak_rss_mib": 53.8,
+      "successful_pages": 150
+     }
+    ]
+   },
+   "summary": {
+    "rust": {
+     "median_seconds": 1.097,
+     "max_peak_rss_mib": 18.0,
+     "successful_pages": [
+      150
+     ]
+    },
+    "upstream": {
+     "median_seconds": 1.692,
+     "max_peak_rss_mib": 53.9,
+     "successful_pages": [
+      150
+     ]
+    }
+   }
+  },
+  "0": {
+   "pages": 150,
+   "concurrency": 8,
+   "latency_ms": 0.0,
+   "runs": {
+    "rust": [
+     {
+      "iteration": 0,
+      "seconds": 0.105,
+      "peak_rss_mib": 17.9,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 1,
+      "seconds": 0.115,
+      "peak_rss_mib": 17.4,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 2,
+      "seconds": 0.105,
+      "peak_rss_mib": 17.9,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 3,
+      "seconds": 0.095,
+      "peak_rss_mib": 17.5,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 4,
+      "seconds": 0.101,
+      "peak_rss_mib": 17.8,
+      "successful_pages": 150
+     }
+    ],
+    "upstream": [
+     {
+      "iteration": 0,
+      "seconds": 0.693,
+      "peak_rss_mib": 53.9,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 1,
+      "seconds": 0.672,
+      "peak_rss_mib": 53.9,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 2,
+      "seconds": 0.672,
+      "peak_rss_mib": 53.9,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 3,
+      "seconds": 0.744,
+      "peak_rss_mib": 53.9,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 4,
+      "seconds": 0.687,
+      "peak_rss_mib": 53.9,
+      "successful_pages": 150
+     }
+    ]
+   },
+   "summary": {
+    "rust": {
+     "median_seconds": 0.105,
+     "max_peak_rss_mib": 17.9,
+     "successful_pages": [
+      150
+     ]
+    },
+    "upstream": {
+     "median_seconds": 0.687,
+     "max_peak_rss_mib": 53.9,
+     "successful_pages": [
+      150
+     ]
+    }
+   }
+  },
+  "200": {
+   "pages": 150,
+   "concurrency": 8,
+   "latency_ms": 200.0,
+   "runs": {
+    "rust": [
+     {
+      "iteration": 0,
+      "seconds": 4.12,
+      "peak_rss_mib": 17.3,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 1,
+      "seconds": 4.103,
+      "peak_rss_mib": 17.8,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 2,
+      "seconds": 4.114,
+      "peak_rss_mib": 17.9,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 3,
+      "seconds": 4.114,
+      "peak_rss_mib": 17.9,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 4,
+      "seconds": 4.098,
+      "peak_rss_mib": 17.8,
+      "successful_pages": 150
+     }
+    ],
+    "upstream": [
+     {
+      "iteration": 0,
+      "seconds": 4.617,
+      "peak_rss_mib": 53.8,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 1,
+      "seconds": 4.605,
+      "peak_rss_mib": 53.8,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 2,
+      "seconds": 4.682,
+      "peak_rss_mib": 53.9,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 3,
+      "seconds": 4.667,
+      "peak_rss_mib": 53.8,
+      "successful_pages": 150
+     },
+     {
+      "iteration": 4,
+      "seconds": 4.665,
+      "peak_rss_mib": 53.8,
+      "successful_pages": 150
+     }
+    ]
+   },
+   "summary": {
+    "rust": {
+     "median_seconds": 4.114,
+     "max_peak_rss_mib": 17.9,
+     "successful_pages": [
+      150
+     ]
+    },
+    "upstream": {
+     "median_seconds": 4.665,
+     "max_peak_rss_mib": 53.9,
+     "successful_pages": [
+      150
+     ]
+    }
+   }
+  }
+ }
+}

@@ -38,7 +38,9 @@ from scrapling.spiders import Spider
 class Bench(Spider):
     name = "bench"
     start_urls = [sys.argv[2]]
-    allowed_domains = {"127.0.0.1"}
+    # Upstream compares allowed_domains with urlparse(url).netloc, which
+    # includes the port, so the loopback site must be listed as host:port.
+    allowed_domains = {sys.argv[2].split("/")[2]}
     concurrent_requests = 8
     logging_level = 40
 
