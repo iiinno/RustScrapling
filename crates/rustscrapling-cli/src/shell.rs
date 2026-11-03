@@ -553,9 +553,12 @@ impl Shell {
             })
             .find(|path| !path.exists())
             .ok_or_else(|| fail("io", "no free temporary file name", "Clean the temp dir"))?;
-        let mut file = std::fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
+        let mut options = std::fs::OpenOptions::new();
+        options.write(true).create_new(true);
+        // Fetched pages may contain private data: owner-only file.
+        #[cfg(unix)]
+        std::os::unix::fs::OpenOptionsExt::mode(&mut options, 0o600);
+        let mut file = options
             .open(&path)
             .map_err(|e| fail("io", e.to_string(), "Check the temporary directory"))?;
         file.write_all(page.body.as_bytes())

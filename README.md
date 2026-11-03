@@ -30,7 +30,15 @@ rustscrapling md page.html --format md
 rustscrapling auto https://example.com --format md
 rustscrapling fetch https://example.com --chrome-path /path/to/chrome
 rustscrapling crawl examples/crawl.toml --out pages.jsonl
+rustscrapling install --dry-run            # Chrome for Testing, pinned SHA-256
+rustscrapling install
+rustscrapling shell                        # interactive console (scrapling shell)
+rustscrapling shell -c $'get https://example.com\ncss h1::text'
+rustscrapling mcp                          # upstream-compatible MCP server (stdio)
+rustscrapling daemon start && rustscrapling session open --session-id s1
 ```
+
+`install` downloads Chrome for Testing into a per-user directory and verifies its size and SHA-256 against the pinned manifest (or `--sha256`); it never installs OS packages and reports missing shared libraries instead. The CLI and MCP use that browser after explicit configuration (`--chrome-path`, `RUSTSCRAPLING_CHROME_PATH`) and before system browsers. `shell` offers `get/post/put/delete/fetch/load`, `page`/`pages`, `css/xpath/find-text/re/similar/selector-gen`, `text/md/html`, `uncurl`/`curl2fetcher` and `view`; type `help` for details (differences from the IPython-based upstream shell are listed in [docs/COMPAT.md](docs/COMPAT.md)).
 
 `--out FILE` saves the full output and prints a compact JSON receipt; `--max-chars N` limits the standard output without cutting JSON in the middle of a token. Network commands use `wreq` with certificate verification enabled. If HTTP/3 fails or is unsupported behind a proxy, the negotiated `protocol` records the actual HTTP/2 or HTTP/1.x outcome.
 

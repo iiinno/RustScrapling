@@ -88,3 +88,10 @@ Plan.md の「判断済みの事項」は変えていない。ここには段階
 - 証拠：変更後、Chrome 155/156でheaded・headless各150ラウンド（計600）取りこぼし0件。153/155/156で実機E2Eマトリクス全PASS（`scripts/chrome_e2e_matrix.sh`）。
 - 互換影響：本家の実プロセス引数に近づく。Chromeが重複スイッチをどう扱うかに依存せず、Playwright/Scrapling双方の機能指定が有効になる（本家は最後の`--disable-features`のみ有効になっている可能性がある＝差分として記録）。
 - 戻し方：`rustscrapling_browser::upstream_launch_args`を`UPSTREAM_LAUNCH_ARGS`に戻し、`merge_feature_switches`呼び出しを外す。
+
+## D-012 外部CDP接続はloopbackか明示allowlistのみ（2026-11-03、後継セッション）
+
+- 問題：`cdp_url`（MCP `browser_open`/CLI `--cdp-url`/shell）は任意のホストへのDevTools接続を受け付けていた。Plan 7.1は「CDPの外部接続は許可されたendpointのみ」を要求する。MCPではAIエージェントが取得本文に誘導されて接続先を選ぶ可能性がある。
+- 決定：`BrowserClient::connect`で`ws`/`wss`のみ、URL内資格情報・空白/制御文字を拒否。ホストがloopback（127/8、::1、localhost）でなければ`RUSTSCRAPLING_CDP_ALLOWED_HOSTS`（カンマ区切り、完全一致）に含まれる必要がある。拒否は`invalid_argument`系typed error。
+- 互換影響：本家は任意の`cdp_url`を受け付ける。リモートブラウザを使う利用者は環境変数で明示許可する（COMPATに記録）。
+- 戻し方：`check_cdp_endpoint`呼び出しを外す。

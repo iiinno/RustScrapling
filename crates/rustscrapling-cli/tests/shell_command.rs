@@ -224,6 +224,18 @@ fn errors_are_typed_and_scripts_from_stdin_work() {
     );
     assert_eq!(lines[1], "[\"one\",\"two\"]");
     assert!(lines[2].contains("\"css\""));
+    let (status, viewed, _) = shell(&format!("load {}\nview", file.display()));
+    assert_eq!(status, 0);
+    let saved = serde_json::from_str::<Value>(viewed.lines().nth(1).unwrap()).unwrap();
+    let saved = std::path::PathBuf::from(saved["saved_to"].as_str().unwrap());
+    assert!(std::fs::read_to_string(&saved).unwrap().contains("two"));
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = std::fs::metadata(&saved).unwrap().permissions().mode();
+        assert_eq!(mode & 0o777, 0o600);
+    }
+    std::fs::remove_file(saved).ok();
     let (status, help, _) = shell("help");
     assert_eq!(status, 0);
     assert!(help.contains("curl2fetcher"));

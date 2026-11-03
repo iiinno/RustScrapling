@@ -426,7 +426,17 @@ impl BrowserClient {
 
     /// Attach to a browser-level DevTools WebSocket endpoint. The caller
     /// retains ownership of the externally managed browser.
+    /// Attach to an existing browser-level DevTools websocket. Only `ws`/`wss`
+    /// endpoints without embedded credentials are accepted, on loopback or on
+    /// a host listed in `RUSTSCRAPLING_CDP_ALLOWED_HOSTS` (Plan 7.1: external
+    /// CDP connections only to allowed endpoints).
     pub async fn connect(ws_endpoint: &str) -> Result<Self, BrowserError> {
+        check_cdp_endpoint(
+            ws_endpoint,
+            std::env::var("RUSTSCRAPLING_CDP_ALLOWED_HOSTS")
+                .ok()
+                .as_deref(),
+        )?;
         Ok(Self {
             connection: Connection::connect(ws_endpoint).await?,
             endpoint: ws_endpoint.to_owned(),
@@ -797,6 +807,58 @@ async fn write_state_file(path: &Path, state: &BrowserState) -> Result<(), Brows
     Ok(())
 }
 
+/// Validate a CDP websocket endpoint (see [`BrowserClient::connect`]).
+pub fn check_cdp_endpoint(endpoint: &str, allowed_hosts: Option<&str>) -> Result<(), BrowserError> {
+    let invalid = |message: &str| Err(BrowserError::InvalidArgument(message.to_owned()));
+    if endpoint
+        .chars()
+        .any(|c| c.is_control() || c.is_whitespace())
+    {
+        return invalid("cdp_url must not contain whitespace or control characters");
+    }
+    let Ok(url) = url::Url::parse(endpoint) else {
+        return invalid("cdp_url must be a ws:// or wss:// URL");
+    };
+    if !matches!(url.scheme(), "ws" | "wss") {
+        return invalid("cdp_url must be a ws:// or wss:// URL");
+    }
+    if !url.username().is_empty() || url.password().is_some() {
+        return invalid("cdp_url must not embed credentials");
+    }
+    let host = match url.host() {
+        Some(url::Host::Domain(name)) => name.to_ascii_lowercase(),
+        Some(url::Host::Ipv4(address)) if address.is_loopback() => return Ok(()),
+        Some(url::Host::Ipv6(address)) if address.is_loopback() => return Ok(()),
+        Some(url::Host::Ipv4(address)) => address.to_string(),
+        Some(url::Host::Ipv6(address)) => address.to_string(),
+        None => return invalid("cdp_url needs a host"),
+    };
+    if host == "localhost" {
+        return Ok(());
+    }
+    let allowed = allowed_hosts.unwrap_or_default().split(',').any(|entry| {
+        let entry = entry.trim().trim_start_matches('[').trim_end_matches(']');
+        !entry.is_empty() && entry.eq_ignore_ascii_case(&host)
+    });
+    if allowed {
+        Ok(())
+    } else {
+        invalid(&format!(
+            "cdp_url host {host} is not loopback; add it to RUSTSCRAPLING_CDP_ALLOWED_HOSTS to allow it"
+        ))
+    }
+}
+
+/// `O_NOFOLLOW` without a libc dependency (Linux, Android, macOS, BSDs).
+#[cfg(unix)]
+fn libc_o_nofollow() -> i32 {
+    if cfg!(any(target_os = "linux", target_os = "android")) {
+        0o400000
+    } else {
+        0x0100
+    }
+}
+
 async fn read_state_file(path: &Path) -> Result<BrowserState, BrowserError> {
     let metadata = tokio::fs::symlink_metadata(path)
         .await
@@ -806,9 +868,28 @@ async fn read_state_file(path: &Path) -> Result<BrowserState, BrowserError> {
             "state must be a regular file under 4 MiB".into(),
         ));
     }
-    let file = tokio::fs::File::open(path)
+    // O_NOFOLLOW closes the window between the check above and the open:
+    // a file swapped for a symlink in between is refused, not followed.
+    let mut options = tokio::fs::OpenOptions::new();
+    options.read(true);
+    #[cfg(unix)]
+    {
+        options.custom_flags(libc_o_nofollow());
+    }
+    let file = options
+        .open(path)
         .await
         .map_err(|e| BrowserError::Io(e.to_string()))?;
+    if !file
+        .metadata()
+        .await
+        .map_err(|e| BrowserError::Io(e.to_string()))?
+        .is_file()
+    {
+        return Err(BrowserError::InvalidArgument(
+            "state must be a regular file under 4 MiB".into(),
+        ));
+    }
     let mut bytes = Vec::new();
     file.take(MAX_STATE_BYTES as u64 + 1)
         .read_to_end(&mut bytes)
@@ -1806,6 +1887,155 @@ async fn read_debugging_endpoint(
         sleep(Duration::from_millis(100)).await;
     }
     Err(BrowserError::Timeout("Chrome DevToolsActivePort".into()))
+}
+
+#[cfg(test)]
+mod cdp_endpoint_tests {
+    use super::check_cdp_endpoint;
+
+    #[test]
+    fn only_loopback_or_allowlisted_websocket_endpoints() {
+        for ok in [
+            "ws://127.0.0.1:9222/devtools/browser/x",
+            "ws://localhost:9222/devtools/browser/x",
+            "ws://[::1]:9222/devtools/browser/x",
+            "wss://127.0.0.2:1/devtools/browser/x",
+        ] {
+            assert!(check_cdp_endpoint(ok, None).is_ok(), "{ok}");
+        }
+        for bad in [
+            "ws://10.0.0.5:9222/devtools/browser/x",
+            "ws://browser.example:9222/devtools/browser/x",
+            "http://127.0.0.1:9222/json/version",
+            "ws://user:pass@127.0.0.1:9222/devtools/browser/x",
+            "ws://127.0.0.1:9222/devtools/browser/x\n",
+            "file:///tmp/socket",
+            "not a url",
+        ] {
+            assert!(check_cdp_endpoint(bad, None).is_err(), "{bad}");
+        }
+        let allow = Some("browser.example, 10.0.0.5");
+        assert!(check_cdp_endpoint("wss://Browser.Example/devtools/browser/x", allow).is_ok());
+        assert!(check_cdp_endpoint("ws://10.0.0.5:9222/devtools/browser/x", allow).is_ok());
+        assert!(check_cdp_endpoint("ws://10.0.0.6:9222/devtools/browser/x", allow).is_err());
+        assert!(check_cdp_endpoint("ws://evil.browser.example/x", allow).is_err());
+    }
+}
+
+#[cfg(test)]
+mod state_file_tests {
+    use super::*;
+
+    fn dir(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("rs-state-{name}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn invalid(result: Result<BrowserState, BrowserError>) -> String {
+        match result {
+            Err(BrowserError::InvalidArgument(message)) => message,
+            other => panic!("expected InvalidArgument, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn malicious_state_files_are_refused() {
+        let dir = dir("read");
+        let valid = dir.join("ok.json");
+        std::fs::write(
+            &valid,
+            r#"{"version":1,"cookies":[{"name":"a","value":"b"}]}"#,
+        )
+        .unwrap();
+        assert_eq!(read_state_file(&valid).await.unwrap().cookies.len(), 1);
+
+        // Oversized (sparse file, no 4 MiB write needed).
+        let big = dir.join("big.json");
+        std::fs::File::create(&big)
+            .unwrap()
+            .set_len(MAX_STATE_BYTES as u64 + 1)
+            .unwrap();
+        assert!(invalid(read_state_file(&big).await).contains("4 MiB"));
+        // Deep nesting is a JSON error, not a stack overflow.
+        let deep = dir.join("deep.json");
+        std::fs::write(
+            &deep,
+            format!(
+                r#"{{"version":1,"cookies":{}{}}}"#,
+                "[".repeat(100_000),
+                "]".repeat(100_000)
+            ),
+        )
+        .unwrap();
+        assert_eq!(
+            invalid(read_state_file(&deep).await),
+            "invalid browser state JSON"
+        );
+        // Wrong schema, garbage and IndexedDB payloads.
+        for (name, body, message) in [
+            (
+                "schema.json",
+                r#"{"version":"x","cookies":{}}"#,
+                "invalid browser state JSON",
+            ),
+            (
+                "garbage.json",
+                "\u{0}not json",
+                "invalid browser state JSON",
+            ),
+            (
+                "idb.json",
+                r#"{"version":2,"cookies":[],"origins":[{"origin":"https://a","indexedDB":[]}]}"#,
+                "IndexedDB state is unsupported",
+            ),
+        ] {
+            let path = dir.join(name);
+            std::fs::write(&path, body).unwrap();
+            assert_eq!(invalid(read_state_file(&path).await), message, "{name}");
+        }
+        // Directories and symlinks (even to a valid state) are refused.
+        assert!(invalid(read_state_file(&dir).await).contains("regular file"));
+        #[cfg(unix)]
+        {
+            let link = dir.join("link.json");
+            std::os::unix::fs::symlink(&valid, &link).unwrap();
+            assert!(invalid(read_state_file(&link).await).contains("regular file"));
+        }
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[tokio::test]
+    async fn state_writes_are_private_and_never_overwrite_or_follow_links() {
+        let dir = dir("write");
+        let state = BrowserState {
+            version: 1,
+            cookies: vec![serde_json::json!({"name":"sid","value":"secret"})],
+            origins: Vec::new(),
+        };
+        let path = dir.join("s.json");
+        write_state_file(&path, &state).await.unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = std::fs::metadata(&path).unwrap().permissions().mode();
+            assert_eq!(mode & 0o777, 0o600);
+        }
+        // Existing file: refused, content unchanged.
+        assert!(write_state_file(&path, &state).await.is_err());
+        assert_eq!(read_state_file(&path).await.unwrap(), state);
+        #[cfg(unix)]
+        {
+            // A dangling symlink pointing outside: refused, target not created.
+            let target = dir.join("outside-target");
+            let link = dir.join("link.json");
+            std::os::unix::fs::symlink(&target, &link).unwrap();
+            assert!(write_state_file(&link, &state).await.is_err());
+            assert!(!target.exists());
+        }
+        std::fs::remove_dir_all(dir).unwrap();
+    }
 }
 
 #[cfg(test)]

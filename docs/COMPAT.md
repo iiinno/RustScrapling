@@ -41,6 +41,8 @@ Plan 7.1節の表が正本。実装が進んだコマンドからここへ実装
 
 - `rustscrapling install [--version pinned|stable|X.Y.Z.W] [--sha256 HEX | --allow-unpinned] [--dir P] [--force] [--dry-run]`（Plan C-05）は Chrome for Testing をユーザー領域へ導入する。本家 `scrapling install` は `playwright install chromium` と `playwright install-deps chromium`（OSパッケージ導入、通常root）を実行するが、Rust版は**OSパッケージを導入しない**（不足共有ライブラリを`ldd`で列挙して`missing_libraries`とhintで返す）。アーカイブは検証付きHTTPSで取得し、リポジトリに固定したSHA-256とサイズ（`crates/rustscrapling-cli/src/chrome_for_testing.json`、`scripts/pin_chrome_for_testing.py`で生成。Chrome for Testingは公式チェックサムを公開していないため、記録時点の公式配布物からの計測値＝TOFU固定であることに注意）と照合する。固定外の版は`--sha256`必須、`--allow-unpinned`はHTTPSのみの検証として`checksum_source:"unpinned"`を記録する。展開はstaging経由・パス走査とsymlink逸脱を拒否し、失敗時はダウンロードとstagingを削除する。結果は`<dir>/current.json`に記録され、CLI（fetch系・shell）とMCPは明示設定の次、システムChromeより先にこれを使う。`RUSTSCRAPLING_CFT_MIRROR`でミラーを指定でき、ミラー経由でも固定チェックサムは強制される。
 
+- `cdp_url`（MCP `browser_open`/`browser_fetch_once`、CLI `--cdp-url`、shell）は`ws`/`wss`かつloopbackのみ既定で許可。リモートのブラウザへ接続するには`RUSTSCRAPLING_CDP_ALLOWED_HOSTS=host1,host2`で明示許可が必要（本家は無制限、D-012）。
+
 ### MCPブラウザ通信と操作（Python v0.5との差、`1a74ab5`時点）
 
 - **CLI daemonの `network search` とMCPの `browser_network_requests` は別のデータ源**。前者は上位Fetch完了のメタデータのみ、後者は同じMCP browser sessionのCDPサブリクエスト（最新128件・session-local単調ID・body合計1MiB）と、`browser_network_request(part="response_body")`によるXHR/Fetchテキスト本文。本家の上限（1000件・20MiB・1件1MiB）とは異なる。URLとJSON機密キーは保守的に伏せるが、アプリ固有情報の完全な秘匿は保証しない。
