@@ -1,0 +1,3697 @@
+{
+  "oracle_kind": "MCP tools/list wire-schema versus Rust tools.json catalog; not executor parity",
+  "upstream_sha": "95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0",
+  "rust_catalog_sha256": "e3c39cbc8c3861b15846b93a8e13e375c3d408d16b33c7bc8279d45c39946b4b",
+  "mcp_sdk_version": "2.3.0",
+  "python_version": "3.13.14",
+  "source_file": "scrapling/__init__.py",
+  "status": "mismatch",
+  "upstream_count": 16,
+  "rust_count": 16,
+  "missing_in_rust": [],
+  "extra_in_rust": [],
+  "differing_tools": 16,
+  "difference_count": 348,
+  "differences": {
+    "browser_actions": [
+      {
+        "path": "/inputSchema/$defs",
+        "reason": "missing_field",
+        "upstream": {
+          "_CheckboxFormField": {
+            "properties": {
+              "target": {
+                "$ref": "#/$defs/_Target"
+              },
+              "timeout": {
+                "$ref": "#/$defs/_FieldTimeout",
+                "default": 30000
+              },
+              "type": {
+                "const": "checkbox",
+                "title": "Type",
+                "type": "string"
+              },
+              "value": {
+                "title": "Value",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "type",
+              "value"
+            ],
+            "title": "_CheckboxFormField",
+            "type": "object"
+          },
+          "_DialogAction": {
+            "properties": {
+              "type": {
+                "const": "dialog",
+                "title": "Type",
+                "type": "string"
+              },
+              "accept": {
+                "description": "Queue one reply before its trigger; unused replies expire at call end.",
+                "title": "Accept",
+                "type": "boolean"
+              },
+              "prompt_text": {
+                "description": "Text for an accepted prompt; omitted means empty.",
+                "title": "Prompt Text",
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "accept"
+            ],
+            "title": "_DialogAction",
+            "type": "object"
+          },
+          "_ElementWait": {
+            "properties": {
+              "timeout": {
+                "default": 30000,
+                "description": "Wait limit in ms; 0 disables it.",
+                "minimum": 0,
+                "title": "Timeout",
+                "type": "number"
+              },
+              "type": {
+                "const": "wait_element",
+                "title": "Type",
+                "type": "string"
+              },
+              "target": {
+                "description": "Playwright selector or aria-ref=<ref> for one element.",
+                "minLength": 1,
+                "title": "Target",
+                "type": "string"
+              },
+              "state": {
+                "default": "visible",
+                "description": "Hidden includes removal.",
+                "enum": [
+                  "attached",
+                  "detached",
+                  "hidden",
+                  "visible"
+                ],
+                "title": "State",
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "target"
+            ],
+            "title": "_ElementWait",
+            "type": "object"
+          },
+          "_FieldTimeout": {
+            "description": "Limit per native operation in ms; 0 disables it.",
+            "minimum": 0,
+            "title": "Timeout",
+            "type": "number"
+          },
+          "_KeyPress": {
+            "properties": {
+              "type": {
+                "const": "press_key",
+                "title": "Type",
+                "type": "string"
+              },
+              "key": {
+                "description": "Key or shortcut at current focus, e.g. Enter or ControlOrMeta+A.",
+                "minLength": 1,
+                "title": "Key",
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "key"
+            ],
+            "title": "_KeyPress",
+            "type": "object"
+          },
+          "_LoadWait": {
+            "properties": {
+              "timeout": {
+                "default": 30000,
+                "description": "Wait limit in ms; 0 disables it.",
+                "minimum": 0,
+                "title": "Timeout",
+                "type": "number"
+              },
+              "type": {
+                "const": "wait_load",
+                "title": "Type",
+                "type": "string"
+              },
+              "state": {
+                "description": "Current document readiness; networkidle waits for 500 ms without active connections.",
+                "enum": [
+                  "domcontentloaded",
+                  "load",
+                  "networkidle"
+                ],
+                "title": "State",
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "state"
+            ],
+            "title": "_LoadWait",
+            "type": "object"
+          },
+          "_MouseClick": {
+            "properties": {
+              "target": {
+                "$ref": "#/$defs/_Target"
+              },
+              "x": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "X"
+              },
+              "y": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Y"
+              },
+              "timeout": {
+                "default": 30000,
+                "description": "Element timeout in ms; 0 disables it.",
+                "minimum": 0,
+                "title": "Timeout",
+                "type": "number"
+              },
+              "type": {
+                "const": "click",
+                "title": "Type",
+                "type": "string"
+              },
+              "button": {
+                "default": "left",
+                "enum": [
+                  "left",
+                  "right",
+                  "middle"
+                ],
+                "title": "Button",
+                "type": "string"
+              },
+              "click_count": {
+                "default": 1,
+                "description": "2 for a double-click.",
+                "exclusiveMinimum": 0,
+                "title": "Click Count",
+                "type": "integer"
+              },
+              "delay": {
+                "default": 0,
+                "description": "Milliseconds between press and release.",
+                "minimum": 0,
+                "title": "Delay",
+                "type": "number"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "title": "_MouseClick",
+            "type": "object"
+          },
+          "_MouseMove": {
+            "properties": {
+              "target": {
+                "$ref": "#/$defs/_Target"
+              },
+              "x": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "X"
+              },
+              "y": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Y"
+              },
+              "timeout": {
+                "default": 30000,
+                "description": "Element timeout in ms; 0 disables it.",
+                "minimum": 0,
+                "title": "Timeout",
+                "type": "number"
+              },
+              "type": {
+                "const": "move",
+                "title": "Type",
+                "type": "string"
+              },
+              "steps": {
+                "default": 1,
+                "description": "Mousemove events for coordinates only.",
+                "exclusiveMinimum": 0,
+                "title": "Steps",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "title": "_MouseMove",
+            "type": "object"
+          },
+          "_MouseWheel": {
+            "properties": {
+              "type": {
+                "const": "wheel",
+                "title": "Type",
+                "type": "string"
+              },
+              "delta_x": {
+                "default": 0,
+                "description": "Horizontal CSS pixels; positive scrolls right.",
+                "title": "Delta X",
+                "type": "number"
+              },
+              "delta_y": {
+                "default": 0,
+                "description": "Vertical CSS pixels; positive scrolls down.",
+                "title": "Delta Y",
+                "type": "number"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "title": "_MouseWheel",
+            "type": "object"
+          },
+          "_RadioFormField": {
+            "properties": {
+              "target": {
+                "$ref": "#/$defs/_Target"
+              },
+              "timeout": {
+                "$ref": "#/$defs/_FieldTimeout",
+                "default": 30000
+              },
+              "type": {
+                "const": "radio",
+                "title": "Type",
+                "type": "string"
+              },
+              "value": {
+                "const": true,
+                "title": "Value",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "type",
+              "value"
+            ],
+            "title": "_RadioFormField",
+            "type": "object"
+          },
+          "_SelectFormField": {
+            "properties": {
+              "target": {
+                "$ref": "#/$defs/_Target"
+              },
+              "timeout": {
+                "$ref": "#/$defs/_FieldTimeout",
+                "default": 30000
+              },
+              "type": {
+                "const": "combobox",
+                "title": "Type",
+                "type": "string"
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                ],
+                "description": "Option label(s); [] clears selection.",
+                "title": "Value"
+              }
+            },
+            "required": [
+              "type",
+              "value"
+            ],
+            "title": "_SelectFormField",
+            "type": "object"
+          },
+          "_Target": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Playwright selector or snapshot ref as aria-ref=<ref>.",
+            "title": "Target"
+          },
+          "_TextFormField": {
+            "properties": {
+              "target": {
+                "$ref": "#/$defs/_Target"
+              },
+              "timeout": {
+                "$ref": "#/$defs/_FieldTimeout",
+                "default": 30000
+              },
+              "type": {
+                "const": "textbox",
+                "title": "Type",
+                "type": "string"
+              },
+              "value": {
+                "title": "Value",
+                "type": "string"
+              },
+              "clear": {
+                "default": true,
+                "description": "False types at the current caret or selection.",
+                "title": "Clear",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "type",
+              "value"
+            ],
+            "title": "_TextFormField",
+            "type": "object"
+          },
+          "_TimeWait": {
+            "properties": {
+              "type": {
+                "const": "wait_time",
+                "title": "Type",
+                "type": "string"
+              },
+              "milliseconds": {
+                "minimum": 0,
+                "title": "Milliseconds",
+                "type": "number"
+              }
+            },
+            "required": [
+              "type",
+              "milliseconds"
+            ],
+            "title": "_TimeWait",
+            "type": "object"
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/discriminator",
+        "reason": "missing_field",
+        "upstream": {
+          "mapping": {
+            "checkbox": "#/$defs/_CheckboxFormField",
+            "click": "#/$defs/_MouseClick",
+            "combobox": "#/$defs/_SelectFormField",
+            "dialog": "#/$defs/_DialogAction",
+            "move": "#/$defs/_MouseMove",
+            "press_key": "#/$defs/_KeyPress",
+            "radio": "#/$defs/_RadioFormField",
+            "textbox": "#/$defs/_TextFormField",
+            "wait_element": "#/$defs/_ElementWait",
+            "wait_load": "#/$defs/_LoadWait",
+            "wait_time": "#/$defs/_TimeWait",
+            "wheel": "#/$defs/_MouseWheel"
+          },
+          "propertyName": "type"
+        }
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/0/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/_MouseMove"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/0/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/0/properties",
+        "reason": "missing_field",
+        "rust": {
+          "target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "x": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "y": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timeout": {
+            "type": "number",
+            "minimum": 0,
+            "default": 30000
+          },
+          "type": {
+            "enum": [
+              "move"
+            ]
+          },
+          "steps": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/0/required",
+        "reason": "missing_field",
+        "rust": [
+          "type"
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/0/type",
+        "reason": "missing_field",
+        "rust": "object"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/1/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/_MouseClick"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/1/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/1/properties",
+        "reason": "missing_field",
+        "rust": {
+          "target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "x": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "y": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timeout": {
+            "type": "number",
+            "minimum": 0,
+            "default": 30000
+          },
+          "type": {
+            "enum": [
+              "click"
+            ]
+          },
+          "button": {
+            "enum": [
+              "left",
+              "right",
+              "middle"
+            ],
+            "default": "left"
+          },
+          "click_count": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          },
+          "delay": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/1/required",
+        "reason": "missing_field",
+        "rust": [
+          "type"
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/1/type",
+        "reason": "missing_field",
+        "rust": "object"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/2/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/_MouseWheel"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/2/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/2/properties",
+        "reason": "missing_field",
+        "rust": {
+          "type": {
+            "enum": [
+              "wheel"
+            ]
+          },
+          "delta_x": {
+            "type": "number",
+            "default": 0
+          },
+          "delta_y": {
+            "type": "number",
+            "default": 0
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/2/required",
+        "reason": "missing_field",
+        "rust": [
+          "type"
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/2/type",
+        "reason": "missing_field",
+        "rust": "object"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/3/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/_TextFormField"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/3/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/3/properties",
+        "reason": "missing_field",
+        "rust": {
+          "target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timeout": {
+            "type": "number",
+            "minimum": 0,
+            "default": 30000
+          },
+          "type": {
+            "enum": [
+              "textbox"
+            ]
+          },
+          "value": {
+            "type": "string"
+          },
+          "clear": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/3/required",
+        "reason": "missing_field",
+        "rust": [
+          "type",
+          "value"
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/3/type",
+        "reason": "missing_field",
+        "rust": "object"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/4/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/_CheckboxFormField"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/4/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/4/properties",
+        "reason": "missing_field",
+        "rust": {
+          "target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timeout": {
+            "type": "number",
+            "minimum": 0,
+            "default": 30000
+          },
+          "type": {
+            "enum": [
+              "checkbox"
+            ]
+          },
+          "value": {
+            "type": "boolean"
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/4/required",
+        "reason": "missing_field",
+        "rust": [
+          "type",
+          "value"
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/4/type",
+        "reason": "missing_field",
+        "rust": "object"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/5/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/_RadioFormField"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/5/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/5/properties",
+        "reason": "missing_field",
+        "rust": {
+          "target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timeout": {
+            "type": "number",
+            "minimum": 0,
+            "default": 30000
+          },
+          "type": {
+            "enum": [
+              "radio"
+            ]
+          },
+          "value": {
+            "enum": [
+              true
+            ]
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/5/required",
+        "reason": "missing_field",
+        "rust": [
+          "type",
+          "value"
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/5/type",
+        "reason": "missing_field",
+        "rust": "object"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/6/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/_SelectFormField"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/6/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/6/properties",
+        "reason": "missing_field",
+        "rust": {
+          "target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timeout": {
+            "type": "number",
+            "minimum": 0,
+            "default": 30000
+          },
+          "type": {
+            "enum": [
+              "combobox"
+            ]
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/6/required",
+        "reason": "missing_field",
+        "rust": [
+          "type",
+          "value"
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/6/type",
+        "reason": "missing_field",
+        "rust": "object"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/7/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/_KeyPress"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/7/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/7/properties",
+        "reason": "missing_field",
+        "rust": {
+          "type": {
+            "enum": [
+              "press_key"
+            ]
+          },
+          "key": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/7/required",
+        "reason": "missing_field",
+        "rust": [
+          "type",
+          "key"
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/7/type",
+        "reason": "missing_field",
+        "rust": "object"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/8/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/_DialogAction"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/8/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/8/properties",
+        "reason": "missing_field",
+        "rust": {
+          "type": {
+            "enum": [
+              "dialog"
+            ]
+          },
+          "accept": {
+            "type": "boolean"
+          },
+          "prompt_text": {
+            "type": "string"
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/8/required",
+        "reason": "missing_field",
+        "rust": [
+          "type",
+          "accept"
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/8/type",
+        "reason": "missing_field",
+        "rust": "object"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/9/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/_TimeWait"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/9/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/9/properties",
+        "reason": "missing_field",
+        "rust": {
+          "type": {
+            "enum": [
+              "wait_time"
+            ]
+          },
+          "milliseconds": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/9/required",
+        "reason": "missing_field",
+        "rust": [
+          "type",
+          "milliseconds"
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/9/type",
+        "reason": "missing_field",
+        "rust": "object"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/10/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/_ElementWait"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/10/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/10/properties",
+        "reason": "missing_field",
+        "rust": {
+          "timeout": {
+            "type": "number",
+            "minimum": 0,
+            "default": 30000
+          },
+          "type": {
+            "enum": [
+              "wait_element"
+            ]
+          },
+          "target": {
+            "type": "string",
+            "minLength": 1
+          },
+          "state": {
+            "enum": [
+              "attached",
+              "detached",
+              "visible",
+              "hidden"
+            ],
+            "default": "visible"
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/10/required",
+        "reason": "missing_field",
+        "rust": [
+          "type",
+          "target"
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/10/type",
+        "reason": "missing_field",
+        "rust": "object"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/11/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/_LoadWait"
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/11/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/11/properties",
+        "reason": "missing_field",
+        "rust": {
+          "timeout": {
+            "type": "number",
+            "minimum": 0,
+            "default": 30000
+          },
+          "type": {
+            "enum": [
+              "wait_load"
+            ]
+          },
+          "state": {
+            "enum": [
+              "domcontentloaded",
+              "load",
+              "networkidle"
+            ]
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/11/required",
+        "reason": "missing_field",
+        "rust": [
+          "type",
+          "state"
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/actions/items/oneOf/11/type",
+        "reason": "missing_field",
+        "rust": "object"
+      },
+      {
+        "path": "/inputSchema/properties/actions/title",
+        "reason": "missing_field",
+        "upstream": "Actions"
+      },
+      {
+        "path": "/inputSchema/properties/session_id/title",
+        "reason": "missing_field",
+        "upstream": "Session Id"
+      },
+      {
+        "path": "/inputSchema/properties/slowly/title",
+        "reason": "missing_field",
+        "upstream": "Slowly"
+      },
+      {
+        "path": "/inputSchema/title",
+        "reason": "missing_field",
+        "upstream": "browser_actionsArguments"
+      },
+      {
+        "path": "/annotations",
+        "reason": "missing_field",
+        "upstream": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        }
+      }
+    ],
+    "browser_evaluate": [
+      {
+        "path": "/inputSchema/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/arg/anyOf/0/additionalProperties",
+        "reason": "type",
+        "upstream": true,
+        "rust": {}
+      },
+      {
+        "path": "/inputSchema/properties/arg/title",
+        "reason": "missing_field",
+        "upstream": "Arg"
+      },
+      {
+        "path": "/inputSchema/properties/expression/title",
+        "reason": "missing_field",
+        "upstream": "Expression"
+      },
+      {
+        "path": "/inputSchema/properties/isolated_context/title",
+        "reason": "missing_field",
+        "upstream": "Isolated Context"
+      },
+      {
+        "path": "/inputSchema/properties/session_id/title",
+        "reason": "missing_field",
+        "upstream": "Session Id"
+      },
+      {
+        "path": "/inputSchema/title",
+        "reason": "missing_field",
+        "upstream": "browser_evaluateArguments"
+      },
+      {
+        "path": "/annotations",
+        "reason": "missing_field",
+        "upstream": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        }
+      }
+    ],
+    "browser_extract": [
+      {
+        "path": "/inputSchema/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/boxes/title",
+        "reason": "missing_field",
+        "upstream": "Boxes"
+      },
+      {
+        "path": "/inputSchema/properties/depth/title",
+        "reason": "missing_field",
+        "upstream": "Depth"
+      },
+      {
+        "path": "/inputSchema/properties/extraction_type/title",
+        "reason": "missing_field",
+        "upstream": "Extraction Type"
+      },
+      {
+        "path": "/inputSchema/properties/extraction_type/type",
+        "reason": "missing_field",
+        "upstream": "string"
+      },
+      {
+        "path": "/inputSchema/properties/main_content_only/title",
+        "reason": "missing_field",
+        "upstream": "Main Content Only"
+      },
+      {
+        "path": "/inputSchema/properties/search/title",
+        "reason": "missing_field",
+        "upstream": "Search"
+      },
+      {
+        "path": "/inputSchema/properties/session_id/title",
+        "reason": "missing_field",
+        "upstream": "Session Id"
+      },
+      {
+        "path": "/inputSchema/properties/target/title",
+        "reason": "missing_field",
+        "upstream": "Target"
+      },
+      {
+        "path": "/inputSchema/title",
+        "reason": "missing_field",
+        "upstream": "browser_extractArguments"
+      },
+      {
+        "path": "/annotations",
+        "reason": "missing_field",
+        "upstream": {
+          "readOnlyHint": true,
+          "openWorldHint": true
+        }
+      }
+    ],
+    "browser_fetch": [
+      {
+        "path": "/inputSchema/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/blocked_domains/title",
+        "reason": "missing_field",
+        "upstream": "Blocked Domains"
+      },
+      {
+        "path": "/inputSchema/properties/css_selector/title",
+        "reason": "missing_field",
+        "upstream": "Css Selector"
+      },
+      {
+        "path": "/inputSchema/properties/disable_resources/title",
+        "reason": "missing_field",
+        "upstream": "Disable Resources"
+      },
+      {
+        "path": "/inputSchema/properties/extra_headers/title",
+        "reason": "missing_field",
+        "upstream": "Extra Headers"
+      },
+      {
+        "path": "/inputSchema/properties/extraction_type/title",
+        "reason": "missing_field",
+        "upstream": "Extraction Type"
+      },
+      {
+        "path": "/inputSchema/properties/extraction_type/type",
+        "reason": "missing_field",
+        "upstream": "string"
+      },
+      {
+        "path": "/inputSchema/properties/google_search/title",
+        "reason": "missing_field",
+        "upstream": "Google Search"
+      },
+      {
+        "path": "/inputSchema/properties/load_dom/title",
+        "reason": "missing_field",
+        "upstream": "Load Dom"
+      },
+      {
+        "path": "/inputSchema/properties/main_content_only/title",
+        "reason": "missing_field",
+        "upstream": "Main Content Only"
+      },
+      {
+        "path": "/inputSchema/properties/network_idle/title",
+        "reason": "missing_field",
+        "upstream": "Network Idle"
+      },
+      {
+        "path": "/inputSchema/properties/pierce_shadow/title",
+        "reason": "missing_field",
+        "upstream": "Pierce Shadow"
+      },
+      {
+        "path": "/inputSchema/properties/session_id/title",
+        "reason": "missing_field",
+        "upstream": "Session Id"
+      },
+      {
+        "path": "/inputSchema/properties/solve_cloudflare/title",
+        "reason": "missing_field",
+        "upstream": "Solve Cloudflare"
+      },
+      {
+        "path": "/inputSchema/properties/timeout/title",
+        "reason": "missing_field",
+        "upstream": "Timeout"
+      },
+      {
+        "path": "/inputSchema/properties/url/title",
+        "reason": "missing_field",
+        "upstream": "Url"
+      },
+      {
+        "path": "/inputSchema/properties/wait/title",
+        "reason": "missing_field",
+        "upstream": "Wait"
+      },
+      {
+        "path": "/inputSchema/properties/wait_selector/title",
+        "reason": "missing_field",
+        "upstream": "Wait Selector"
+      },
+      {
+        "path": "/inputSchema/properties/wait_selector_state/enum/2",
+        "reason": "value",
+        "upstream": "hidden",
+        "rust": "visible"
+      },
+      {
+        "path": "/inputSchema/properties/wait_selector_state/enum/3",
+        "reason": "value",
+        "upstream": "visible",
+        "rust": "hidden"
+      },
+      {
+        "path": "/inputSchema/properties/wait_selector_state/title",
+        "reason": "missing_field",
+        "upstream": "Wait Selector State"
+      },
+      {
+        "path": "/inputSchema/properties/wait_selector_state/type",
+        "reason": "missing_field",
+        "upstream": "string"
+      },
+      {
+        "path": "/inputSchema/title",
+        "reason": "missing_field",
+        "upstream": "browser_fetchArguments"
+      },
+      {
+        "path": "/outputSchema",
+        "reason": "missing_field",
+        "upstream": {
+          "description": "Request's response information structure.",
+          "properties": {
+            "status": {
+              "description": "The status code returned by the website.",
+              "title": "Status",
+              "type": "integer"
+            },
+            "content": {
+              "description": "The page content as Markdown, HTML, text, or an AI ARIA snapshot.",
+              "items": {
+                "type": "string"
+              },
+              "title": "Content",
+              "type": "array"
+            },
+            "url": {
+              "description": "The URL given by the user that resulted in this response.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "content",
+            "url"
+          ],
+          "title": "ResponseModel",
+          "type": "object"
+        }
+      },
+      {
+        "path": "/annotations",
+        "reason": "missing_field",
+        "upstream": {
+          "readOnlyHint": true,
+          "openWorldHint": true
+        }
+      }
+    ],
+    "browser_fetch_once": [
+      {
+        "path": "/inputSchema/$defs",
+        "reason": "missing_field",
+        "upstream": {
+          "SetCookieParam": {
+            "properties": {
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "value": {
+                "title": "Value",
+                "type": "string"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Url"
+              },
+              "domain": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Domain"
+              },
+              "path": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Path"
+              },
+              "expires": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Expires"
+              },
+              "httpOnly": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Httponly"
+              },
+              "secure": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Secure"
+              },
+              "sameSite": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "Lax",
+                      "None",
+                      "Strict"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Samesite"
+              },
+              "partitionKey": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Partitionkey"
+              }
+            },
+            "title": "SetCookieParam",
+            "type": "object"
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/additional_args/anyOf/0/additionalProperties",
+        "reason": "missing_field",
+        "upstream": true
+      },
+      {
+        "path": "/inputSchema/properties/additional_args/title",
+        "reason": "missing_field",
+        "upstream": "Additional Args"
+      },
+      {
+        "path": "/inputSchema/properties/allow_webgl/title",
+        "reason": "missing_field",
+        "upstream": "Allow Webgl"
+      },
+      {
+        "path": "/inputSchema/properties/block_webrtc/title",
+        "reason": "missing_field",
+        "upstream": "Block Webrtc"
+      },
+      {
+        "path": "/inputSchema/properties/cdp_url/title",
+        "reason": "missing_field",
+        "upstream": "Cdp Url"
+      },
+      {
+        "path": "/inputSchema/properties/cookies/anyOf/0/items/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/SetCookieParam"
+      },
+      {
+        "path": "/inputSchema/properties/cookies/anyOf/0/items/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/cookies/anyOf/0/items/properties",
+        "reason": "missing_field",
+        "rust": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expires": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "httpOnly": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "secure": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sameSite": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Lax",
+                  "None",
+                  "Strict"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "partitionKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/properties/cookies/anyOf/0/items/type",
+        "reason": "missing_field",
+        "rust": "object"
+      },
+      {
+        "path": "/inputSchema/properties/cookies/title",
+        "reason": "missing_field",
+        "upstream": "Cookies"
+      },
+      {
+        "path": "/inputSchema/properties/css_selector/title",
+        "reason": "missing_field",
+        "upstream": "Css Selector"
+      },
+      {
+        "path": "/inputSchema/properties/disable_resources/title",
+        "reason": "missing_field",
+        "upstream": "Disable Resources"
+      },
+      {
+        "path": "/inputSchema/properties/executable_path/title",
+        "reason": "missing_field",
+        "upstream": "Executable Path"
+      },
+      {
+        "path": "/inputSchema/properties/extra_headers/title",
+        "reason": "missing_field",
+        "upstream": "Extra Headers"
+      },
+      {
+        "path": "/inputSchema/properties/extraction_type/title",
+        "reason": "missing_field",
+        "upstream": "Extraction Type"
+      },
+      {
+        "path": "/inputSchema/properties/extraction_type/type",
+        "reason": "missing_field",
+        "upstream": "string"
+      },
+      {
+        "path": "/inputSchema/properties/google_search/title",
+        "reason": "missing_field",
+        "upstream": "Google Search"
+      },
+      {
+        "path": "/inputSchema/properties/headless/title",
+        "reason": "missing_field",
+        "upstream": "Headless"
+      },
+      {
+        "path": "/inputSchema/properties/hide_canvas/title",
+        "reason": "missing_field",
+        "upstream": "Hide Canvas"
+      },
+      {
+        "path": "/inputSchema/properties/locale/title",
+        "reason": "missing_field",
+        "upstream": "Locale"
+      },
+      {
+        "path": "/inputSchema/properties/main_content_only/title",
+        "reason": "missing_field",
+        "upstream": "Main Content Only"
+      },
+      {
+        "path": "/inputSchema/properties/network_idle/title",
+        "reason": "missing_field",
+        "upstream": "Network Idle"
+      },
+      {
+        "path": "/inputSchema/properties/pierce_shadow/title",
+        "reason": "missing_field",
+        "upstream": "Pierce Shadow"
+      },
+      {
+        "path": "/inputSchema/properties/proxy/anyOf",
+        "reason": "array_length",
+        "upstream": 3,
+        "rust": 2
+      },
+      {
+        "path": "/inputSchema/properties/proxy/anyOf/0/anyOf",
+        "reason": "missing_field",
+        "rust": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/proxy/anyOf/0/type",
+        "reason": "missing_field",
+        "upstream": "string"
+      },
+      {
+        "path": "/inputSchema/properties/proxy/anyOf/1/additionalProperties",
+        "reason": "missing_field",
+        "upstream": {
+          "type": "string"
+        }
+      },
+      {
+        "path": "/inputSchema/properties/proxy/anyOf/1/type",
+        "reason": "value",
+        "upstream": "object",
+        "rust": "null"
+      },
+      {
+        "path": "/inputSchema/properties/proxy/title",
+        "reason": "missing_field",
+        "upstream": "Proxy"
+      },
+      {
+        "path": "/inputSchema/properties/real_chrome/title",
+        "reason": "missing_field",
+        "upstream": "Real Chrome"
+      },
+      {
+        "path": "/inputSchema/properties/solve_cloudflare/title",
+        "reason": "missing_field",
+        "upstream": "Solve Cloudflare"
+      },
+      {
+        "path": "/inputSchema/properties/timeout/title",
+        "reason": "missing_field",
+        "upstream": "Timeout"
+      },
+      {
+        "path": "/inputSchema/properties/timezone_id/title",
+        "reason": "missing_field",
+        "upstream": "Timezone Id"
+      },
+      {
+        "path": "/inputSchema/properties/url/title",
+        "reason": "missing_field",
+        "upstream": "Url"
+      },
+      {
+        "path": "/inputSchema/properties/useragent/title",
+        "reason": "missing_field",
+        "upstream": "Useragent"
+      },
+      {
+        "path": "/inputSchema/properties/wait/title",
+        "reason": "missing_field",
+        "upstream": "Wait"
+      },
+      {
+        "path": "/inputSchema/properties/wait_selector/title",
+        "reason": "missing_field",
+        "upstream": "Wait Selector"
+      },
+      {
+        "path": "/inputSchema/properties/wait_selector_state/enum/2",
+        "reason": "value",
+        "upstream": "hidden",
+        "rust": "visible"
+      },
+      {
+        "path": "/inputSchema/properties/wait_selector_state/enum/3",
+        "reason": "value",
+        "upstream": "visible",
+        "rust": "hidden"
+      },
+      {
+        "path": "/inputSchema/properties/wait_selector_state/title",
+        "reason": "missing_field",
+        "upstream": "Wait Selector State"
+      },
+      {
+        "path": "/inputSchema/properties/wait_selector_state/type",
+        "reason": "missing_field",
+        "upstream": "string"
+      },
+      {
+        "path": "/inputSchema/title",
+        "reason": "missing_field",
+        "upstream": "browser_fetch_onceArguments"
+      },
+      {
+        "path": "/outputSchema",
+        "reason": "missing_field",
+        "upstream": {
+          "description": "Request's response information structure.",
+          "properties": {
+            "status": {
+              "description": "The status code returned by the website.",
+              "title": "Status",
+              "type": "integer"
+            },
+            "content": {
+              "description": "The page content as Markdown, HTML, text, or an AI ARIA snapshot.",
+              "items": {
+                "type": "string"
+              },
+              "title": "Content",
+              "type": "array"
+            },
+            "url": {
+              "description": "The URL given by the user that resulted in this response.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "content",
+            "url"
+          ],
+          "title": "ResponseModel",
+          "type": "object"
+        }
+      },
+      {
+        "path": "/annotations",
+        "reason": "missing_field",
+        "upstream": {
+          "readOnlyHint": true,
+          "openWorldHint": true
+        }
+      }
+    ],
+    "browser_load_state": [
+      {
+        "path": "/inputSchema/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/path/title",
+        "reason": "missing_field",
+        "upstream": "Path"
+      },
+      {
+        "path": "/inputSchema/properties/session_id/title",
+        "reason": "missing_field",
+        "upstream": "Session Id"
+      },
+      {
+        "path": "/inputSchema/title",
+        "reason": "missing_field",
+        "upstream": "browser_load_stateArguments"
+      },
+      {
+        "path": "/annotations",
+        "reason": "missing_field",
+        "upstream": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        }
+      }
+    ],
+    "browser_network_request": [
+      {
+        "path": "/inputSchema/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/part/title",
+        "reason": "missing_field",
+        "upstream": "Part"
+      },
+      {
+        "path": "/inputSchema/properties/part/type",
+        "reason": "missing_field",
+        "upstream": "string"
+      },
+      {
+        "path": "/inputSchema/properties/request_id/title",
+        "reason": "missing_field",
+        "upstream": "Request Id"
+      },
+      {
+        "path": "/inputSchema/properties/session_id/title",
+        "reason": "missing_field",
+        "upstream": "Session Id"
+      },
+      {
+        "path": "/inputSchema/title",
+        "reason": "missing_field",
+        "upstream": "browser_network_requestArguments"
+      },
+      {
+        "path": "/outputSchema",
+        "reason": "missing_field",
+        "upstream": {
+          "$defs": {
+            "NetworkRequestInfo": {
+              "description": "Summary of a recorded browser request.",
+              "properties": {
+                "id": {
+                  "title": "Id",
+                  "type": "integer"
+                },
+                "url": {
+                  "title": "Url",
+                  "type": "string"
+                },
+                "method": {
+                  "title": "Method",
+                  "type": "string"
+                },
+                "resource_type": {
+                  "title": "Resource Type",
+                  "type": "string"
+                },
+                "status": {
+                  "title": "Status",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "id",
+                "url",
+                "method",
+                "resource_type",
+                "status"
+              ],
+              "title": "NetworkRequestInfo",
+              "type": "object"
+            }
+          },
+          "description": "One complete saved request part, with an optional note.",
+          "properties": {
+            "request_id": {
+              "title": "Request Id",
+              "type": "integer"
+            },
+            "part": {
+              "enum": [
+                "summary",
+                "request_headers",
+                "request_body",
+                "response_headers",
+                "response_body"
+              ],
+              "title": "Part",
+              "type": "string"
+            },
+            "data": {
+              "anyOf": [
+                {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                {
+                  "$ref": "#/$defs/NetworkRequestInfo"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Data"
+            },
+            "note": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Note"
+            }
+          },
+          "required": [
+            "request_id",
+            "part"
+          ],
+          "title": "NetworkRequestModel",
+          "type": "object"
+        }
+      },
+      {
+        "path": "/annotations",
+        "reason": "missing_field",
+        "upstream": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        }
+      }
+    ],
+    "browser_network_requests": [
+      {
+        "path": "/inputSchema/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/after_id/title",
+        "reason": "missing_field",
+        "upstream": "After Id"
+      },
+      {
+        "path": "/inputSchema/properties/include_static/title",
+        "reason": "missing_field",
+        "upstream": "Include Static"
+      },
+      {
+        "path": "/inputSchema/properties/limit/title",
+        "reason": "missing_field",
+        "upstream": "Limit"
+      },
+      {
+        "path": "/inputSchema/properties/session_id/title",
+        "reason": "missing_field",
+        "upstream": "Session Id"
+      },
+      {
+        "path": "/inputSchema/properties/url_pattern/title",
+        "reason": "missing_field",
+        "upstream": "Url Pattern"
+      },
+      {
+        "path": "/inputSchema/title",
+        "reason": "missing_field",
+        "upstream": "browser_network_requestsArguments"
+      },
+      {
+        "path": "/outputSchema",
+        "reason": "missing_field",
+        "upstream": {
+          "$defs": {
+            "NetworkRequestInfo": {
+              "description": "Summary of a recorded browser request.",
+              "properties": {
+                "id": {
+                  "title": "Id",
+                  "type": "integer"
+                },
+                "url": {
+                  "title": "Url",
+                  "type": "string"
+                },
+                "method": {
+                  "title": "Method",
+                  "type": "string"
+                },
+                "resource_type": {
+                  "title": "Resource Type",
+                  "type": "string"
+                },
+                "status": {
+                  "title": "Status",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "id",
+                "url",
+                "method",
+                "resource_type",
+                "status"
+              ],
+              "title": "NetworkRequestInfo",
+              "type": "object"
+            }
+          },
+          "description": "Recorded request summaries and pagination details.",
+          "properties": {
+            "requests": {
+              "items": {
+                "$ref": "#/$defs/NetworkRequestInfo"
+              },
+              "title": "Requests",
+              "type": "array"
+            },
+            "next_cursor": {
+              "title": "Next Cursor",
+              "type": "integer"
+            },
+            "has_more": {
+              "title": "Has More",
+              "type": "boolean"
+            },
+            "dropped_count": {
+              "title": "Dropped Count",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "requests",
+            "next_cursor",
+            "has_more",
+            "dropped_count"
+          ],
+          "title": "NetworkRequestsModel",
+          "type": "object"
+        }
+      },
+      {
+        "path": "/annotations",
+        "reason": "missing_field",
+        "upstream": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        }
+      }
+    ],
+    "browser_open": [
+      {
+        "path": "/inputSchema/$defs",
+        "reason": "missing_field",
+        "upstream": {
+          "SetCookieParam": {
+            "properties": {
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "value": {
+                "title": "Value",
+                "type": "string"
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Url"
+              },
+              "domain": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Domain"
+              },
+              "path": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Path"
+              },
+              "expires": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Expires"
+              },
+              "httpOnly": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Httponly"
+              },
+              "secure": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Secure"
+              },
+              "sameSite": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "Lax",
+                      "None",
+                      "Strict"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Samesite"
+              },
+              "partitionKey": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Partitionkey"
+              }
+            },
+            "title": "SetCookieParam",
+            "type": "object"
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/additional_args/anyOf/0/additionalProperties",
+        "reason": "missing_field",
+        "upstream": true
+      },
+      {
+        "path": "/inputSchema/properties/additional_args/title",
+        "reason": "missing_field",
+        "upstream": "Additional Args"
+      },
+      {
+        "path": "/inputSchema/properties/allow_webgl/title",
+        "reason": "missing_field",
+        "upstream": "Allow Webgl"
+      },
+      {
+        "path": "/inputSchema/properties/block_webrtc/title",
+        "reason": "missing_field",
+        "upstream": "Block Webrtc"
+      },
+      {
+        "path": "/inputSchema/properties/cdp_url/title",
+        "reason": "missing_field",
+        "upstream": "Cdp Url"
+      },
+      {
+        "path": "/inputSchema/properties/cookies/anyOf/0/items/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/SetCookieParam"
+      },
+      {
+        "path": "/inputSchema/properties/cookies/anyOf/0/items/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/cookies/anyOf/0/items/properties",
+        "reason": "missing_field",
+        "rust": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expires": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "httpOnly": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "secure": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sameSite": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Lax",
+                  "None",
+                  "Strict"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "partitionKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/properties/cookies/anyOf/0/items/type",
+        "reason": "missing_field",
+        "rust": "object"
+      },
+      {
+        "path": "/inputSchema/properties/cookies/title",
+        "reason": "missing_field",
+        "upstream": "Cookies"
+      },
+      {
+        "path": "/inputSchema/properties/executable_path/title",
+        "reason": "missing_field",
+        "upstream": "Executable Path"
+      },
+      {
+        "path": "/inputSchema/properties/headless/title",
+        "reason": "missing_field",
+        "upstream": "Headless"
+      },
+      {
+        "path": "/inputSchema/properties/hide_canvas/title",
+        "reason": "missing_field",
+        "upstream": "Hide Canvas"
+      },
+      {
+        "path": "/inputSchema/properties/locale/title",
+        "reason": "missing_field",
+        "upstream": "Locale"
+      },
+      {
+        "path": "/inputSchema/properties/proxy/anyOf",
+        "reason": "array_length",
+        "upstream": 3,
+        "rust": 2
+      },
+      {
+        "path": "/inputSchema/properties/proxy/anyOf/0/anyOf",
+        "reason": "missing_field",
+        "rust": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/proxy/anyOf/0/type",
+        "reason": "missing_field",
+        "upstream": "string"
+      },
+      {
+        "path": "/inputSchema/properties/proxy/anyOf/1/additionalProperties",
+        "reason": "missing_field",
+        "upstream": {
+          "type": "string"
+        }
+      },
+      {
+        "path": "/inputSchema/properties/proxy/anyOf/1/type",
+        "reason": "value",
+        "upstream": "object",
+        "rust": "null"
+      },
+      {
+        "path": "/inputSchema/properties/proxy/title",
+        "reason": "missing_field",
+        "upstream": "Proxy"
+      },
+      {
+        "path": "/inputSchema/properties/real_chrome/title",
+        "reason": "missing_field",
+        "upstream": "Real Chrome"
+      },
+      {
+        "path": "/inputSchema/properties/session_id/title",
+        "reason": "missing_field",
+        "upstream": "Session Id"
+      },
+      {
+        "path": "/inputSchema/properties/timezone_id/title",
+        "reason": "missing_field",
+        "upstream": "Timezone Id"
+      },
+      {
+        "path": "/inputSchema/properties/useragent/title",
+        "reason": "missing_field",
+        "upstream": "Useragent"
+      },
+      {
+        "path": "/inputSchema/required",
+        "reason": "missing_field",
+        "rust": []
+      },
+      {
+        "path": "/inputSchema/title",
+        "reason": "missing_field",
+        "upstream": "browser_openArguments"
+      },
+      {
+        "path": "/outputSchema",
+        "reason": "missing_field",
+        "upstream": {
+          "description": "Response returned when a new session is created.",
+          "properties": {
+            "session_id": {
+              "description": "The unique identifier of the session.",
+              "title": "Session Id",
+              "type": "string"
+            },
+            "session_type": {
+              "description": "The type of the session: 'stealthy' or 'static'.",
+              "enum": [
+                "stealthy",
+                "static"
+              ],
+              "title": "Session Type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "session_id",
+            "session_type"
+          ],
+          "title": "SessionCreatedModel",
+          "type": "object"
+        }
+      },
+      {
+        "path": "/annotations",
+        "reason": "missing_field",
+        "upstream": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": true
+        }
+      }
+    ],
+    "browser_save_state": [
+      {
+        "path": "/inputSchema/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/path/title",
+        "reason": "missing_field",
+        "upstream": "Path"
+      },
+      {
+        "path": "/inputSchema/properties/session_id/title",
+        "reason": "missing_field",
+        "upstream": "Session Id"
+      },
+      {
+        "path": "/inputSchema/title",
+        "reason": "missing_field",
+        "upstream": "browser_save_stateArguments"
+      },
+      {
+        "path": "/annotations",
+        "reason": "missing_field",
+        "upstream": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        }
+      }
+    ],
+    "browser_screenshot": [
+      {
+        "path": "/inputSchema/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/full_page/title",
+        "reason": "missing_field",
+        "upstream": "Full Page"
+      },
+      {
+        "path": "/inputSchema/properties/image_type/title",
+        "reason": "missing_field",
+        "upstream": "Image Type"
+      },
+      {
+        "path": "/inputSchema/properties/image_type/type",
+        "reason": "missing_field",
+        "upstream": "string"
+      },
+      {
+        "path": "/inputSchema/properties/quality/title",
+        "reason": "missing_field",
+        "upstream": "Quality"
+      },
+      {
+        "path": "/inputSchema/properties/ref/title",
+        "reason": "missing_field",
+        "upstream": "Ref"
+      },
+      {
+        "path": "/inputSchema/properties/selector/title",
+        "reason": "missing_field",
+        "upstream": "Selector"
+      },
+      {
+        "path": "/inputSchema/properties/session_id/title",
+        "reason": "missing_field",
+        "upstream": "Session Id"
+      },
+      {
+        "path": "/inputSchema/properties/timeout/title",
+        "reason": "missing_field",
+        "upstream": "Timeout"
+      },
+      {
+        "path": "/inputSchema/title",
+        "reason": "missing_field",
+        "upstream": "browser_screenshotArguments"
+      },
+      {
+        "path": "/annotations",
+        "reason": "missing_field",
+        "upstream": {
+          "readOnlyHint": true,
+          "openWorldHint": true
+        }
+      }
+    ],
+    "close_session": [
+      {
+        "path": "/inputSchema/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/session_id/title",
+        "reason": "missing_field",
+        "upstream": "Session Id"
+      },
+      {
+        "path": "/inputSchema/title",
+        "reason": "missing_field",
+        "upstream": "close_sessionArguments"
+      },
+      {
+        "path": "/outputSchema",
+        "reason": "missing_field",
+        "upstream": {
+          "description": "Response returned when a session is closed.",
+          "properties": {
+            "session_id": {
+              "description": "The unique identifier of the closed session.",
+              "title": "Session Id",
+              "type": "string"
+            },
+            "message": {
+              "description": "A confirmation message.",
+              "title": "Message",
+              "type": "string"
+            }
+          },
+          "required": [
+            "session_id",
+            "message"
+          ],
+          "title": "SessionClosedModel",
+          "type": "object"
+        }
+      },
+      {
+        "path": "/annotations",
+        "reason": "missing_field",
+        "upstream": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": true
+        }
+      }
+    ],
+    "list_sessions": [
+      {
+        "path": "/inputSchema/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/required",
+        "reason": "missing_field",
+        "rust": []
+      },
+      {
+        "path": "/inputSchema/title",
+        "reason": "missing_field",
+        "upstream": "list_sessionsArguments"
+      },
+      {
+        "path": "/outputSchema",
+        "reason": "missing_field",
+        "upstream": {
+          "$defs": {
+            "SessionInfo": {
+              "description": "Information about an open browser session.",
+              "properties": {
+                "session_id": {
+                  "description": "The unique identifier of the session.",
+                  "title": "Session Id",
+                  "type": "string"
+                },
+                "session_type": {
+                  "description": "The type of the session: 'stealthy' or 'static'.",
+                  "enum": [
+                    "stealthy",
+                    "static"
+                  ],
+                  "title": "Session Type",
+                  "type": "string"
+                },
+                "created_at": {
+                  "description": "ISO timestamp of when the session was created.",
+                  "title": "Created At",
+                  "type": "string"
+                },
+                "is_alive": {
+                  "description": "Whether the session is still alive and usable.",
+                  "title": "Is Alive",
+                  "type": "boolean"
+                },
+                "settings": {
+                  "additionalProperties": true,
+                  "description": "The effective settings this session was created with.",
+                  "title": "Settings",
+                  "type": "object"
+                }
+              },
+              "required": [
+                "session_id",
+                "session_type",
+                "created_at",
+                "is_alive"
+              ],
+              "title": "SessionInfo",
+              "type": "object"
+            }
+          },
+          "properties": {
+            "result": {
+              "items": {
+                "$ref": "#/$defs/SessionInfo"
+              },
+              "title": "Result",
+              "type": "array"
+            }
+          },
+          "required": [
+            "result"
+          ],
+          "title": "list_sessionsOutput",
+          "type": "object"
+        }
+      },
+      {
+        "path": "/annotations",
+        "reason": "missing_field",
+        "upstream": {
+          "readOnlyHint": true,
+          "openWorldHint": false
+        }
+      }
+    ],
+    "make_request": [
+      {
+        "path": "/inputSchema/$defs",
+        "reason": "missing_field",
+        "upstream": {
+          "_BrowserProfile": {
+            "enum": [
+              "edge99",
+              "edge101",
+              "chrome99",
+              "chrome100",
+              "chrome101",
+              "chrome104",
+              "chrome107",
+              "chrome110",
+              "chrome116",
+              "chrome119",
+              "chrome120",
+              "chrome123",
+              "chrome124",
+              "chrome131",
+              "chrome133a",
+              "chrome136",
+              "chrome142",
+              "chrome145",
+              "chrome146",
+              "chrome150",
+              "chrome151",
+              "chrome151_macos",
+              "chrome152",
+              "chrome152_macos",
+              "chrome99_android",
+              "chrome131_android",
+              "safari153",
+              "safari155",
+              "safari170",
+              "safari172_ios",
+              "safari180",
+              "safari180_ios",
+              "safari184",
+              "safari184_ios",
+              "safari260",
+              "safari2601",
+              "safari260_ios",
+              "safari270",
+              "safari270_ios",
+              "firefox133",
+              "firefox135",
+              "firefox144",
+              "firefox147",
+              "firefox153",
+              "firefox154",
+              "firefox155",
+              "tor145",
+              "chrome",
+              "edge",
+              "safari",
+              "safari_ios",
+              "safari_beta",
+              "safari_ios_beta",
+              "chrome_android",
+              "firefox",
+              "safari15_3",
+              "safari15_5",
+              "safari17_0",
+              "safari17_2_ios",
+              "safari18_0",
+              "safari18_0_ios",
+              "safari18_4",
+              "safari18_4_ios"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/auth/title",
+        "reason": "missing_field",
+        "upstream": "Auth"
+      },
+      {
+        "path": "/inputSchema/properties/cookies/title",
+        "reason": "missing_field",
+        "upstream": "Cookies"
+      },
+      {
+        "path": "/inputSchema/properties/css_selector/title",
+        "reason": "missing_field",
+        "upstream": "Css Selector"
+      },
+      {
+        "path": "/inputSchema/properties/data/anyOf",
+        "reason": "array_length",
+        "upstream": 3,
+        "rust": 2
+      },
+      {
+        "path": "/inputSchema/properties/data/anyOf/0/anyOf",
+        "reason": "missing_field",
+        "rust": [
+          {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          {
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/data/anyOf/0/type",
+        "reason": "missing_field",
+        "upstream": "string"
+      },
+      {
+        "path": "/inputSchema/properties/data/anyOf/1/additionalProperties",
+        "reason": "missing_field",
+        "upstream": {
+          "type": "string"
+        }
+      },
+      {
+        "path": "/inputSchema/properties/data/anyOf/1/type",
+        "reason": "value",
+        "upstream": "object",
+        "rust": "null"
+      },
+      {
+        "path": "/inputSchema/properties/data/title",
+        "reason": "missing_field",
+        "upstream": "Data"
+      },
+      {
+        "path": "/inputSchema/properties/extraction_type/title",
+        "reason": "missing_field",
+        "upstream": "Extraction Type"
+      },
+      {
+        "path": "/inputSchema/properties/extraction_type/type",
+        "reason": "missing_field",
+        "upstream": "string"
+      },
+      {
+        "path": "/inputSchema/properties/follow_redirects/anyOf/0/enum",
+        "reason": "missing_field",
+        "rust": [
+          "safe",
+          "all",
+          "obeycode",
+          "firstonly"
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/follow_redirects/anyOf/0/type",
+        "reason": "missing_field",
+        "upstream": "boolean"
+      },
+      {
+        "path": "/inputSchema/properties/follow_redirects/anyOf/1/enum",
+        "reason": "missing_field",
+        "upstream": [
+          "safe",
+          "all",
+          "obeycode",
+          "firstonly"
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/follow_redirects/anyOf/1/type",
+        "reason": "value",
+        "upstream": "string",
+        "rust": "boolean"
+      },
+      {
+        "path": "/inputSchema/properties/follow_redirects/title",
+        "reason": "missing_field",
+        "upstream": "Follow Redirects"
+      },
+      {
+        "path": "/inputSchema/properties/headers/title",
+        "reason": "missing_field",
+        "upstream": "Headers"
+      },
+      {
+        "path": "/inputSchema/properties/http3/title",
+        "reason": "missing_field",
+        "upstream": "Http3"
+      },
+      {
+        "path": "/inputSchema/properties/impersonate/anyOf/0/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/_BrowserProfile"
+      },
+      {
+        "path": "/inputSchema/properties/impersonate/anyOf/0/type",
+        "reason": "missing_field",
+        "rust": "string"
+      },
+      {
+        "path": "/inputSchema/properties/impersonate/anyOf/1/items/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/_BrowserProfile"
+      },
+      {
+        "path": "/inputSchema/properties/impersonate/anyOf/1/items/type",
+        "reason": "missing_field",
+        "rust": "string"
+      },
+      {
+        "path": "/inputSchema/properties/impersonate/title",
+        "reason": "missing_field",
+        "upstream": "Impersonate"
+      },
+      {
+        "path": "/inputSchema/properties/json/anyOf",
+        "reason": "array_length",
+        "upstream": 3,
+        "rust": 2
+      },
+      {
+        "path": "/inputSchema/properties/json/anyOf/0/additionalProperties",
+        "reason": "missing_field",
+        "upstream": true
+      },
+      {
+        "path": "/inputSchema/properties/json/anyOf/0/anyOf",
+        "reason": "missing_field",
+        "rust": [
+          {
+            "type": "object"
+          },
+          {
+            "type": "array"
+          }
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/json/anyOf/0/type",
+        "reason": "missing_field",
+        "upstream": "object"
+      },
+      {
+        "path": "/inputSchema/properties/json/anyOf/1/items",
+        "reason": "missing_field",
+        "upstream": {}
+      },
+      {
+        "path": "/inputSchema/properties/json/anyOf/1/type",
+        "reason": "value",
+        "upstream": "array",
+        "rust": "null"
+      },
+      {
+        "path": "/inputSchema/properties/json/title",
+        "reason": "missing_field",
+        "upstream": "Json"
+      },
+      {
+        "path": "/inputSchema/properties/main_content_only/title",
+        "reason": "missing_field",
+        "upstream": "Main Content Only"
+      },
+      {
+        "path": "/inputSchema/properties/max_redirects/title",
+        "reason": "missing_field",
+        "upstream": "Max Redirects"
+      },
+      {
+        "path": "/inputSchema/properties/method/title",
+        "reason": "missing_field",
+        "upstream": "Method"
+      },
+      {
+        "path": "/inputSchema/properties/method/type",
+        "reason": "missing_field",
+        "upstream": "string"
+      },
+      {
+        "path": "/inputSchema/properties/params/anyOf/0/additionalProperties",
+        "reason": "missing_field",
+        "upstream": true
+      },
+      {
+        "path": "/inputSchema/properties/params/title",
+        "reason": "missing_field",
+        "upstream": "Params"
+      },
+      {
+        "path": "/inputSchema/properties/proxy/title",
+        "reason": "missing_field",
+        "upstream": "Proxy"
+      },
+      {
+        "path": "/inputSchema/properties/proxy_auth/title",
+        "reason": "missing_field",
+        "upstream": "Proxy Auth"
+      },
+      {
+        "path": "/inputSchema/properties/retries/title",
+        "reason": "missing_field",
+        "upstream": "Retries"
+      },
+      {
+        "path": "/inputSchema/properties/retry_delay/title",
+        "reason": "missing_field",
+        "upstream": "Retry Delay"
+      },
+      {
+        "path": "/inputSchema/properties/stealthy_headers/title",
+        "reason": "missing_field",
+        "upstream": "Stealthy Headers"
+      },
+      {
+        "path": "/inputSchema/properties/timeout/anyOf",
+        "reason": "array_length",
+        "upstream": 3,
+        "rust": 2
+      },
+      {
+        "path": "/inputSchema/properties/timeout/anyOf/0/anyOf",
+        "reason": "missing_field",
+        "rust": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "number"
+          }
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/timeout/anyOf/0/type",
+        "reason": "missing_field",
+        "upstream": "integer"
+      },
+      {
+        "path": "/inputSchema/properties/timeout/anyOf/1/type",
+        "reason": "value",
+        "upstream": "number",
+        "rust": "null"
+      },
+      {
+        "path": "/inputSchema/properties/timeout/title",
+        "reason": "missing_field",
+        "upstream": "Timeout"
+      },
+      {
+        "path": "/inputSchema/properties/url/title",
+        "reason": "missing_field",
+        "upstream": "Url"
+      },
+      {
+        "path": "/inputSchema/properties/verify/title",
+        "reason": "missing_field",
+        "upstream": "Verify"
+      },
+      {
+        "path": "/inputSchema/title",
+        "reason": "missing_field",
+        "upstream": "make_requestArguments"
+      },
+      {
+        "path": "/outputSchema",
+        "reason": "missing_field",
+        "upstream": {
+          "description": "Request's response information structure.",
+          "properties": {
+            "status": {
+              "description": "The status code returned by the website.",
+              "title": "Status",
+              "type": "integer"
+            },
+            "content": {
+              "description": "The page content as Markdown, HTML, text, or an AI ARIA snapshot.",
+              "items": {
+                "type": "string"
+              },
+              "title": "Content",
+              "type": "array"
+            },
+            "url": {
+              "description": "The URL given by the user that resulted in this response.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "content",
+            "url"
+          ],
+          "title": "ResponseModel",
+          "type": "object"
+        }
+      },
+      {
+        "path": "/annotations",
+        "reason": "missing_field",
+        "upstream": {
+          "readOnlyHint": true,
+          "openWorldHint": true
+        }
+      }
+    ],
+    "open_request_session": [
+      {
+        "path": "/inputSchema/$defs",
+        "reason": "missing_field",
+        "upstream": {
+          "_BrowserProfile": {
+            "enum": [
+              "edge99",
+              "edge101",
+              "chrome99",
+              "chrome100",
+              "chrome101",
+              "chrome104",
+              "chrome107",
+              "chrome110",
+              "chrome116",
+              "chrome119",
+              "chrome120",
+              "chrome123",
+              "chrome124",
+              "chrome131",
+              "chrome133a",
+              "chrome136",
+              "chrome142",
+              "chrome145",
+              "chrome146",
+              "chrome150",
+              "chrome151",
+              "chrome151_macos",
+              "chrome152",
+              "chrome152_macos",
+              "chrome99_android",
+              "chrome131_android",
+              "safari153",
+              "safari155",
+              "safari170",
+              "safari172_ios",
+              "safari180",
+              "safari180_ios",
+              "safari184",
+              "safari184_ios",
+              "safari260",
+              "safari2601",
+              "safari260_ios",
+              "safari270",
+              "safari270_ios",
+              "firefox133",
+              "firefox135",
+              "firefox144",
+              "firefox147",
+              "firefox153",
+              "firefox154",
+              "firefox155",
+              "tor145",
+              "chrome",
+              "edge",
+              "safari",
+              "safari_ios",
+              "safari_beta",
+              "safari_ios_beta",
+              "chrome_android",
+              "firefox",
+              "safari15_3",
+              "safari15_5",
+              "safari17_0",
+              "safari17_2_ios",
+              "safari18_0",
+              "safari18_0_ios",
+              "safari18_4",
+              "safari18_4_ios"
+            ],
+            "type": "string"
+          }
+        }
+      },
+      {
+        "path": "/inputSchema/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/impersonate/anyOf/0/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/_BrowserProfile"
+      },
+      {
+        "path": "/inputSchema/properties/impersonate/anyOf/0/type",
+        "reason": "missing_field",
+        "rust": "string"
+      },
+      {
+        "path": "/inputSchema/properties/impersonate/anyOf/1/items/$ref",
+        "reason": "missing_field",
+        "upstream": "#/$defs/_BrowserProfile"
+      },
+      {
+        "path": "/inputSchema/properties/impersonate/anyOf/1/items/type",
+        "reason": "missing_field",
+        "rust": "string"
+      },
+      {
+        "path": "/inputSchema/properties/impersonate/title",
+        "reason": "missing_field",
+        "upstream": "Impersonate"
+      },
+      {
+        "path": "/inputSchema/properties/proxy/title",
+        "reason": "missing_field",
+        "upstream": "Proxy"
+      },
+      {
+        "path": "/inputSchema/properties/session_id/title",
+        "reason": "missing_field",
+        "upstream": "Session Id"
+      },
+      {
+        "path": "/inputSchema/required",
+        "reason": "missing_field",
+        "rust": []
+      },
+      {
+        "path": "/inputSchema/title",
+        "reason": "missing_field",
+        "upstream": "open_request_sessionArguments"
+      },
+      {
+        "path": "/outputSchema",
+        "reason": "missing_field",
+        "upstream": {
+          "description": "Response returned when a new session is created.",
+          "properties": {
+            "session_id": {
+              "description": "The unique identifier of the session.",
+              "title": "Session Id",
+              "type": "string"
+            },
+            "session_type": {
+              "description": "The type of the session: 'stealthy' or 'static'.",
+              "enum": [
+                "stealthy",
+                "static"
+              ],
+              "title": "Session Type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "session_id",
+            "session_type"
+          ],
+          "title": "SessionCreatedModel",
+          "type": "object"
+        }
+      },
+      {
+        "path": "/annotations",
+        "reason": "missing_field",
+        "upstream": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": true
+        }
+      }
+    ],
+    "session_make_request": [
+      {
+        "path": "/inputSchema/additionalProperties",
+        "reason": "missing_field",
+        "rust": false
+      },
+      {
+        "path": "/inputSchema/properties/auth/title",
+        "reason": "missing_field",
+        "upstream": "Auth"
+      },
+      {
+        "path": "/inputSchema/properties/cookies/title",
+        "reason": "missing_field",
+        "upstream": "Cookies"
+      },
+      {
+        "path": "/inputSchema/properties/css_selector/title",
+        "reason": "missing_field",
+        "upstream": "Css Selector"
+      },
+      {
+        "path": "/inputSchema/properties/data/anyOf",
+        "reason": "array_length",
+        "upstream": 3,
+        "rust": 2
+      },
+      {
+        "path": "/inputSchema/properties/data/anyOf/0/anyOf",
+        "reason": "missing_field",
+        "rust": [
+          {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          {
+            "type": "string"
+          }
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/data/anyOf/0/type",
+        "reason": "missing_field",
+        "upstream": "string"
+      },
+      {
+        "path": "/inputSchema/properties/data/anyOf/1/additionalProperties",
+        "reason": "missing_field",
+        "upstream": {
+          "type": "string"
+        }
+      },
+      {
+        "path": "/inputSchema/properties/data/anyOf/1/type",
+        "reason": "value",
+        "upstream": "object",
+        "rust": "null"
+      },
+      {
+        "path": "/inputSchema/properties/data/title",
+        "reason": "missing_field",
+        "upstream": "Data"
+      },
+      {
+        "path": "/inputSchema/properties/extraction_type/title",
+        "reason": "missing_field",
+        "upstream": "Extraction Type"
+      },
+      {
+        "path": "/inputSchema/properties/extraction_type/type",
+        "reason": "missing_field",
+        "upstream": "string"
+      },
+      {
+        "path": "/inputSchema/properties/follow_redirects/anyOf/0/enum",
+        "reason": "missing_field",
+        "rust": [
+          "safe",
+          "all",
+          "obeycode",
+          "firstonly"
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/follow_redirects/anyOf/0/type",
+        "reason": "missing_field",
+        "upstream": "boolean"
+      },
+      {
+        "path": "/inputSchema/properties/follow_redirects/anyOf/1/enum",
+        "reason": "missing_field",
+        "upstream": [
+          "safe",
+          "all",
+          "obeycode",
+          "firstonly"
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/follow_redirects/anyOf/1/type",
+        "reason": "value",
+        "upstream": "string",
+        "rust": "boolean"
+      },
+      {
+        "path": "/inputSchema/properties/follow_redirects/title",
+        "reason": "missing_field",
+        "upstream": "Follow Redirects"
+      },
+      {
+        "path": "/inputSchema/properties/headers/title",
+        "reason": "missing_field",
+        "upstream": "Headers"
+      },
+      {
+        "path": "/inputSchema/properties/http3/title",
+        "reason": "missing_field",
+        "upstream": "Http3"
+      },
+      {
+        "path": "/inputSchema/properties/json/anyOf",
+        "reason": "array_length",
+        "upstream": 3,
+        "rust": 2
+      },
+      {
+        "path": "/inputSchema/properties/json/anyOf/0/additionalProperties",
+        "reason": "missing_field",
+        "upstream": true
+      },
+      {
+        "path": "/inputSchema/properties/json/anyOf/0/anyOf",
+        "reason": "missing_field",
+        "rust": [
+          {
+            "type": "object"
+          },
+          {
+            "type": "array"
+          }
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/json/anyOf/0/type",
+        "reason": "missing_field",
+        "upstream": "object"
+      },
+      {
+        "path": "/inputSchema/properties/json/anyOf/1/items",
+        "reason": "missing_field",
+        "upstream": {}
+      },
+      {
+        "path": "/inputSchema/properties/json/anyOf/1/type",
+        "reason": "value",
+        "upstream": "array",
+        "rust": "null"
+      },
+      {
+        "path": "/inputSchema/properties/json/title",
+        "reason": "missing_field",
+        "upstream": "Json"
+      },
+      {
+        "path": "/inputSchema/properties/main_content_only/title",
+        "reason": "missing_field",
+        "upstream": "Main Content Only"
+      },
+      {
+        "path": "/inputSchema/properties/max_redirects/title",
+        "reason": "missing_field",
+        "upstream": "Max Redirects"
+      },
+      {
+        "path": "/inputSchema/properties/method/title",
+        "reason": "missing_field",
+        "upstream": "Method"
+      },
+      {
+        "path": "/inputSchema/properties/method/type",
+        "reason": "missing_field",
+        "upstream": "string"
+      },
+      {
+        "path": "/inputSchema/properties/params/anyOf/0/additionalProperties",
+        "reason": "missing_field",
+        "upstream": true
+      },
+      {
+        "path": "/inputSchema/properties/params/title",
+        "reason": "missing_field",
+        "upstream": "Params"
+      },
+      {
+        "path": "/inputSchema/properties/retries/title",
+        "reason": "missing_field",
+        "upstream": "Retries"
+      },
+      {
+        "path": "/inputSchema/properties/retry_delay/title",
+        "reason": "missing_field",
+        "upstream": "Retry Delay"
+      },
+      {
+        "path": "/inputSchema/properties/session_id/title",
+        "reason": "missing_field",
+        "upstream": "Session Id"
+      },
+      {
+        "path": "/inputSchema/properties/stealthy_headers/title",
+        "reason": "missing_field",
+        "upstream": "Stealthy Headers"
+      },
+      {
+        "path": "/inputSchema/properties/timeout/anyOf",
+        "reason": "array_length",
+        "upstream": 3,
+        "rust": 2
+      },
+      {
+        "path": "/inputSchema/properties/timeout/anyOf/0/anyOf",
+        "reason": "missing_field",
+        "rust": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "number"
+          }
+        ]
+      },
+      {
+        "path": "/inputSchema/properties/timeout/anyOf/0/type",
+        "reason": "missing_field",
+        "upstream": "integer"
+      },
+      {
+        "path": "/inputSchema/properties/timeout/anyOf/1/type",
+        "reason": "value",
+        "upstream": "number",
+        "rust": "null"
+      },
+      {
+        "path": "/inputSchema/properties/timeout/title",
+        "reason": "missing_field",
+        "upstream": "Timeout"
+      },
+      {
+        "path": "/inputSchema/properties/url/title",
+        "reason": "missing_field",
+        "upstream": "Url"
+      },
+      {
+        "path": "/inputSchema/properties/verify/title",
+        "reason": "missing_field",
+        "upstream": "Verify"
+      },
+      {
+        "path": "/inputSchema/title",
+        "reason": "missing_field",
+        "upstream": "session_make_requestArguments"
+      },
+      {
+        "path": "/outputSchema",
+        "reason": "missing_field",
+        "upstream": {
+          "description": "Request's response information structure.",
+          "properties": {
+            "status": {
+              "description": "The status code returned by the website.",
+              "title": "Status",
+              "type": "integer"
+            },
+            "content": {
+              "description": "The page content as Markdown, HTML, text, or an AI ARIA snapshot.",
+              "items": {
+                "type": "string"
+              },
+              "title": "Content",
+              "type": "array"
+            },
+            "url": {
+              "description": "The URL given by the user that resulted in this response.",
+              "title": "Url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "content",
+            "url"
+          ],
+          "title": "ResponseModel",
+          "type": "object"
+        }
+      },
+      {
+        "path": "/annotations",
+        "reason": "missing_field",
+        "upstream": {
+          "readOnlyHint": true,
+          "openWorldHint": true
+        }
+      }
+    ]
+  }
+}
