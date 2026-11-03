@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import io
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -28,6 +30,7 @@ from runtime_schema_oracle import (  # noqa: E402
     named_tools,
     pointer,
 )
+from inventory_upstream import verify_source_tree  # noqa: E402
 
 
 def tool(name: str, schema: dict | None = None, **fields: object) -> dict:
@@ -114,26 +117,70 @@ class ToolComparisonTests(unittest.TestCase):
         raw = load_json((ROOT / "crates/rustscrapling-mcp/src/tools.json").read_text(encoding="utf-8"))
         self.assertEqual(len(named_tools(raw, "rust")), 16)
 
+    def test_committed_live_report_preserves_complete_difference_counts(self) -> None:
+        report = load_json((ROOT / "docs/compat/MCP_RUNTIME_SCHEMA_LIVE_V05.json").read_text(encoding="utf-8"))
+        self.assertEqual(report["upstream_sha"], UPSTREAM_SHA)
+        self.assertEqual(report["mcp_sdk_version"], "2.3.0")
+        self.assertEqual(report["source_file"], "scrapling/__init__.py")
+        self.assertEqual(report["status"], "mismatch")
+        self.assertEqual((report["upstream_count"], report["rust_count"]), (16, 16))
+        self.assertEqual(report["missing_in_rust"], [])
+        self.assertEqual(report["extra_in_rust"], [])
+        self.assertEqual(report["differing_tools"], len(report["differences"]))
+        self.assertEqual(report["difference_count"],
+                         sum(len(changes) for changes in report["differences"].values()))
+        self.assertEqual(report["difference_count"], 348)
+        self.assertEqual(len(report["rust_catalog_sha256"]), 64)
+
     def test_upstream_provenance_guard_rejects_missing_checkout(self) -> None:
         fake_checkout = ROOT / "tests"  # Exists but does not have upstream source
         with self.assertRaisesRegex(ValueError, "Not a Scrapling upstream checkout"):
             checked_upstream(fake_checkout)
 
-    def test_upstream_provenance_guard_rejects_wrong_sha_and_dirty_source(self) -> None:
+    def test_upstream_provenance_guard_delegates_to_shared_verifier(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             upstream = Path(directory)
             server = upstream / "scrapling/core/ai/server.py"
             server.parent.mkdir(parents=True)
             server.touch()
-            with patch("runtime_schema_oracle.subprocess.run", return_value=CompletedProcess([], 0, "badsha\n", "")):
-                with self.assertRaisesRegex(ValueError, "Wrong upstream HEAD"):
+            with patch("runtime_schema_oracle.verify_source_tree") as guard:
+                checked_upstream(upstream)
+            guard.assert_called_once_with(upstream)
+            with patch("runtime_schema_oracle.verify_source_tree", side_effect=ValueError("Source SHA mismatch")):
+                with self.assertRaisesRegex(ValueError, "Source SHA mismatch"):
                     checked_upstream(upstream)
-            fake_responses = [CompletedProcess([], 0, UPSTREAM_SHA + "\n", ""),
-                              CompletedProcess([], 0, " M scrapling/core/ai/server.py\n", "")]
-            with patch("runtime_schema_oracle.subprocess.run", side_effect=fake_responses) as fake:
-                with self.assertRaisesRegex(ValueError, "uncommitted"):
+
+    def test_second_probe_accepts_python_bytecode_but_rejects_python_source_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            upstream = Path(directory)
+            server = upstream / "scrapling/core/ai/server.py"
+            server.parent.mkdir(parents=True)
+            server.write_text("# pinned fixture\n", encoding="utf-8")
+
+            def git(*arguments: str) -> str:
+                return subprocess.check_output(["git", "-C", str(upstream), *arguments], text=True).strip()
+
+            git("init", "-q")
+            git("config", "user.email", "tests@example.invalid")
+            git("config", "user.name", "Runtime Schema Test")
+            git("add", "--", "scrapling/core/ai/server.py")
+            git("commit", "-qm", "fixture")
+            sha = git("rev-parse", "HEAD")
+
+            # The shared verifier is exercised with the fixture's SHA; the
+            # real Oracle passes the pinned SHA via its default argument.
+            def fixture_guard(source: Path) -> set[str]:
+                return verify_source_tree(source, expected_sha=sha)
+
+            with patch("runtime_schema_oracle.verify_source_tree", side_effect=fixture_guard):
+                checked_upstream(upstream)
+                bytecode = server.parent / "__pycache__/server.cpython-313.pyc"
+                bytecode.parent.mkdir()
+                bytecode.write_bytes(b"compiled bytecode")
+                checked_upstream(upstream)  # repeated probe stays valid
+                (server.parent / "new_tool.py").write_text("VALUE = 1\n", encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "working-tree changes"):
                     checked_upstream(upstream)
-            self.assertEqual(fake.call_count, 2)
 
     def test_missing_runtime_python_is_explicit_failure(self) -> None:
         with patch("runtime_schema_oracle.subprocess.run", side_effect=FileNotFoundError("missing-python")):
@@ -152,7 +199,7 @@ class ToolComparisonTests(unittest.TestCase):
             report_path = Path(directory) / "report.json"
             rust_path = Path(directory) / "tools.json"
             rust_path.write_text(json.dumps([tool("a", description="Rust")]), encoding="utf-8")
-            live = {"sdk_version": "2.0.0", "python_version": "3.13", "source_file": "scrapling/core/ai/server.py",
+            live = {"sdk_version": "2.0.0", "python_version": "3.13", "source_file": str(ROOT / "scrapling/core/ai/server.py"),
                     "tools": [tool("a", description="Upstream")]}
             with patch("runtime_schema_oracle.checked_upstream"), patch(
                 "runtime_schema_oracle.collect_runtime", return_value=live), contextlib.redirect_stdout(io.StringIO()):
@@ -162,6 +209,7 @@ class ToolComparisonTests(unittest.TestCase):
             report = load_json(report_path.read_text(encoding="utf-8"))
             self.assertEqual(report["difference_count"], 1)
             self.assertEqual(report["differences"]["a"][0]["path"], "/description")
+            self.assertEqual(report["source_file"], "scrapling/core/ai/server.py")
 @unittest.skipUnless(os.environ.get("SCRAPLING_MCP_LIVE_ORACLE") == "1",
                      "Set SCRAPLING_MCP_LIVE_ORACLE=1 with upstream mcp>=2.0 dependencies to probe live tools/list")
 class LiveProtocolProbeTests(unittest.TestCase):
@@ -172,6 +220,21 @@ class LiveProtocolProbeTests(unittest.TestCase):
         self.assertEqual(len(named_tools(response["tools"], "upstream")), 16)
         self.assertTrue(response["source_file"].startswith(str(upstream.resolve())))
         self.assertEqual(len(UPSTREAM_SHA), 40)
+
+    def test_committed_live_report_reproduces_on_identical_sdk_and_catalog(self) -> None:
+        upstream = ROOT.parent / "scrapling-v05-reference"
+        checked_upstream(upstream)
+        response = collect_runtime(upstream, sys.executable, 45)
+        report = load_json((ROOT / "docs/compat/MCP_RUNTIME_SCHEMA_LIVE_V05.json").read_text(encoding="utf-8"))
+        if response["sdk_version"] != report["mcp_sdk_version"]:
+            self.skipTest("Runtime SDK version differs from captured snapshot")
+        current_catalog_bytes = (ROOT / "crates/rustscrapling-mcp/src/tools.json").read_bytes()
+        if hashlib.sha256(current_catalog_bytes).hexdigest() != report["rust_catalog_sha256"]:
+            self.skipTest("Rust MCP catalog has changed since captured snapshot")
+        self.assertEqual(compare_tools(response["tools"], load_json(current_catalog_bytes.decode("utf-8"))),
+                         {key: report[key] for key in (
+                             "status", "upstream_count", "rust_count", "missing_in_rust", "extra_in_rust",
+                             "differing_tools", "difference_count", "differences")})
 
 
 if __name__ == "__main__":

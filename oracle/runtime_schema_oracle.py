@@ -22,9 +22,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from inventory_upstream import UPSTREAM_SHA, verify_source_tree
+
 
 ROOT = Path(__file__).resolve().parents[1]
-UPSTREAM_SHA = "95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0"
 FIELDS = ("title", "description", "inputSchema", "outputSchema", "annotations")
 MISSING = object()
 
@@ -174,15 +175,9 @@ def compare_tools(upstream: Any, rust: Any) -> dict[str, Any]:
 def checked_upstream(upstream: Path) -> None:
     if not (upstream / "scrapling" / "core" / "ai" / "server.py").is_file():
         raise ValueError(f"Not a Scrapling upstream checkout: {upstream}")
-    result = subprocess.run(["git", "-C", str(upstream), "rev-parse", "HEAD"],
-                            capture_output=True, text=True, check=True, timeout=10)
-    if result.stdout.strip() != UPSTREAM_SHA:
-        raise ValueError(f"Wrong upstream HEAD: {result.stdout.strip()}, expected {UPSTREAM_SHA}")
-    # A matching HEAD does not guarantee imported Python modules are unchanged.
-    dirty = subprocess.run(["git", "-C", str(upstream), "status", "--porcelain", "--", "scrapling"],
-                           capture_output=True, text=True, check=True, timeout=10)
-    if dirty.stdout.strip():
-        raise ValueError("Pinned upstream's scrapling/ has uncommitted or untracked changes")
+    # Share the AST oracle's tracked/untracked Python-source guard. Python
+    # imports create __pycache__/*.pyc, which must not invalidate later probes.
+    verify_source_tree(upstream)
 
 
 def collect_runtime(upstream: Path, python: str, timeout: int) -> dict[str, Any]:
@@ -226,7 +221,9 @@ def main(argv: list[str] | None = None) -> int:
             "rust_catalog_sha256": hashlib.sha256(rust_bytes).hexdigest(),
             "mcp_sdk_version": live["sdk_version"],
             "python_version": live["python_version"],
-            "source_file": live["source_file"],
+            # Do not embed a workstation-specific absolute path in a portable
+            # committed audit artifact. The probe already verifies provenance.
+            "source_file": Path(live["source_file"]).relative_to(upstream).as_posix(),
             **compare_tools(live["tools"], rust),
         }
         if args.report:
