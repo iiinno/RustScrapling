@@ -342,10 +342,14 @@ fn visible_text_len(body: &[u8]) -> Option<usize> {
     let head = &body[..body.len().min(65_536)];
     let lowered = String::from_utf8_lossy(head).to_ascii_lowercase();
     let bytes = lowered.as_bytes();
-    if !(bytes.windows(5).any(|w| w == b"<html")
+    // Partial documents often omit <html> and <!doctype>, so any tag pair is
+    // enough evidence that this is markup rather than JSON or an image.
+    let markup = bytes.windows(5).any(|w| w == b"<html")
         || bytes.windows(9).any(|w| w == b"<!doctype")
-        || bytes.windows(5).any(|w| w == b"<body"))
-    {
+        || bytes.windows(5).any(|w| w == b"<body")
+        || (bytes.windows(4).any(|w| w == b"<div")
+            && bytes.windows(5).any(|w| w == b"</div"));
+    if !markup {
         return None;
     }
     const SCRIPT: &[u8] = b"<script";
