@@ -116,6 +116,41 @@ impl BrowserBackend for CdpBackend {
                 .await
                 .map_err(|e| failed(&format!("CDP navigation failed: {e}")))?;
             if response.blocked.is_some() {
+                // Upstream solves the interstitial before reporting a failure, so
+                // a Cloudflare page is retried through the same solver the MCP
+                // executor uses instead of being refused outright.
+                let page = browser
+                    .as_ref()
+                    .expect("initialized browser")
+                    .open_page(false)
+                    .await
+                    .map_err(|e| failed(&format!("CDP could not open a page: {e}")))?;
+                let solved = page
+                    .navigate(&url, std::time::Duration::from_secs(30))
+                    .await
+                    .map_err(|e| failed(&format!("CDP navigation failed: {e}")));
+                let outcome = match solved {
+                    Ok(()) => rustscrapling_browser::solve_cloudflare(&page, 30_000.0).await,
+                    Err(error) => Err(error),
+                };
+                let reloaded = if outcome.is_ok() {
+                    Some(browser.as_ref().expect("initialized browser").get(url, self.get_options(headed)).await)
+                } else {
+                    None
+                };
+                let _ = page.close().await;
+                if let Some(Ok(refreshed)) = reloaded {
+                    if refreshed.blocked.is_none() {
+                        return Ok(FetchResponse {
+                            status: refreshed.status,
+                            final_url: refreshed.final_url,
+                            headers: refreshed.headers.into_iter().collect(),
+                            body: refreshed.body.into_bytes(),
+                            tier: if headed { FetchTier::Headed } else { FetchTier::Browser },
+                            protocol: Some("CDP".into()),
+                        });
+                    }
+                }
                 return Err(FetchError {
                     kind: FetchErrorKind::Blocked,
                     message: "Browser received a CAPTCHA or challenge page".into(),

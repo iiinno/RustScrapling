@@ -6,6 +6,7 @@
 //! Only the explicitly requested `evaluate` operation enables Runtime.
 
 mod actions;
+pub mod cloudflare;
 pub mod installed;
 mod keys;
 mod settings;
@@ -20,6 +21,7 @@ pub use settings::{
     UPSTREAM_LAUNCH_ARGS,
 };
 pub use transport::{BrowserError, CdpEvent};
+pub use cloudflare::{detect_cloudflare, solve_cloudflare, CloudflareChallenge};
 
 use chromiumoxide_cdp::cdp::browser_protocol::{dom, target};
 use serde::{Deserialize, Serialize};

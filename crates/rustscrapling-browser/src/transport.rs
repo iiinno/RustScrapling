@@ -28,6 +28,9 @@ pub enum BrowserError {
     Disconnected,
     Timeout(String),
     InvalidArgument(String),
+    /// A bot challenge remained after solving was attempted. Kept distinct so
+    /// callers can report `blocked` instead of a generic browser failure.
+    Blocked(String),
 }
 
 impl fmt::Display for BrowserError {
@@ -38,6 +41,7 @@ impl fmt::Display for BrowserError {
             Self::Disconnected => write!(f, "CDP connection closed"),
             Self::Timeout(command) => write!(f, "CDP operation timed out: {command}"),
             Self::InvalidArgument(msg) => write!(f, "invalid browser argument: {msg}"),
+            Self::Blocked(msg) => write!(f, "browser challenge blocked: {msg}"),
         }
     }
 }
