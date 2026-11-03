@@ -30,6 +30,11 @@ async fn real_chrome_click_and_unicode_input_without_implicit_runtime() {
     page.navigate(&target, Duration::from_secs(15))
         .await
         .unwrap();
+    let source = page.source().await.unwrap();
+    assert!(
+        source.contains("id=\"push\""),
+        "fixture HTML not loaded: {source}"
+    );
     page.click_css("#push").await.unwrap();
     page.type_text_css("#entry", "日本語テキスト")
         .await
