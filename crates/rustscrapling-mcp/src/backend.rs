@@ -1,7 +1,7 @@
 //! MCP runtime using the integrated HTTP, extraction and CDP libraries.
 //! Every unsupported upstream option is rejected instead of silently ignored.
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::{BTreeMap, HashMap, VecDeque},
     path::PathBuf,
     sync::Arc,
     time::Duration,
@@ -67,13 +67,93 @@ struct Session {
     settings: Value,
     engine: Engine,
 }
+
+const MAX_NETWORK_RECORDS: usize = 128;
+const MAX_NETWORK_BODY_BYTES: usize = 64 * 1024;
+const MAX_NETWORK_TOTAL_BODY_BYTES: usize = 1024 * 1024;
+// MCP JSON numbers must round-trip safely through JavaScript-based clients.
+const MAX_SAFE_NETWORK_ID: u64 = (1_u64 << 53) - 1;
+
+struct NetworkEntry {
+    id: u64,
+    record: NetworkRecord,
+}
+
+struct NetworkHistory {
+    entries: VecDeque<NetworkEntry>,
+    next_id: u64,
+    body_bytes: usize,
+    dropped_count: u64,
+}
+
+impl Default for NetworkHistory {
+    fn default() -> Self {
+        Self {
+            entries: VecDeque::new(),
+            next_id: 1,
+            body_bytes: 0,
+            dropped_count: 0,
+        }
+    }
+}
+
+impl NetworkHistory {
+    fn append(
+        &mut self,
+        records: impl IntoIterator<Item = NetworkRecord>,
+    ) -> Result<(), BackendError> {
+        for mut record in records {
+            let id = self.next_id;
+            if id > MAX_SAFE_NETWORK_ID {
+                return Err(BackendError::new(
+                    "network_id_exhausted",
+                    "Network request IDs exhausted",
+                ));
+            }
+            self.next_id += 1;
+            // BrowserPage is the redaction boundary. Do not persist larger bodies
+            // even if a future producer relaxes its own per-record limit.
+            if record
+                .body
+                .as_ref()
+                .is_some_and(|body| body.len() > MAX_NETWORK_BODY_BYTES)
+            {
+                record.body = None;
+            }
+            let bytes = record.body.as_ref().map_or(0, String::len);
+            while self.entries.len() >= MAX_NETWORK_RECORDS
+                || self.body_bytes.saturating_add(bytes) > MAX_NETWORK_TOTAL_BODY_BYTES
+            {
+                self.evict_oldest();
+            }
+            self.body_bytes += bytes;
+            self.entries.push_back(NetworkEntry { id, record });
+        }
+        Ok(())
+    }
+
+    fn evict_oldest(&mut self) {
+        if let Some(entry) = self.entries.pop_front() {
+            self.body_bytes -= entry.record.body.as_ref().map_or(0, String::len);
+            self.dropped_count += 1;
+        }
+    }
+
+    fn get(&self, id: u64) -> Option<&NetworkRecord> {
+        self.entries
+            .iter()
+            .find(|entry| entry.id == id)
+            .map(|entry| &entry.record)
+    }
+}
+
 enum Engine {
     Http(HttpClient),
     Browser {
         client: Box<BrowserClient>,
         page: Box<BrowserPage>,
         last_url: Option<String>,
-        network: Vec<NetworkRecord>,
+        network: NetworkHistory,
     },
 }
 
@@ -407,7 +487,7 @@ impl RuntimeBackend {
                 client: Box::new(client),
                 page: Box::new(page),
                 last_url: None,
-                network: vec![],
+                network: NetworkHistory::default(),
             },
             settings,
             "stealthy",
@@ -492,7 +572,7 @@ impl RuntimeBackend {
                     .find(|record| record.resource_type.as_deref() == Some("Document"))
             })
             .and_then(|record| record.status);
-        network.extend(captured);
+        network.append(captured)?;
         check_challenge(&body, status)?;
         render_browser(&body, &final_url, status, args)
     }
@@ -684,7 +764,16 @@ impl RuntimeBackend {
         ]))
     }
     async fn network_list(&self, args: &Map<String, Value>) -> Outcome {
-        let pattern = opt_str(args, "url_pattern")?
+        let after = network_integer(args, "after_id", Some(0), 0, MAX_SAFE_NETWORK_ID)?;
+        let limit = network_integer(args, "limit", Some(50), 1, 200)? as usize;
+        let url_pattern = opt_str(args, "url_pattern")?;
+        if url_pattern.is_some_and(|value| value.len() > 2048) {
+            return Err(BackendError::new(
+                "invalid_arguments",
+                "url_pattern is too long",
+            ));
+        }
+        let pattern = url_pattern
             .map(regex::Regex::new)
             .transpose()
             .map_err(|error| {
@@ -692,15 +781,17 @@ impl RuntimeBackend {
             })?;
         let include_static = opt_bool(args, "include_static", false)?;
         let session = self.session(required(args, "session_id")?).await?;
-        let s = session.lock().await;
-        let Engine::Browser { network, .. } = &s.engine else {
+        let mut s = session.lock().await;
+        let Engine::Browser { page, network, .. } = &mut s.engine else {
             return Err(BackendError::new(
                 "session_type",
                 "Expected browser session",
             ));
         };
-        let after = number(args, "after_id", 0.0)? as usize;
-        let limit = number(args, "limit", 50.0)? as usize;
+        // take_network() uses the same CDP response-body capture as the page's
+        // network_records()/search_network_bodies() APIs, then clears the page
+        // buffer so repeated MCP reads never assign new IDs to the same event.
+        network.append(page.take_network().await)?;
         let matches = |r: &NetworkRecord| {
             pattern.as_ref().is_none_or(|p| p.is_match(&r.url))
                 && (include_static
@@ -708,46 +799,71 @@ impl RuntimeBackend {
                     || r.resource_type.as_deref() == Some("XHR")
                     || r.resource_type.as_deref() == Some("Fetch"))
         };
-        let filtered:Vec<_>=network.iter().enumerate().skip(after).filter(|(_,r)| matches(r))
-            .take(limit).map(|(i,r)|json!({"id":i+1,"url":r.url,"status":r.status,"resource_type":r.resource_type})).collect();
+        let filtered: Vec<_> = network
+            .entries
+            .iter()
+            .filter(|entry| entry.id > after && matches(&entry.record))
+            .take(limit)
+            .map(|entry| {
+                json!({
+                    "id":entry.id,"url":entry.record.url,"status":entry.record.status,
+                    "resource_type":entry.record.resource_type
+                })
+            })
+            .collect();
         let next = filtered
             .last()
             .and_then(|v| v["id"].as_u64())
-            .unwrap_or(after as u64);
+            .unwrap_or(after);
+        let has_more = network
+            .entries
+            .iter()
+            .any(|entry| entry.id > next && matches(&entry.record));
         Ok(structured(
-            json!({"requests":filtered,"next_cursor":next,"has_more":network.iter().skip(next as usize).any(matches),"dropped_count":0}),
+            json!({"requests":filtered,"next_cursor":next,"has_more":has_more,"dropped_count":network.dropped_count}),
         ))
     }
     async fn network_request(&self, args: &Map<String, Value>) -> Outcome {
+        let id = network_integer(args, "request_id", None, 1, MAX_SAFE_NETWORK_ID)?;
+        let part = opt_str(args, "part")?.unwrap_or("summary");
+        if !matches!(part, "summary" | "response_headers" | "response_body") {
+            return Err(BackendError::new(
+                "unsupported_operation",
+                format!("'{part}' is not recorded by the CDP backend"),
+            ));
+        }
         let session = self.session(required(args, "session_id")?).await?;
-        let s = session.lock().await;
-        let Engine::Browser { network, .. } = &s.engine else {
+        let mut s = session.lock().await;
+        let Engine::Browser { page, network, .. } = &mut s.engine else {
             return Err(BackendError::new(
                 "session_type",
                 "Expected browser session",
             ));
         };
-        let id = number(args, "request_id", 0.0)? as usize;
-        let record = network
-            .get(id.checked_sub(1).ok_or_else(|| {
-                BackendError::new("invalid_arguments", "request_id must be positive")
-            })?)
-            .ok_or_else(|| BackendError::new("not_found", "Network record not found"))?;
-        let part = args
-            .get("part")
-            .and_then(Value::as_str)
-            .unwrap_or("summary");
+        network.append(page.take_network().await)?;
+        let record = network.get(id).ok_or_else(|| {
+            BackendError::new("not_found", "Network record was evicted or does not exist")
+        })?;
         match part {
             "summary" => Ok(structured(
-                json!({"id":id,"url":record.url,"status":record.status,"resource_type":record.resource_type,"failed":record.failed}),
+                json!({"id":id,"url":record.url,"status":record.status,
+                    "resource_type":record.resource_type,"failed":record.failed,
+                    "mime_type":record.mime_type,"body_available":record.body.is_some()}),
             )),
             "response_headers" => Ok(structured(
                 json!({"id":id,"part":part,"headers":record.headers}),
             )),
-            _ => Err(BackendError::new(
-                "unsupported_operation",
-                format!("'{part}' is not recorded by the CDP backend"),
-            )),
+            "response_body" => Ok(structured(json!({
+                "id":id,"part":part,"available":record.body.is_some(),
+                "body":record.body,"mime_type":record.mime_type,
+                "size_bytes":record.body.as_ref().map(String::len),
+                "note":if record.body.is_some() {
+                    "Text body captured by CDP with conservative credential redaction"
+                } else {
+                    "Body not captured (unsupported, binary, oversized, sensitive or unavailable)"
+                }
+            }))),
+            _ => unreachable!("part validated above"),
         }
     }
 }
@@ -849,6 +965,30 @@ fn opt_bool(args: &Map<String, Value>, key: &str, default: bool) -> Result<bool,
         })
     })
 }
+
+/// Network cursors and request IDs are integers, never floating-point values.
+/// Keep them within the exact JSON integer range of common MCP clients.
+fn network_integer(
+    args: &Map<String, Value>,
+    key: &str,
+    default: Option<u64>,
+    min: u64,
+    max: u64,
+) -> Result<u64, BackendError> {
+    let number = match args.get(key) {
+        Some(value) => value.as_u64(),
+        None => default,
+    };
+    number
+        .filter(|number| (min..=max).contains(number))
+        .ok_or_else(|| {
+            BackendError::new(
+                "invalid_arguments",
+                format!("'{key}' must be an integer between {min} and {max}"),
+            )
+        })
+}
+
 fn number(args: &Map<String, Value>, key: &str, default: f64) -> Result<f64, BackendError> {
     let n = args
         .get(key)
@@ -1028,4 +1168,106 @@ fn default_chrome() -> Option<PathBuf> {
         }
     }
     None
+}
+
+#[cfg(test)]
+mod network_tests {
+    use super::*;
+
+    fn record(index: usize, body: Option<String>) -> NetworkRecord {
+        NetworkRecord {
+            url: format!("https://example.test/api/{index}"),
+            status: Some(200),
+            resource_type: Some("XHR".into()),
+            headers: BTreeMap::new(),
+            failed: None,
+            request_id: Some(format!("cdp-{index}")),
+            mime_type: Some("application/json".into()),
+            body,
+        }
+    }
+
+    #[test]
+    fn request_ids_never_shift_and_eviction_count_is_exact() {
+        let mut history = NetworkHistory::default();
+        for index in 0..140 {
+            history.append([record(index, None)]).unwrap();
+        }
+        assert_eq!(history.entries.len(), 128);
+        assert_eq!(history.dropped_count, 12);
+        assert_eq!(history.entries.front().unwrap().id, 13);
+        assert_eq!(history.entries.back().unwrap().id, 140);
+        assert!(history.get(1).is_none());
+        assert_eq!(
+            history.get(13).unwrap().request_id.as_deref(),
+            Some("cdp-12")
+        );
+        history.append([record(140, None)]).unwrap();
+        assert_eq!(history.entries.front().unwrap().id, 14);
+        assert_eq!(history.entries.back().unwrap().id, 141);
+        assert_eq!(history.dropped_count, 13);
+    }
+
+    #[test]
+    fn total_body_limit_is_enforced_without_reassigning_ids() {
+        let mut history = NetworkHistory::default();
+        for index in 0..20 {
+            history
+                .append([record(index, Some("x".repeat(64 * 1024)))])
+                .unwrap();
+        }
+        assert_eq!(history.body_bytes, 1024 * 1024);
+        assert_eq!(history.entries.len(), 16);
+        assert_eq!(history.dropped_count, 4);
+        assert_eq!(history.entries.front().unwrap().id, 5);
+        history
+            .append([record(20, Some("x".repeat(MAX_NETWORK_BODY_BYTES + 1)))])
+            .unwrap();
+        assert_eq!(history.body_bytes, 1024 * 1024);
+        assert!(history.get(21).unwrap().body.is_none());
+    }
+
+    #[test]
+    fn numeric_network_arguments_require_exact_bounded_integers() {
+        let good = json!({"after_id":140,"limit":200,"request_id":MAX_SAFE_NETWORK_ID});
+        let args = good.as_object().unwrap();
+        assert_eq!(
+            network_integer(args, "after_id", Some(0), 0, MAX_SAFE_NETWORK_ID).unwrap(),
+            140
+        );
+        assert_eq!(
+            network_integer(args, "limit", Some(50), 1, 200).unwrap(),
+            200
+        );
+        assert_eq!(
+            network_integer(args, "request_id", None, 1, MAX_SAFE_NETWORK_ID).unwrap(),
+            MAX_SAFE_NETWORK_ID
+        );
+        for invalid in [
+            json!(-1),
+            json!(1.5),
+            json!(null),
+            json!("NaN"),
+            json!(9007199254740992_u64),
+            json!(1e100),
+            json!(f64::NAN),
+            json!(f64::INFINITY),
+            json!(true),
+        ] {
+            let args = json!({"after_id":invalid});
+            assert!(network_integer(
+                args.as_object().unwrap(),
+                "after_id",
+                Some(0),
+                0,
+                MAX_SAFE_NETWORK_ID
+            )
+            .is_err());
+        }
+        for invalid in [json!(0), json!(-1), json!(201), json!(2.5), json!(u64::MAX)] {
+            let args = json!({"limit":invalid});
+            assert!(network_integer(args.as_object().unwrap(), "limit", Some(50), 1, 200).is_err());
+        }
+        assert!(network_integer(&Map::new(), "request_id", None, 1, MAX_SAFE_NETWORK_ID).is_err());
+    }
 }
