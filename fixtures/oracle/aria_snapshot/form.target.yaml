@@ -1,0 +1,4 @@
+- combobox [ref=f1e8]:
+  - option "Red"
+  - option "Green" [selected]
+  - option "Blue"

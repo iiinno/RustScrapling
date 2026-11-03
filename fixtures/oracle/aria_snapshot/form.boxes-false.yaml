@@ -1,0 +1,17 @@
+- generic [active] [ref=f1e1]:
+  - heading "Test form" [level=1] [ref=f1e2]
+  - text: Name
+  - textbox "Name" [ref=f1e3]: old
+  - textbox [ref=f1e4]: x
+  - checkbox "Agree" [checked] [ref=f1e5]
+  - text: Agree
+  - radio [ref=f1e6]
+  - radio [ref=f1e7]
+  - combobox [ref=f1e8]:
+    - option "Red"
+    - option "Green" [selected]
+    - option "Blue"
+  - button "Go" [disabled] [ref=f1e9]
+  - searchbox "Search here" [ref=f1e10]
+  - link "Link" [ref=f1e11] [cursor=pointer]:
+    - /url: "#x"

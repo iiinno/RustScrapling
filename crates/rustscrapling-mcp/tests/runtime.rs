@@ -284,9 +284,21 @@ async fn browser_get_and_session_if_chrome_is_available() {
         .as_str()
         .unwrap()
         .starts_with("/9j/"));
+    let element = call(
+        &handler,
+        "browser_screenshot",
+        json!({"session_id":"browser-test","selector":"h1"}),
+    )
+    .await;
+    assert_eq!(element.is_error, Some(false), "{element:?}");
+    assert!(serde_json::to_value(&element.content[0]).unwrap()["data"]
+        .as_str()
+        .unwrap()
+        .starts_with("iVBORw0KGgo"));
     for invalid in [
-        json!({"selector":"h1"}),
+        json!({"selector":"h1","full_page":true}),
         json!({"image_type":"png","quality":50}),
+        json!({"selector":"#missing","timeout":200}),
     ] {
         let mut args = invalid.as_object().unwrap().clone();
         args.insert("session_id".into(), json!("browser-test"));

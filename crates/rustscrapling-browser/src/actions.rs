@@ -19,6 +19,8 @@ use crate::transport::Connection;
 use crate::{BrowserError, BrowserPage};
 
 const INJECTED: &str = include_str!("injected.js");
+/// Vendored patchright-core 1.64.3 injected script (Apache-2.0, see NOTICE).
+const PLAYWRIGHT_INJECTED: &str = include_str!("../vendor/playwright-injected.js");
 const WORLD_NAME: &str = "__rustscrapling_utility__";
 const OBJECT_GROUP: &str = "rustscrapling-actions";
 /// Retry backoff used while waiting for actionability, in milliseconds.
@@ -222,6 +224,14 @@ pub(crate) struct MonitorState {
     modifiers: u32,
     /// Utility world keyed by the document loader it was created for.
     world: Option<(Option<String>, i64)>,
+    /// Playwright-compatible frame sequence numbers: the main frame starts
+    /// at 0, every attached child frame takes the next number, and a main
+    /// frame navigation away from a non-blank URL allocates a new one. ARIA
+    /// snapshot refs of documents with a nonzero sequence are prefixed
+    /// `f<seq>`, exactly like upstream.
+    next_frame_seq: u64,
+    main_frame_seq: u64,
+    main_url: Option<String>,
 }
 
 pub(crate) struct PageMonitor {
@@ -256,7 +266,10 @@ pub(crate) fn spawn_monitor(
     main_frame: String,
 ) -> (Arc<PageMonitor>, MonitorGuard) {
     let monitor = Arc::new(PageMonitor {
-        state: StdMutex::new(MonitorState::default()),
+        state: StdMutex::new(MonitorState {
+            next_frame_seq: 1,
+            ..MonitorState::default()
+        }),
         changed: Notify::new(),
     });
     let mut events = connection.subscribe();
@@ -299,10 +312,28 @@ pub(crate) fn spawn_monitor(
                     drop(state);
                     shared.changed.notify_waiters();
                 }
+                "Page.frameAttached" => {
+                    let mut state = shared.lock();
+                    state.next_frame_seq += 1;
+                }
                 "Page.frameNavigated" => {
                     if event.params.pointer("/frame/parentId").is_none() {
                         let mut state = shared.lock();
                         state.world = None;
+                        let url = event
+                            .params
+                            .pointer("/frame/url")
+                            .and_then(Value::as_str)
+                            .map(str::to_owned);
+                        if state
+                            .main_url
+                            .as_deref()
+                            .is_some_and(|previous| previous != "about:blank")
+                        {
+                            state.main_frame_seq = state.next_frame_seq;
+                            state.next_frame_seq += 1;
+                        }
+                        state.main_url = url;
                         let loader = event
                             .params
                             .pointer("/frame/loaderId")
@@ -496,14 +527,14 @@ fn js_error(details: &Value) -> String {
 
 impl BrowserPage {
     async fn utility_world(&self) -> Result<i64, BrowserError> {
-        let loader = {
+        let (loader, frame_seq) = {
             let state = self.monitor.lock();
             if let Some((loader, id)) = &state.world {
                 if *loader == state.loader_id {
                     return Ok(*id);
                 }
             }
-            state.loader_id.clone()
+            (state.loader_id.clone(), state.main_frame_seq)
         };
         let created = self
             .raw(
@@ -525,6 +556,27 @@ impl BrowserPage {
         if let Some(details) = installed.get("exceptionDetails") {
             return Err(BrowserError::Protocol(format!(
                 "utility script failed: {}",
+                js_error(details)
+            )));
+        }
+        // Instantiate Playwright's InjectedScript the same way its utility
+        // world does, so selectors and ARIA snapshots match upstream exactly.
+        let playwright = format!(
+            "(() => {{ if (globalThis.__pw) return true; const module = {{ exports: {{}} }};\n{PLAYWRIGHT_INJECTED}\n;\
+             const PlaywrightInjected = module.exports.InjectedScript(); globalThis.__pw = new PlaywrightInjected(globalThis, {{ isUnderTest: false, \
+             sdkLanguage: 'python', testIdAttributeName: 'data-testid', stableRafCount: 1, \
+             browserName: 'chromium', isUtilityWorld: true, customEngines: [], frameSeq: {frame_seq} }}); \
+             return true; }})()"
+        );
+        let installed = self
+            .raw(
+                "Runtime.evaluate",
+                json!({"expression": playwright, "contextId": id, "returnByValue": true}),
+            )
+            .await?;
+        if let Some(details) = installed.get("exceptionDetails") {
+            return Err(BrowserError::Protocol(format!(
+                "selector engine failed: {}",
                 js_error(details)
             )));
         }
@@ -610,10 +662,7 @@ impl BrowserPage {
     async fn resolve(&self, selector: &str, retarget: bool) -> Result<Option<String>, Attempt> {
         let function = r#"function(selector, retarget) {
             const found = globalThis.__rsx.query(selector);
-            if (found.length > 1) {
-                const shown = found.slice(0, 10).map((e, i) => `    ${i + 1}) ${globalThis.__rsx.preview(e)}`).join('\n');
-                throw new Error(`strict mode violation: locator(${JSON.stringify(selector)}) resolved to ${found.length} elements:\n${shown}`);
-            }
+            if (found.length > 1) throw new Error(globalThis.__rsx.strictError(selector, found));
             if (!found.length) return null;
             return retarget ? globalThis.__rsx.retarget(found[0], 'follow-label') : found[0];
         }"#;
@@ -1336,6 +1385,96 @@ impl BrowserPage {
             }
         }
         outcome
+    }
+
+    /// Playwright `aria_snapshot(mode="ai")` of the page body or of the one
+    /// element matching `selector` (strict). Refs (`e1`, `e2`, ...) become
+    /// valid `aria-ref=<ref>` targets until the next snapshot. Content of
+    /// iframes is not yet merged into the snapshot.
+    pub async fn aria_snapshot(
+        &self,
+        selector: Option<&str>,
+        depth: Option<i64>,
+        boxes: bool,
+        timeout_ms: f64,
+    ) -> Result<String, BrowserError> {
+        let mut waiter = Waiter::new(timeout_ms);
+        let function = "function(selector, depth, boxes) { return globalThis.__rsx.snapshot(selector, depth, boxes); }";
+        let args = [json!(selector), json!(depth), json!(boxes)];
+        loop {
+            match waiter
+                .bound(
+                    "capturing ARIA snapshot",
+                    attempt_result(self.world_call(function, &args, true)),
+                )
+                .await?
+            {
+                Ok(value) => match value.get("value").and_then(Value::as_str) {
+                    Some(snapshot) => return Ok(snapshot.to_owned()),
+                    None => waiter.retry("waiting for document body").await?,
+                },
+                Err(reason) => waiter.retry(&reason).await?,
+            }
+        }
+    }
+
+    /// Screenshot one element (strict selector or `aria-ref=<ref>`), after
+    /// waiting for it to be visible and scrolling it into view.
+    pub async fn element_screenshot(
+        &self,
+        selector: &str,
+        image_type: &str,
+        quality: Option<u8>,
+        timeout_ms: f64,
+    ) -> Result<String, BrowserError> {
+        if !matches!(image_type, "png" | "jpeg") || (image_type == "png" && quality.is_some()) {
+            return Err(BrowserError::InvalidArgument(
+                "invalid screenshot format or quality".into(),
+            ));
+        }
+        let mut waiter = Waiter::new(timeout_ms);
+        let result = async {
+            let object = self
+                .actionable(&mut waiter, selector, false, &["visible"])
+                .await?;
+            self.raw("DOM.scrollIntoViewIfNeeded", json!({ "objectId": object }))
+                .await?;
+            let rect = self
+                .element_call(&object, "pageRect", &[])
+                .await
+                .map_err(attempt_error)?;
+            let values: Vec<f64> = rect
+                .get("value")
+                .and_then(Value::as_array)
+                .map(|values| values.iter().filter_map(Value::as_f64).collect())
+                .unwrap_or_default();
+            let [x, y, width, height] = values[..] else {
+                return Err(BrowserError::Protocol("element box unavailable".into()));
+            };
+            if !(width >= 1.0 && height >= 1.0 && width <= 8192.0 && height <= 8192.0)
+                || !x.is_finite()
+                || !y.is_finite()
+            {
+                return Err(BrowserError::InvalidArgument(
+                    "element screenshot must be 1-8192 CSS pixels per axis".into(),
+                ));
+            }
+            let mut args = json!({"format": image_type, "fromSurface": true,
+                "captureBeyondViewport": true,
+                "clip": {"x": x, "y": y, "width": width, "height": height, "scale": 1}});
+            if let Some(quality) = quality {
+                args["quality"] = json!(quality.min(100));
+            }
+            waiter
+                .bound(
+                    "capturing element screenshot",
+                    self.capture_screenshot(args),
+                )
+                .await
+        }
+        .await;
+        self.release_objects().await;
+        result
     }
 
     /// Resolve a Playwright-style selector or `aria-ref` to exactly one

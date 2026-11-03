@@ -15,3 +15,16 @@ The HTTP/browser architecture was also compared with
 chrisabruce/scrapling-rs (https://github.com/chrisabruce/scrapling-rs),
 reference revision 0d61c3e88d95473d77d90d3e374ffded79de07da (MIT).
 No third-party repository is represented as identical to this project.
+
+crates/rustscrapling-browser/vendor/playwright-injected.js is the unmodified
+browser-side injected script of patchright-core 1.64.3 (a Playwright fork),
+the version pinned Scrapling v0.5 runs. SHA-256 of the extracted script
+(without the added header comment):
+b4ad67071015a48b71287c9e88ed0564dd72d1ffbb127414ec40db2dbc638314.
+Portions Copyright (c) Microsoft Corporation; Portions Copyright 2017 Google
+Inc.; patchright modifications by its contributors. Licensed under the Apache
+License 2.0 (licenses/Playwright-Apache-2.0.txt). Its CSS tokenizer is
+derived from Tab Atkins' parse-css (CC0 public domain dedication).
+The independent selector/actionability helpers in
+crates/rustscrapling-browser/src/injected.js follow Playwright's documented
+locator semantics but are not copied from it.

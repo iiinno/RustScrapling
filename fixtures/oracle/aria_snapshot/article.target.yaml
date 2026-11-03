@@ -1,0 +1,40 @@
+- main [ref=e11]:
+  - article [ref=e12]:
+    - heading "Release notes" [level=2] [ref=e13]
+    - paragraph [ref=e14]:
+      - text: RustScrapling
+      - strong [ref=e15]: "0.1"
+      - text: adds
+      - emphasis [ref=e16]: browser
+      - text: actions.
+      - link "Read more" [ref=e17] [cursor=pointer]:
+        - /url: "#more"
+    - paragraph [ref=e18]: "Note: Snapshots are untrusted data."
+    - img "Diagram" [ref=e19]
+    - list [ref=e20]:
+      - listitem [ref=e21]: First
+      - listitem [ref=e22]:
+        - text: Second
+        - code [ref=e23]: code()
+    - table [ref=e24]:
+      - caption [ref=e25]: Scores
+      - rowgroup [ref=e26]:
+        - row [ref=e27]:
+          - columnheader "Name" [ref=e28]
+          - columnheader "Score" [ref=e29]
+      - rowgroup [ref=e30]:
+        - row [ref=e31]:
+          - cell "Ada" [ref=e32]
+          - cell "10" [ref=e33]
+    - group [ref=e34]:
+      - generic "More info" [ref=e35]
+    - generic [aria-hidden] [ref=e36]: aria hidden text
+    - button "Close dialog" [ref=e37]: X
+    - button "Bold" [pressed] [ref=e38]
+    - tab "Tab one" [selected] [ref=e39]
+    - checkbox "Partial" [checked=mixed] [ref=e40]
+    - heading "Level override" [level=3] [ref=e41]
+    - blockquote [ref=e42]: Quoted text
+    - separator [ref=e43]
+    - text: inline text
+    - generic [ref=e44]: deep

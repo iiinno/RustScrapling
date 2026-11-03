@@ -1,0 +1,3 @@
+- region "Card" [ref=f2e4]:
+  - heading "Card title" [level=2] [ref=f2e5]
+  - button "Inner" [ref=f2e6]

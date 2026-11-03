@@ -1,0 +1,8 @@
+- generic [active] [ref=f2e1]:
+  - heading "Shadow" [level=1] [ref=f2e2]
+  - region "Card" [ref=f2e4]:
+    - heading "Card title" [level=2] [ref=f2e5]
+    - button "Inner" [ref=f2e6]
+  - generic [ref=f2e7]: Editable
+  - dialog "Settings" [ref=f2e8]:
+    - button "OK" [ref=f2e9]

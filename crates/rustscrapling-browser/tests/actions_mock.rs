@@ -23,6 +23,7 @@ async fn css_click_type_and_keys_use_page_session_without_runtime() {
                 "Target.attachToTarget" => json!({"sessionId":"actions-page"}),
                 "Page.enable"
                 | "Page.setLifecycleEventsEnabled"
+                | "Emulation.setFocusEmulationEnabled"
                 | "DOM.scrollIntoViewIfNeeded"
                 | "DOM.focus"
                 | "Input.dispatchMouseEvent"

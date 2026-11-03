@@ -41,6 +41,7 @@ async fn response_bodies_are_redacted_and_ids_survive_evictions() {
                 "Target.attachToTarget" => json!({"sessionId":"mock-network-session"}),
                 "Page.enable"
                 | "Page.setLifecycleEventsEnabled"
+                | "Emulation.setFocusEmulationEnabled"
                 | "Network.enable"
                 | "Target.closeTarget" => json!({}),
                 "Page.navigate" => {

@@ -428,6 +428,13 @@ impl BrowserClient {
         page.raw("Page.enable", json!({})).await?;
         page.raw("Page.setLifecycleEventsEnabled", json!({"enabled": true}))
             .await?;
+        // Like Playwright/patchright: keep document.hasFocus() and focus
+        // events consistent even when the tab is in the background.
+        page.raw(
+            "Emulation.setFocusEmulationEnabled",
+            json!({"enabled": true}),
+        )
+        .await?;
         if capture_network {
             page.raw("Network.enable", json!({})).await?;
         }
@@ -1395,6 +1402,11 @@ impl BrowserPage {
             args["captureBeyondViewport"] = json!(true);
             args["clip"] = json!({"x":0,"y":0,"width":width,"height":height,"scale":1});
         }
+        self.capture_screenshot(args).await
+    }
+
+    /// Run `Page.captureScreenshot` and validate the encoded result size.
+    pub(crate) async fn capture_screenshot(&self, args: Value) -> Result<String, BrowserError> {
         let response = self.raw("Page.captureScreenshot", args).await?;
         let encoded = response
             .get("data")

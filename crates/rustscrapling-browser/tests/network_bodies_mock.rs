@@ -25,6 +25,7 @@ async fn text_api_bodies_are_bounded_and_scoped_to_the_page_session() {
                 "Target.attachToTarget" => json!({"sessionId":"page-a"}),
                 "Page.enable"
                 | "Page.setLifecycleEventsEnabled"
+                | "Emulation.setFocusEmulationEnabled"
                 | "Network.enable"
                 | "Target.closeTarget" => json!({}),
                 "Page.navigate" => json!({}),

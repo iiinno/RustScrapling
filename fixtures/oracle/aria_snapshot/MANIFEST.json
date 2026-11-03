@@ -1,0 +1,16 @@
+{
+  "upstream_sha": "95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0",
+  "patchright": "1.64.4",
+  "chrome": "Google Chrome for Testing 153.0.8010.12",
+  "targets": {
+    "article": "main",
+    "form": "select",
+    "shadow": "x-card"
+  },
+  "fixtures": [
+    "article",
+    "form",
+    "shadow"
+  ],
+  "note": "boxes=False; refs depend on snapshot order within one page load"
+}

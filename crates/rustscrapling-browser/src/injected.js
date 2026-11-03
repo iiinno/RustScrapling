@@ -468,8 +468,12 @@
     return /^(["']).*\1$/s.test(text) ? unquote(text) : text;
   }
 
+  // With the vendored Playwright injected script present (`globalThis.__pw`),
+  // selectors are parsed and evaluated by exactly the engine upstream uses;
+  // the local engines below remain as a fallback.
   function query(selector) {
     if (typeof selector !== 'string' || !selector.trim()) throw new Error('Selector must be a non-empty string');
+    if (globalThis.__pw) return globalThis.__pw.querySelectorAll(globalThis.__pw.parseSelector(selector), document);
     let current = [document];
     for (const part of splitChain(selector)) {
       const { name, body } = parsePart(part);
@@ -493,7 +497,31 @@
   }
 
   // ---------------------------------------------------------- inspection
+  function strictError(selector, found) {
+    if (globalThis.__pw) return globalThis.__pw.strictModeViolationError(globalThis.__pw.parseSelector(selector), found).message;
+    const shown = found.slice(0, 10).map((e, i) => `    ${i + 1}) ${preview(e)}`).join('\n');
+    return `strict mode violation: locator(${JSON.stringify(selector)}) resolved to ${found.length} elements:\n${shown}`;
+  }
+
+  function snapshot(selector, depth, boxes) {
+    if (!globalThis.__pw) throw new Error('ARIA snapshot engine is unavailable');
+    let root;
+    if (selector) {
+      const found = query(selector);
+      if (found.length > 1) throw new Error(strictError(selector, found));
+      if (!found.length) throw new Error(`Selector "${selector}" does not match any element`);
+      root = found[0];
+    } else {
+      root = document.body || document.querySelector('frameset');
+      if (!root) return null;
+    }
+    const options = { mode: 'ai', boxes: !!boxes };
+    if (depth !== null && depth !== undefined) options.depth = depth;
+    return globalThis.__pw.ariaSnapshot(root, options);
+  }
+
   function preview(element) {
+    if (globalThis.__pw) return globalThis.__pw.previewNode(element);
     const attrs = Array.from(element.attributes).slice(0, 6)
       .map((a) => a.value === '' ? ` ${a.name}` : ` ${a.name}="${a.value.slice(0, 50)}"`).join('');
     const tag = element.nodeName.toLowerCase();
@@ -669,7 +697,13 @@
     return before.x === after.x && before.y === after.y && before.width === after.width && before.height === after.height;
   }
 
+  function pageRect(element) {
+    const rect = element.getBoundingClientRect();
+    return [rect.x + window.scrollX, rect.y + window.scrollY, rect.width, rect.height];
+  }
+
   globalThis.__rsx = {
+    snapshot, strictError, pageRect,
     stableRect, outerHTML: (element) => element.outerHTML,
     query, preview, isVisible, check, hitTarget, retarget, fillPrepare, focus, checkedState, selectOptions,
     ariaRole, accessibleName, isHiddenForAria, ariaChecked, isDisabled, normalize, composedElements,

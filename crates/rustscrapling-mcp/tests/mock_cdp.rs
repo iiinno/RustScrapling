@@ -122,6 +122,7 @@ async fn state_roundtrip_and_screenshots_via_mock_cdp() {
                 }
                 "Page.enable"
                 | "Page.setLifecycleEventsEnabled"
+                | "Emulation.setFocusEmulationEnabled"
                 | "Network.enable"
                 | "Target.closeTarget" => json!({}),
                 other => panic!("unexpected CDP command: {other}"),

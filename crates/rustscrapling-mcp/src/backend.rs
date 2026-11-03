@@ -552,6 +552,43 @@ impl RuntimeBackend {
             Duration::from_millis(number(args, "timeout", 30000.0)? as u64),
         )
         .await?;
+        let timeout_ms = number(args, "timeout", 30000.0)?;
+        // Upstream: both waits are best effort ("continue if the wait fails").
+        if opt_bool(args, "network_idle", false)? {
+            let _ = page
+                .run_actions(
+                    &[BrowserAction::WaitLoad {
+                        state: LoadState::NetworkIdle,
+                        timeout_ms,
+                    }],
+                    false,
+                )
+                .await;
+        }
+        if let Some(selector) = opt_str(args, "wait_selector")? {
+            let state = match opt_str(args, "wait_selector_state")?.unwrap_or("attached") {
+                "attached" => ElementState::Attached,
+                "detached" => ElementState::Detached,
+                "visible" => ElementState::Visible,
+                "hidden" => ElementState::Hidden,
+                other => {
+                    return Err(BackendError::new(
+                        "invalid_arguments",
+                        format!("unknown wait_selector_state '{other}'"),
+                    ))
+                }
+            };
+            let _ = page
+                .run_actions(
+                    &[BrowserAction::WaitElement {
+                        target: format!("{selector} >> nth=0"),
+                        state,
+                        timeout_ms,
+                    }],
+                    false,
+                )
+                .await;
+        }
         let wait = number(args, "wait", 0.0)?;
         if wait > 0.0 {
             sleep(Duration::from_millis(wait as u64)).await;
@@ -575,26 +612,47 @@ impl RuntimeBackend {
             .and_then(|record| record.status);
         network.append(captured)?;
         check_challenge(&body, status)?;
+        if opt_str(args, "extraction_type")? == Some("snapshot") {
+            let snapshot = page
+                .aria_snapshot(
+                    opt_str(args, "css_selector")?,
+                    None,
+                    true,
+                    DEFAULT_PAGE_TIMEOUT_MS,
+                )
+                .await?;
+            return Ok(structured(
+                json!({"status":status.unwrap_or(0),"url":final_url,"content":[snapshot]}),
+            ));
+        }
         render_browser(&body, &final_url, status, args)
     }
     async fn browser_extract(&self, args: &Map<String, Value>) -> Outcome {
-        for key in ["target", "search", "depth"] {
-            reject_some(args, key)?;
-        }
-        allow_defaults(
-            args,
-            &[("boxes", json!(true)), ("main_content_only", json!(true))],
-        )?;
-        let format = args
-            .get("extraction_type")
-            .and_then(Value::as_str)
-            .unwrap_or("snapshot");
-        if format == "snapshot" {
-            return Err(BackendError::new(
-                "unsupported_operation",
-                "ARIA snapshots and refs are not exposed by the current CDP backend",
-            ));
-        }
+        allow_defaults(args, &[("main_content_only", json!(true))])?;
+        let format = opt_str(args, "extraction_type")?.unwrap_or("snapshot");
+        let target = opt_str(args, "target")?;
+        let pattern = match opt_str(args, "search")? {
+            None => None,
+            Some(_) if format != "snapshot" => {
+                return Err(BackendError::new(
+                    "invalid_arguments",
+                    "search requires snapshot output.",
+                ))
+            }
+            Some(search) => Some(regex::Regex::new(search).map_err(|error| {
+                BackendError::new(
+                    "invalid_arguments",
+                    format!("Invalid search regex: {error}"),
+                )
+            })?),
+        };
+        let depth = match args.get("depth").filter(|value| !value.is_null()) {
+            None => None,
+            Some(value) => Some(value.as_i64().ok_or_else(|| {
+                BackendError::new("invalid_arguments", "'depth' must be an integer")
+            })?),
+        };
+        let boxes = opt_bool(args, "boxes", true)?;
         let s = self.session(required(args, "session_id")?).await?;
         let s = s.lock().await;
         let Engine::Browser { page, last_url, .. } = &s.engine else {
@@ -606,8 +664,27 @@ impl RuntimeBackend {
         if last_url.is_none() {
             return Err(BackendError::new("no_page", "Call browser_fetch first"));
         }
-        let html = page.source().await?;
-        let out = render_content(&html, last_url.as_deref().unwrap_or(""), format)?;
+        if format == "snapshot" {
+            let snapshot = page
+                .aria_snapshot(target, depth, boxes, DEFAULT_PAGE_TIMEOUT_MS)
+                .await?;
+            return Ok(text(match pattern {
+                Some(pattern) => search_snapshot(&snapshot, &pattern),
+                None => snapshot,
+            }));
+        }
+        let html = match target {
+            Some(target) => {
+                page.element_outer_html(target, DEFAULT_PAGE_TIMEOUT_MS)
+                    .await?
+            }
+            None => page.source().await?,
+        };
+        let url = page
+            .current_url()
+            .await
+            .unwrap_or_else(|_| last_url.clone().unwrap_or_default());
+        let out = render_content(&html, &url, format)?;
         Ok(text(out))
     }
     async fn browser_evaluate(&self, args: &Map<String, Value>) -> Outcome {
@@ -719,8 +796,6 @@ impl RuntimeBackend {
         ))
     }
     async fn browser_screenshot(&self, args: &Map<String, Value>) -> Outcome {
-        reject_some(args, "selector")?;
-        reject_some(args, "ref")?;
         let format = opt_str(args, "image_type")?.unwrap_or("png");
         if !matches!(format, "png" | "jpeg") {
             return Err(BackendError::new(
@@ -729,25 +804,39 @@ impl RuntimeBackend {
             ));
         }
         let quality = if args.get("quality").is_some_and(|v| !v.is_null()) {
-            let value = number(args, "quality", 0.0)?;
-            if format != "jpeg" || value > 100.0 || value.fract() != 0.0 {
+            if format != "jpeg" {
                 return Err(BackendError::new(
                     "invalid_arguments",
-                    "quality is valid only for JPEG (integer 0-100)",
+                    "'quality' is only valid when 'image_type' is 'jpeg'.",
+                ));
+            }
+            let value = number(args, "quality", 0.0)?;
+            if value > 100.0 || value.fract() != 0.0 {
+                return Err(BackendError::new(
+                    "invalid_arguments",
+                    "quality must be an integer 0-100",
                 ));
             }
             Some(value as u8)
         } else {
             None
         };
-        let full_page = opt_bool(args, "full_page", false)?;
-        let timeout_ms = number(args, "timeout", 30000.0)?;
-        if timeout_ms > 300_000.0 {
+        let selector = opt_str(args, "selector")?;
+        let reference = opt_str(args, "ref")?;
+        if selector.is_some() && reference.is_some() {
             return Err(BackendError::new(
                 "invalid_arguments",
-                "Screenshot timeout cannot exceed 300000ms",
+                "Provide either 'selector' or 'ref', not both.",
             ));
         }
+        let full_page = opt_bool(args, "full_page", false)?;
+        if full_page && (selector.is_some() || reference.is_some()) {
+            return Err(BackendError::new(
+                "invalid_arguments",
+                "'full_page' cannot be combined with 'selector' or 'ref'.",
+            ));
+        }
+        let timeout_ms = number(args, "timeout", 30000.0)?;
         let session = self.session(required(args, "session_id")?).await?;
         let session = session.lock().await;
         let Engine::Browser { page, last_url, .. } = &session.engine else {
@@ -759,19 +848,33 @@ impl RuntimeBackend {
         if last_url.is_none() {
             return Err(BackendError::new("no_page", "Call browser_fetch first"));
         }
-        let capture = page.screenshot(format, quality, full_page);
-        let encoded = if timeout_ms == 0.0 {
-            capture.await?
-        } else {
-            tokio::time::timeout(Duration::from_millis(timeout_ms as u64), capture)
-                .await
-                .map_err(|_| BackendError::new("timeout", "Screenshot timed out"))??
+        let element = selector
+            .map(str::to_owned)
+            .or_else(|| reference.map(|reference| format!("aria-ref={reference}")));
+        let encoded = match element {
+            Some(element) => {
+                page.element_screenshot(&element, format, quality, timeout_ms)
+                    .await?
+            }
+            None => {
+                let capture = page.screenshot(format, quality, full_page);
+                match Duration::try_from_secs_f64(timeout_ms / 1000.0) {
+                    Ok(limit) if timeout_ms > 0.0 => tokio::time::timeout(limit, capture)
+                        .await
+                        .map_err(|_| {
+                        BackendError::new("timeout", format!("Timeout {timeout_ms}ms exceeded."))
+                    })??,
+                    _ => capture.await?,
+                }
+            }
         };
+        let url = page
+            .current_url()
+            .await
+            .unwrap_or_else(|_| last_url.clone().unwrap_or_default());
         Ok(CallToolResult::success(vec![
             ContentBlock::image(encoded, format!("image/{format}")),
-            ContentBlock::text(
-                json!({"url":last_url,"format":format,"full_page":full_page}).to_string(),
-            ),
+            ContentBlock::text(url),
         ]))
     }
     async fn network_list(&self, args: &Map<String, Value>) -> Outcome {
@@ -975,6 +1078,58 @@ fn opt_bool(args: &Map<String, Value>, key: &str, default: bool) -> Result<bool,
             BackendError::new("invalid_arguments", format!("'{key}' must be boolean"))
         })
     })
+}
+
+/// Playwright's default action/navigation timeout used by upstream when a
+/// tool exposes no timeout parameter.
+const DEFAULT_PAGE_TIMEOUT_MS: f64 = 30_000.0;
+
+/// Port of upstream `_search_snapshot`: keep matching lines, three lines of
+/// context on each side and every ancestor line (by indentation), marking
+/// omitted runs with `...`. Refs are never rewritten.
+fn search_snapshot(snapshot: &str, pattern: &regex::Regex) -> String {
+    let lines: Vec<&str> = if snapshot.is_empty() {
+        Vec::new()
+    } else {
+        snapshot.split('\n').collect()
+    };
+    let matches: Vec<usize> = (0..lines.len())
+        .filter(|&index| pattern.is_match(lines[index]))
+        .collect();
+    if matches.is_empty() {
+        return String::new();
+    }
+    let mut retained = std::collections::BTreeSet::new();
+    for &index in &matches {
+        retained.extend(index.saturating_sub(3)..(index + 4).min(lines.len()));
+    }
+    let mut ancestors: Vec<(usize, usize)> = Vec::new();
+    for (index, line) in lines.iter().enumerate() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        let indent = line.chars().count() - line.trim_start().chars().count();
+        while ancestors.last().is_some_and(|(depth, _)| *depth >= indent) {
+            ancestors.pop();
+        }
+        if retained.contains(&index) {
+            retained.extend(ancestors.iter().map(|(_, parent)| *parent));
+        }
+        ancestors.push((indent, index));
+    }
+    let mut output: Vec<&str> = Vec::new();
+    let mut previous: Option<usize> = None;
+    for &index in &retained {
+        if index > previous.map_or(0, |p| p + 1) {
+            output.push("...");
+        }
+        output.push(lines[index]);
+        previous = Some(index);
+    }
+    if previous.is_some_and(|p| p + 1 < lines.len()) {
+        output.push("...");
+    }
+    output.join("\n")
 }
 
 /// Convert one upstream `BrowserAction` JSON object (already validated
@@ -1298,10 +1453,17 @@ fn render_content(html: &str, url: &str, format: &str) -> Result<String, Backend
     }
 }
 fn browser_options(args: &Map<String, Value>, once: bool) -> Result<(), BackendError> {
+    // Session fetches implement snapshot targets and page waits through the
+    // browser action engine; one-shot fetches do not expose the page yet.
+    let snapshot = args.get("extraction_type").and_then(Value::as_str) == Some("snapshot");
+    if once || !snapshot {
+        reject_some(args, "css_selector")?;
+    }
+    if once {
+        reject_some(args, "wait_selector")?;
+    }
     for key in [
-        "css_selector",
         "extra_headers",
-        "wait_selector",
         "cookies",
         "additional_args",
         "timezone_id",
@@ -1314,13 +1476,13 @@ fn browser_options(args: &Map<String, Value>, once: bool) -> Result<(), BackendE
     let mut defaults = vec![
         ("google_search", json!(true)),
         ("main_content_only", json!(true)),
-        ("network_idle", json!(false)),
         ("disable_resources", json!(false)),
         ("solve_cloudflare", json!(false)),
         ("pierce_shadow", json!(false)),
-        ("wait_selector_state", json!("attached")),
     ];
     if once {
+        defaults.push(("network_idle", json!(false)));
+        defaults.push(("wait_selector_state", json!("attached")));
         defaults.extend([
             ("real_chrome", json!(false)),
             ("hide_canvas", json!(false)),
@@ -1425,6 +1587,25 @@ mod network_tests {
             .unwrap();
         assert_eq!(history.body_bytes, 1024 * 1024);
         assert!(history.get(21).unwrap().body.is_none());
+    }
+
+    #[test]
+    fn snapshot_search_keeps_context_and_ancestors_like_upstream() {
+        let snapshot = "- generic [ref=e1]:\n  - list [ref=e2]:\n    - listitem [ref=e3]: a\n    - listitem [ref=e4]: b\n    - listitem [ref=e5]: c\n    - listitem [ref=e6]: d\n    - listitem [ref=e7]: e\n    - listitem [ref=e8]: f\n    - listitem [ref=e9]: Target\n    - listitem [ref=e10]: h\n  - button \"Go\" [ref=e11]\n  - text: tail1\n  - text: tail2\n  - text: tail3\n  - text: tail4";
+        let pattern = regex::Regex::new("Target").unwrap();
+        assert_eq!(
+            super::search_snapshot(snapshot, &pattern),
+            "- generic [ref=e1]:\n  - list [ref=e2]:\n...\n    - listitem [ref=e6]: d\n    - listitem [ref=e7]: e\n    - listitem [ref=e8]: f\n    - listitem [ref=e9]: Target\n    - listitem [ref=e10]: h\n  - button \"Go\" [ref=e11]\n  - text: tail1\n..."
+        );
+        assert_eq!(
+            super::search_snapshot(snapshot, &regex::Regex::new(r"e1\]").unwrap()),
+            "- generic [ref=e1]:\n  - list [ref=e2]:\n    - listitem [ref=e3]: a\n    - listitem [ref=e4]: b\n..."
+        );
+        assert_eq!(
+            super::search_snapshot(snapshot, &regex::Regex::new("nope").unwrap()),
+            ""
+        );
+        assert_eq!(super::search_snapshot("", &pattern), "");
     }
 
     #[test]

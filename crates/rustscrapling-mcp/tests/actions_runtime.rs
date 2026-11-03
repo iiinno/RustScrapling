@@ -191,6 +191,102 @@ async fn browser_actions_chain_on_real_chrome_if_available() {
         "{}",
         text(&failed)
     );
+    // ARIA snapshot (default extraction), refs as action and screenshot targets.
+    let snapshot = call(&handler, "browser_extract", json!({"session_id":"actions"})).await;
+    assert_eq!(snapshot.is_error, Some(false), "{snapshot:?}");
+    let snapshot = text(&snapshot);
+    assert!(snapshot.contains("- button \"Go\" [ref="), "{snapshot}");
+    assert!(snapshot.contains("[box="), "{snapshot}");
+    let reference = snapshot
+        .lines()
+        .find(|line| line.contains("button \"Go\""))
+        .and_then(|line| line.split("[ref=").nth(1))
+        .and_then(|rest| rest.split(']').next())
+        .unwrap()
+        .to_owned();
+    let clicked = call(
+        &handler,
+        "browser_actions",
+        json!({"session_id":"actions","actions":[{"type":"click","target":format!("aria-ref={reference}")}]}),
+    )
+    .await;
+    assert_eq!(clicked.is_error, Some(false), "{clicked:?}");
+    let found = call(
+        &handler,
+        "browser_extract",
+        json!({"session_id":"actions","search":"(?i)agree","boxes":false}),
+    )
+    .await;
+    assert!(
+        text(&found).contains("checkbox \"Agree\""),
+        "{}",
+        text(&found)
+    );
+    assert!(!text(&found).contains("[box="));
+    let bad = call(
+        &handler,
+        "browser_extract",
+        json!({"session_id":"actions","search":"x","extraction_type":"html"}),
+    )
+    .await;
+    assert!(text(&bad).contains("search requires snapshot output."));
+    let html = call(
+        &handler,
+        "browser_extract",
+        json!({"session_id":"actions","extraction_type":"html","target":"#color"}),
+    )
+    .await;
+    // Content parity of the HTML/Markdown/text renderer with upstream's
+    // Convertor (body sanitising, not article extraction) is tracked
+    // separately; here only the strict element target is exercised.
+    assert_eq!(html.is_error, Some(false), "{html:?}");
+    let shot = call(
+        &handler,
+        "browser_screenshot",
+        json!({"session_id":"actions","ref":reference}),
+    )
+    .await;
+    assert_eq!(shot.is_error, Some(false), "{shot:?}");
+    let image = serde_json::to_value(&shot.content[0]).unwrap();
+    assert!(image["data"].as_str().unwrap().starts_with("iVBORw0KGgo"));
+    assert!(serde_json::to_value(&shot.content[1]).unwrap()["text"]
+        .as_str()
+        .unwrap()
+        .ends_with("/page"));
+    for (args, expected) in [
+        (
+            json!({"selector":"#go","ref":reference}),
+            "Provide either 'selector' or 'ref', not both.",
+        ),
+        (
+            json!({"selector":"#go","full_page":true}),
+            "'full_page' cannot be combined",
+        ),
+        (
+            json!({"quality":5}),
+            "'quality' is only valid when 'image_type' is 'jpeg'.",
+        ),
+    ] {
+        let mut args = args.as_object().unwrap().clone();
+        args.insert("session_id".into(), json!("actions"));
+        let result = handler
+            .execute_tool("browser_screenshot", args)
+            .await
+            .unwrap();
+        assert!(text(&result).contains(expected), "{}", text(&result));
+    }
+    let snap_fetch = call(
+        &handler,
+        "browser_fetch",
+        json!({"session_id":"actions","url":url,"extraction_type":"snapshot","css_selector":"select"}),
+    )
+    .await;
+    assert_eq!(snap_fetch.is_error, Some(false), "{snap_fetch:?}");
+    let content = snap_fetch.structured_content.unwrap()["content"][0]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    assert!(content.starts_with("- combobox"), "{content}");
     let closed = call(&handler, "close_session", json!({"session_id":"actions"})).await;
     assert_eq!(closed.is_error, Some(false));
 }
