@@ -24,6 +24,21 @@
 | `86a5500` | 本家`Convertor._extract_content`互換レンダラ＋markdownify移植 | `oracle/convertor_oracle.py`：5 fixture×(html/text/markdown)×main_content_only×8 selector＝**240/240一致**（C0制御文字のみ比較時に除外：MCPでは本家同様に除去）。全workspace 134 PASS・0 FAIL・5 ignored、clippy/fmt exit 0 |
 | `51ed85a` | MCP `tools/list`完全一致・outputSchema検証・evaluate | live schema oracle：**match、16/16ツール、差分0**（以前348）、exit 0。M0 37 tests OK、live opt-in 23 tests OK。全workspace 134 PASS・0 FAIL・5 ignored、実Chrome opt-in 5/5 PASS、clippy/fmt exit 0、CLI E2E 6/6 |
 
+### G-06 adaptive/選択性能：本家との同一マシン・同日比較（`0e30c70`）
+
+環境：クラウドLinuxコンテナ（Intel Xeon 2.10GHz、4 vCPU、15GiB、kernel 6.18）、Rust 1.99.1 `--release`（`lto = true`）、本家は隔離venvのPython 3.13.18＋固定SHAのScrapling。入力は付録Aの2,000商品・416,497バイト（約1万要素）。Rust：`target/release/examples/bench_adaptive`（warm-up 1回後best-of-3/5）と`bench_appendix`を各3回、Criterion `cargo bench -p rustscrapling-adaptive --bench appendix_a`。本家：`python -I oracle/bench_appendix_a.py ../scrapling-v05-reference`を3回（best-of-5、relocateは1回）。
+
+| 処理 | Rust（3回） | Rust Criterion 95%CI | 本家（3回） | Plan目標 | 判定 |
+| --- | --- | --- | --- | --- | --- |
+| relocate（レイアウト変更後、1万要素） | 9.73 / 9.42 / 9.67 ms | 9.68–10.31 ms | 4,150.70 / 4,060.32 / 4,355.84 ms | ≤50 ms | **達成** |
+| find_by_text | 0.36 / 0.68 / 0.40 ms | 0.376–0.401 ms | 61.63 / 61.73 / 59.09 ms | ≤5 ms | **達成** |
+| find_similar（1,999兄弟） | 0.77 / 1.31 / 0.84 ms | 0.837–0.913 ms | 27.92 / 29.42 / 28.89 ms | ≤3 ms | **達成** |
+| `css('.price::text')`（html5 DOM） | 0.66 / 0.69 / 1.02 ms | — | 8.34 / 7.92 / 8.36 ms | ≤5 ms | **達成** |
+| 既定パーサ（html5ever）解析 | 10.98 / 12.42 / 13.19 ms | — | （lxml）7.39 / 7.36 / 7.36 ms | ≤15 ms | **達成**（本家より遅い） |
+| 互換パーサ（libxml2→arena）解析 | 15.32 / 15.87 / 19.01 ms | — | 同上 | 目標外（参考） | 本家の約2倍 |
+
+正確性：同HEADの全workspaceテストで`rustscrapling-adaptive`の固定oracle（SequenceMatcher 3×10,000、丸め8,003、relocate/find_similar/find_by_text/SQLite）がPASS。G-06の「スコア/再特定100%一致」はこの既存fixtureの範囲での確認であり、fixture外の入力分布は未検証。解析時間は本家（lxml）より遅く、DOM変換の最適化は残課題。
+
 ### Issue #1 の根本原因
 
 `net::ERR_CONNECTION_REFUSED` はブラウザ起動・鍵管理の問題ではなく**テストfixtureの欠陥**。MCP runtimeテストのHTTPサーバは`accept()`を2回だけ行う実装で、Chromeが`GET /page`の後に`GET /favicon.ico`を別接続で要求したため2回目の枠を消費しサーバスレッドが終了した。続く`browser_fetch`の遷移は待受ソケットが閉じており接続拒否になった（受信ログ：`GET /page` → `GET /favicon.ico`）。修正（`8bd7146`）はテスト終了まで全接続を処理し、`/page`以外へ404を返し、`/page`が2回以上配信されたことを検証する。製品Launcherに`--password-store=basic`は追加していない。修正後同テストを5回連続PASS。
