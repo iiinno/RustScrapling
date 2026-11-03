@@ -264,9 +264,6 @@ pub fn run_tier(target: &str, options: &RequestOptions, tier: FetchTier) -> Resu
         }
         let client = HttpClient::new(transport_options(options))
             .map_err(|e| error(e.kind.as_str(), &e.message, "Check network options"))?;
-        if std::env::var_os("RUSTSCRAPLING_TRACE_TIER").is_some() {
-            eprintln!("trace local-path reached, tier={tier:?}");
-        }
         let mut fetcher = Fetcher::new(client, FetchPolicy::default());
         let mut launched = None;
         if let Some(backend) = CdpBackend::new(
