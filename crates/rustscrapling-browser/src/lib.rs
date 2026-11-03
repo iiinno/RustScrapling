@@ -12,7 +12,7 @@ pub use transport::{BrowserError, CdpEvent};
 use chromiumoxide_cdp::cdp::browser_protocol::{dom, target};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet, VecDeque};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -65,6 +65,186 @@ pub struct NetworkRecord {
     pub resource_type: Option<String>,
     pub headers: BTreeMap<String, String>,
     pub failed: Option<String>,
+    /// CDP request identifier, scoped to this page's session.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub request_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mime_type: Option<String>,
+    /// Small textual XHR/Fetch response, with sensitive JSON fields redacted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub body: Option<String>,
+}
+
+const MAX_NETWORK_RECORDS: usize = 128;
+const MAX_NETWORK_BODY_BYTES: usize = 64 * 1024;
+const MAX_NETWORK_TOTAL_BODY_BYTES: usize = 1024 * 1024;
+
+#[derive(Default)]
+struct NetworkCapture {
+    records: VecDeque<NetworkRecord>,
+    finished: HashSet<String>,
+    sensitive: HashSet<String>,
+    ready: VecDeque<String>,
+}
+
+impl NetworkCapture {
+    fn clear(&mut self) {
+        self.records.clear();
+        self.finished.clear();
+        self.sensitive.clear();
+        self.ready.clear();
+    }
+
+    fn observe(&mut self, event: &CdpEvent) {
+        let id = event
+            .params
+            .get("requestId")
+            .and_then(Value::as_str)
+            .filter(|id| !id.is_empty() && id.len() <= 128);
+        match event.method.as_str() {
+            "Network.responseReceived" => {
+                if let Some(id) = id {
+                    self.records
+                        .retain(|record| record.request_id.as_deref() != Some(id));
+                    self.finished.remove(id);
+                    self.sensitive.remove(id);
+                    self.ready.retain(|ready| ready != id);
+                }
+                if let Some(id) = id {
+                    if event
+                        .params
+                        .pointer("/response/headers")
+                        .and_then(Value::as_object)
+                        .is_some_and(|headers| {
+                            headers.keys().any(|name| {
+                                [
+                                    "set-cookie",
+                                    "www-authenticate",
+                                    "proxy-authenticate",
+                                    "authorization",
+                                    "proxy-authorization",
+                                    "cookie",
+                                ]
+                                .iter()
+                                .any(|sensitive| name.eq_ignore_ascii_case(sensitive))
+                            })
+                        })
+                    {
+                        self.sensitive.insert(id.to_owned());
+                    }
+                }
+                if self.records.len() == MAX_NETWORK_RECORDS {
+                    if let Some(old) = self.records.pop_front().and_then(|r| r.request_id) {
+                        self.finished.remove(&old);
+                        self.sensitive.remove(&old);
+                        self.ready.retain(|ready| ready != &old);
+                    }
+                }
+                self.records.push_back(record_network(event));
+            }
+            "Network.loadingFinished" => {
+                let Some(id) = id else {
+                    return;
+                };
+                if !self
+                    .records
+                    .iter()
+                    .any(|record| record.request_id.as_deref() == Some(id))
+                {
+                    return;
+                }
+                self.finished.insert(id.to_owned());
+                if event
+                    .params
+                    .get("encodedDataLength")
+                    .and_then(Value::as_f64)
+                    .is_some_and(|len| !len.is_finite() || len > MAX_NETWORK_BODY_BYTES as f64)
+                {
+                    return;
+                }
+                if self.records.iter().any(|record| {
+                    record.request_id.as_deref() == Some(id) && eligible_api_body(record)
+                }) && !self.sensitive.contains(id)
+                    && !self.ready.iter().any(|ready| ready == id)
+                {
+                    self.ready.push_back(id.to_owned());
+                }
+            }
+            "Network.loadingFailed" => {
+                if let Some(id) = id {
+                    self.finished.insert(id.to_owned());
+                    self.ready.retain(|ready| ready != id);
+                    if let Some(record) = self
+                        .records
+                        .iter_mut()
+                        .rev()
+                        .find(|record| record.request_id.as_deref() == Some(id))
+                    {
+                        record.failed = event
+                            .params
+                            .get("errorText")
+                            .and_then(Value::as_str)
+                            .map(safe_network_error);
+                        return;
+                    }
+                }
+                if self.records.len() == MAX_NETWORK_RECORDS {
+                    if let Some(old) = self
+                        .records
+                        .pop_front()
+                        .and_then(|record| record.request_id)
+                    {
+                        self.finished.remove(&old);
+                        self.sensitive.remove(&old);
+                        self.ready.retain(|ready| ready != &old);
+                    }
+                }
+                self.records.push_back(record_network(event));
+            }
+            _ => {}
+        }
+    }
+
+    fn awaiting_api_completion(&self) -> bool {
+        self.records.iter().any(|record| {
+            eligible_api_body(record)
+                && record
+                    .request_id
+                    .as_ref()
+                    .is_some_and(|id| !self.finished.contains(id) && !self.sensitive.contains(id))
+        })
+    }
+
+    fn take_ready(&mut self) -> Vec<String> {
+        self.ready.drain(..).collect()
+    }
+
+    fn store_body(&mut self, id: &str, body: String) {
+        if self.sensitive.contains(id) {
+            return;
+        }
+        let used: usize = self
+            .records
+            .iter()
+            .filter_map(|r| r.body.as_ref())
+            .map(String::len)
+            .sum();
+        if body.len() > MAX_NETWORK_BODY_BYTES
+            || used.saturating_add(body.len()) > MAX_NETWORK_TOTAL_BODY_BYTES
+        {
+            return;
+        }
+        if let Some(record) = self
+            .records
+            .iter_mut()
+            .rev()
+            .find(|r| r.request_id.as_deref() == Some(id))
+        {
+            if record.failed.is_none() {
+                record.body = Some(body);
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -231,7 +411,7 @@ impl BrowserClient {
             target_id: id,
             session_id,
             events: Mutex::new(events),
-            network: Mutex::new(Vec::new()),
+            network: Mutex::new(NetworkCapture::default()),
             network_enabled: capture_network,
         };
         page.raw("Page.enable", json!({})).await?;
@@ -264,11 +444,12 @@ impl BrowserClient {
         } else {
             Vec::new()
         };
+        let matching_url = redact_network_url(&final_url);
         let response = network
             .iter()
             .rev()
             .find(|entry| {
-                entry.resource_type.as_deref() == Some("Document") && entry.url == final_url
+                entry.resource_type.as_deref() == Some("Document") && entry.url == matching_url
             })
             .or_else(|| {
                 network
@@ -611,7 +792,7 @@ pub struct BrowserPage {
     target_id: String,
     session_id: String,
     events: Mutex<tokio::sync::broadcast::Receiver<CdpEvent>>,
-    network: Mutex<Vec<NetworkRecord>>,
+    network: Mutex<NetworkCapture>,
     network_enabled: bool,
 }
 
@@ -680,11 +861,7 @@ impl BrowserPage {
                         if event.method == "Page.loadEventFired" && main_frame_navigated {
                             return Ok(());
                         }
-                        if event.method == "Network.responseReceived"
-                            || event.method == "Network.loadingFailed"
-                        {
-                            self.network.lock().await.push(record_network(&event));
-                        }
+                        self.observe_network(&event).await;
                     }
                     Ok(_) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {}
                     Err(_) => return Err(BrowserError::Disconnected),
@@ -695,14 +872,7 @@ impl BrowserPage {
             .await
             .map_err(|_| BrowserError::Timeout("Page.loadEventFired".into()))??;
         while let Ok(event) = receiver.try_recv() {
-            if event.session_id.as_deref() == Some(&self.session_id)
-                && matches!(
-                    event.method.as_str(),
-                    "Network.responseReceived" | "Network.loadingFailed"
-                )
-            {
-                self.network.lock().await.push(record_network(&event));
-            }
+            self.observe_network(&event).await;
         }
         Ok(())
     }
@@ -846,8 +1016,119 @@ impl BrowserPage {
         Ok(())
     }
 
+    async fn observe_network(&self, event: &CdpEvent) {
+        if self.network_enabled && event.session_id.as_deref() == Some(self.session_id.as_str()) {
+            self.network.lock().await.observe(event);
+        }
+    }
+
+    /// Consume pending CDP events for this page. A short grace window allows
+    /// in-flight API responses to finish after the top-level load event.
+    async fn collect_network_events(&self) {
+        if !self.network_enabled {
+            return;
+        }
+        let mut receiver = self.events.lock().await;
+        while let Ok(event) = receiver.try_recv() {
+            self.observe_network(&event).await;
+        }
+        if !self.network.lock().await.awaiting_api_completion() {
+            return;
+        }
+        let deadline = tokio::time::Instant::now() + Duration::from_millis(120);
+        while self.network.lock().await.awaiting_api_completion() {
+            match tokio::time::timeout_at(deadline, receiver.recv()).await {
+                Ok(Ok(event)) => self.observe_network(&event).await,
+                Ok(Err(tokio::sync::broadcast::error::RecvError::Lagged(_))) => {}
+                _ => break,
+            }
+        }
+    }
+
+    async fn refresh_network(&self) {
+        self.collect_network_events().await;
+        let ready = self.network.lock().await.take_ready();
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
+        for id in ready {
+            let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
+            if remaining.is_zero() {
+                break;
+            }
+            let result = self
+                .connection
+                .send_with_timeout(
+                    "Network.getResponseBody",
+                    json!({"requestId":id}),
+                    Some(&self.session_id),
+                    remaining,
+                )
+                .await;
+            let Ok(response) = result else {
+                continue;
+            };
+            if response.get("base64Encoded").and_then(Value::as_bool) != Some(false) {
+                continue; // CDP binary or unknown encoding must not be retained.
+            }
+            let Some(raw) = response
+                .get("body")
+                .and_then(Value::as_str)
+                .filter(|body| body.len() <= MAX_NETWORK_BODY_BYTES)
+            else {
+                continue;
+            };
+            let mime = self
+                .network
+                .lock()
+                .await
+                .records
+                .iter()
+                .rev()
+                .find(|record| record.request_id.as_deref() == Some(id.as_str()))
+                .and_then(|record| {
+                    record.mime_type.clone().or_else(|| {
+                        record
+                            .headers
+                            .iter()
+                            .find(|(key, _)| key.eq_ignore_ascii_case("content-type"))
+                            .map(|(_, value)| value.clone())
+                    })
+                });
+            if let Some(body) = sanitized_api_body(raw, mime.as_deref()) {
+                self.network.lock().await.store_body(&id, body);
+            }
+        }
+    }
+
+    /// Snapshot of a page's bounded network history, including captured API bodies.
+    pub async fn network_records(&self) -> Vec<NetworkRecord> {
+        self.refresh_network().await;
+        self.network.lock().await.records.iter().cloned().collect()
+    }
+
+    /// Search captured textual API response bodies (case-sensitive).
+    pub async fn search_network_bodies(&self, needle: &str) -> Vec<NetworkRecord> {
+        if needle.is_empty() || needle.len() > 256 {
+            return Vec::new();
+        }
+        self.network_records()
+            .await
+            .into_iter()
+            .filter(|record| {
+                record
+                    .body
+                    .as_ref()
+                    .is_some_and(|body| body.contains(needle))
+            })
+            .collect()
+    }
+
+    /// Preserve the existing take-and-clear contract for BrowserClient and MCP.
     pub async fn take_network(&self) -> Vec<NetworkRecord> {
-        std::mem::take(&mut *self.network.lock().await)
+        self.refresh_network().await;
+        let mut state = self.network.lock().await;
+        let records = state.records.drain(..).collect();
+        state.clear();
+        records
     }
 
     /// Explicit JavaScript evaluation, never called from `get`/`source`.
@@ -954,25 +1235,29 @@ fn record_network(event: &CdpEvent) -> NetworkRecord {
         .get("url")
         .or_else(|| request.get("url"))
         .and_then(Value::as_str)
-        .unwrap_or_default()
-        .to_owned();
+        .map(redact_network_url)
+        .unwrap_or_default();
     let status = response
         .get("status")
         .and_then(Value::as_f64)
+        .filter(|v| (100.0..=599.0).contains(v))
         .map(|v| v as u16);
     let headers = response
         .get("headers")
         .and_then(Value::as_object)
         .map(|map| {
             map.iter()
-                .map(|(key, value)| {
-                    (
-                        key.clone(),
-                        value
-                            .as_str()
-                            .map(str::to_owned)
-                            .unwrap_or_else(|| value.to_string()),
-                    )
+                .filter_map(|(key, value)| {
+                    // Never store Set-Cookie, Authorization, proxy auth or
+                    // arbitrary application headers with credential values.
+                    if !["content-type", "content-length", "server"]
+                        .iter()
+                        .any(|allowed| key.eq_ignore_ascii_case(allowed))
+                    {
+                        return None;
+                    }
+                    let value = value.as_str().filter(|value| value.len() <= 256)?;
+                    Some((key.clone(), value.to_owned()))
                 })
                 .collect()
         })
@@ -985,12 +1270,197 @@ fn record_network(event: &CdpEvent) -> NetworkRecord {
             .params
             .get("type")
             .and_then(Value::as_str)
+            .filter(|kind| kind.len() <= 32)
             .map(str::to_owned),
         failed: event
             .params
             .get("errorText")
             .and_then(Value::as_str)
+            .map(safe_network_error),
+        request_id: event
+            .params
+            .get("requestId")
+            .and_then(Value::as_str)
+            .filter(|id| !id.is_empty() && id.len() <= 128)
             .map(str::to_owned),
+        mime_type: response
+            .get("mimeType")
+            .and_then(Value::as_str)
+            .filter(|kind| kind.len() <= 128)
+            .map(str::to_owned),
+        body: None,
+    }
+}
+
+fn redact_network_url(raw: &str) -> String {
+    let Ok(mut url) = url::Url::parse(raw) else {
+        return "[redacted]".into();
+    };
+    if !matches!(url.scheme(), "http" | "https") {
+        return format!("{}:[redacted]", url.scheme());
+    }
+    let _ = url.set_username("");
+    let _ = url.set_password(None);
+    url.set_query(None);
+    url.set_fragment(None);
+    let path = url.path().to_ascii_lowercase();
+    if [
+        "/auth/",
+        "/oauth",
+        "/token",
+        "/login",
+        "/signin",
+        "/sign-in",
+        "/password",
+        "/session",
+    ]
+    .iter()
+    .any(|segment| path.contains(segment))
+    {
+        url.set_path("/[redacted-auth-path]");
+    }
+    let value = url.as_str();
+    if value.len() > 2048 {
+        "[redacted:long-url]".into()
+    } else {
+        value.to_owned()
+    }
+}
+
+fn safe_network_error(error: &str) -> String {
+    if error.len() <= 128
+        && error.starts_with("net::ERR_")
+        && error
+            .bytes()
+            .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, b':' | b'_'))
+    {
+        error.to_owned()
+    } else {
+        "[redacted error]".into()
+    }
+}
+
+fn eligible_api_body(record: &NetworkRecord) -> bool {
+    if !matches!(record.resource_type.as_deref(), Some("XHR" | "Fetch"))
+        || record.failed.is_some()
+        || record.url.contains("redacted-auth-path")
+    {
+        return false;
+    }
+    let mime = record
+        .mime_type
+        .as_deref()
+        .or_else(|| {
+            record
+                .headers
+                .iter()
+                .find(|(key, _)| key.eq_ignore_ascii_case("content-type"))
+                .map(|(_, value)| value.as_str())
+        })
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    if !(mime.starts_with("application/json")
+        || mime.contains("+json")
+        || mime.starts_with("text/json")
+        || mime.starts_with("text/plain"))
+    {
+        return false;
+    }
+    !record.headers.iter().any(|(key, value)| {
+        key.eq_ignore_ascii_case("content-length")
+            && value
+                .parse::<usize>()
+                .is_ok_and(|len| len > MAX_NETWORK_BODY_BYTES)
+    })
+}
+
+fn is_sensitive_json_key(key: &str) -> bool {
+    let compact: String = key
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .flat_map(char::to_lowercase)
+        .collect();
+    [
+        "password",
+        "passwd",
+        "secret",
+        "token",
+        "apikey",
+        "accesskey",
+        "authorization",
+        "credential",
+        "cookie",
+        "session",
+        "privatekey",
+        "jwt",
+    ]
+    .iter()
+    .any(|word| compact.contains(word))
+}
+
+fn redact_json_values(value: &mut Value) {
+    match value {
+        Value::Object(map) => {
+            for (key, entry) in map {
+                if is_sensitive_json_key(key) {
+                    *entry = Value::String("[REDACTED]".into());
+                } else {
+                    redact_json_values(entry);
+                }
+            }
+        }
+        Value::Array(values) => values.iter_mut().for_each(redact_json_values),
+        Value::String(text) => {
+            let lower = text.to_ascii_lowercase();
+            if [
+                "bearer ",
+                "authorization:",
+                "token=",
+                "password=",
+                "api_key=",
+            ]
+            .iter()
+            .any(|marker| lower.contains(marker))
+            {
+                *text = "[REDACTED]".into();
+            }
+        }
+        _ => {}
+    }
+}
+
+fn sanitized_api_body(raw: &str, mime_type: Option<&str>) -> Option<String> {
+    if raw.len() > MAX_NETWORK_BODY_BYTES {
+        return None;
+    }
+    let mime = mime_type?.to_ascii_lowercase();
+    if mime.contains("json") {
+        let mut parsed: Value = serde_json::from_str(raw).ok()?;
+        redact_json_values(&mut parsed);
+        let serialized = serde_json::to_string(&parsed).ok()?;
+        (serialized.len() <= MAX_NETWORK_BODY_BYTES).then_some(serialized)
+    } else if mime.starts_with("text/plain") {
+        // Plain text cannot be field-redacted safely; drop obvious credentials.
+        let lower = raw.to_ascii_lowercase();
+        if [
+            "bearer ",
+            "authorization",
+            "set-cookie",
+            "password",
+            "secret",
+            "token=",
+            "api_key",
+            "session=",
+        ]
+        .iter()
+        .any(|marker| lower.contains(marker))
+        {
+            None
+        } else {
+            Some(raw.to_owned())
+        }
+    } else {
+        None
     }
 }
 
@@ -1053,6 +1523,91 @@ async fn read_debugging_endpoint(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn network_history_is_bounded_and_old_ids_are_not_reused() {
+        let mut capture = NetworkCapture::default();
+        for number in 0..(MAX_NETWORK_RECORDS + 30) {
+            capture.observe(&CdpEvent {
+                method: "Network.responseReceived".into(),
+                session_id: Some("session-a".into()),
+                params: json!({
+                    "requestId":format!("id-{number}"),
+                    "type":"XHR",
+                    "response":{"url":format!("https://example.test/api/{number}"),
+                        "status":200,"mimeType":"application/json","headers":{}}
+                }),
+            });
+            capture.observe(&CdpEvent {
+                method: "Network.loadingFinished".into(),
+                session_id: Some("session-a".into()),
+                params: json!({"requestId":format!("id-{number}"),"encodedDataLength":12}),
+            });
+        }
+        assert_eq!(capture.records.len(), MAX_NETWORK_RECORDS);
+        assert_eq!(capture.ready.len(), MAX_NETWORK_RECORDS);
+        assert!(!capture.finished.contains("id-0"));
+        assert_eq!(
+            capture.records.front().unwrap().request_id.as_deref(),
+            Some("id-30")
+        );
+        capture.store_body("id-0", "should never attach to a later request".into());
+        assert!(capture.records.iter().all(|record| record.body.is_none()));
+    }
+
+    #[test]
+    fn aggregate_body_size_and_single_body_size_remain_bounded() {
+        let mut capture = NetworkCapture::default();
+        for number in 0..24 {
+            let id = format!("id-{number}");
+            capture.observe(&CdpEvent {
+                method: "Network.responseReceived".into(),
+                session_id: Some("session-a".into()),
+                params: json!({"requestId":id.clone(),"type":"XHR","response":{
+                    "url":"http://example.test/api","status":200,"mimeType":"text/plain"
+                }}),
+            });
+            capture.store_body(&id, "a".repeat(60 * 1024));
+        }
+        let used: usize = capture
+            .records
+            .iter()
+            .filter_map(|record| record.body.as_ref())
+            .map(String::len)
+            .sum();
+        assert!(used <= MAX_NETWORK_TOTAL_BODY_BYTES);
+        assert!(capture.records.iter().any(|record| record.body.is_none()));
+        let id = capture.records.front().unwrap().request_id.clone().unwrap();
+        capture.store_body(&id, "b".repeat(MAX_NETWORK_BODY_BYTES + 1));
+        assert_eq!(
+            capture
+                .records
+                .front()
+                .unwrap()
+                .body
+                .as_ref()
+                .unwrap()
+                .len(),
+            60 * 1024
+        );
+    }
+
+    #[test]
+    fn credential_values_in_json_and_urls_are_redacted() {
+        let parsed = sanitized_api_body(
+            r#"{"name":"safe","access_token":"abc","nested":{"password":"pass"},"note":"Bearer a-secret"}"#,
+            Some("application/json"),
+        ).unwrap();
+        assert!(parsed.contains("safe"));
+        assert!(!parsed.contains("abc"));
+        assert!(!parsed.contains("\"pass\""));
+        assert!(!parsed.contains("Bearer a-secret"));
+        assert_eq!(
+            redact_network_url("https://user:pw@example.test/api?q=secret#secret"),
+            "https://example.test/api"
+        );
+        assert!(sanitized_api_body("Bearer secret", Some("text/plain")).is_none());
+    }
 
     #[test]
     fn block_markers_are_specific() {

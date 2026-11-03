@@ -15,7 +15,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tokio::net::TcpStream;
 use tokio::sync::{broadcast, oneshot, Mutex};
-use tokio::time::timeout;
 use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 
@@ -159,6 +158,20 @@ impl Connection {
         params: Value,
         session_id: Option<&str>,
     ) -> Result<Value, BrowserError> {
+        self.send_with_timeout(method, params, session_id, Duration::from_secs(20))
+            .await
+    }
+
+    /// Use an explicit response timeout for optional body capture. Unlike
+    /// canceling `send()` from outside, this removes the pending CDP sender
+    /// before returning and avoids accumulating abandoned requests.
+    pub async fn send_with_timeout(
+        &self,
+        method: &str,
+        params: Value,
+        session_id: Option<&str>,
+        response_timeout: Duration,
+    ) -> Result<Value, BrowserError> {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed) + 1;
         let (sender, receiver) = oneshot::channel();
         self.pending.lock().await.insert(id, sender);
@@ -171,11 +184,23 @@ impl Connection {
         }
         self.history.lock().await.push(method.to_owned());
         let data = Message::Text(message.to_string().into());
-        if let Err(error) = self.writer.lock().await.send(data).await {
-            self.pending.lock().await.remove(&id);
-            return Err(BrowserError::Io(error.to_string()));
+        let deadline = tokio::time::Instant::now() + response_timeout;
+        match tokio::time::timeout_at(deadline, async move {
+            self.writer.lock().await.send(data).await
+        })
+        .await
+        {
+            Ok(Ok(())) => {}
+            Ok(Err(error)) => {
+                self.pending.lock().await.remove(&id);
+                return Err(BrowserError::Io(error.to_string()));
+            }
+            Err(_) => {
+                self.pending.lock().await.remove(&id);
+                return Err(BrowserError::Timeout(method.into()));
+            }
         }
-        match timeout(Duration::from_secs(20), receiver).await {
+        match tokio::time::timeout_at(deadline, receiver).await {
             Ok(Ok(result)) => result,
             Ok(Err(_)) => Err(BrowserError::Disconnected),
             Err(_) => {

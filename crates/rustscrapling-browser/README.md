@@ -24,11 +24,15 @@ browser.shutdown().await?;
 ```
 
 `BrowserResponse` includes `status: Option<u16>`, `final_url`, `body`, `headers`,
-`blocked: Option<BlockKind>`, `network: Vec<NetworkRecord>`. `status` is `None`
+`blocked: Option<BlockKind>`, `network: Vec<NetworkRecord>`. `NetworkRecord` also
+includes a page-session-scoped CDP `request_id`, MIME type, and optional captured
+textual response `body`. `status` is `None`
 for non-HTTP documents or when no matching response was captured. `get()`
 reuses one tab across sequential requests; `open_page()` opens independent
 tabs. Explicit page APIs include `navigate()`, `source()` (HTML including
-open shadow roots where supported), `current_url()`, `evaluate()` and `close()`.
+open shadow roots where supported), `current_url()`, `network_records()` for a
+snapshot, `search_network_bodies(text)` for case-sensitive body searches,
+`take_network()` for consume-and-clear, `evaluate()` and `close()`.
 `commands()` returns the CDP methods sent by that client for auditing.
 
 ## D-007: Runtime.enable
@@ -51,10 +55,24 @@ directory. External `connect()` accepts loopback `ws://` endpoints and remote
 shutting down an attached client leaves the external browser running.
 
 `LaunchOptions::proxy` accepts Chromium's `--proxy-server` endpoint syntax.
-Authenticated proxy challenges are not yet handled. Network capture uses the
-CDP `Network.responseReceived` and `Network.loadingFailed` events to collect
-response status, URL, headers, resource type and failures. Captured request
-bodies are not currently retained. `BrowserState` stores cookies through
+Authenticated proxy challenges are not yet handled. Network capture correlates
+`Network.responseReceived`, `Network.loadingFinished` and `Network.loadingFailed`
+by `requestId` **within the current page's CDP session**. After a completed
+small XHR/Fetch response, `Network.getResponseBody` can retain a JSON or
+`text/plain` API response without enabling Runtime. A body is unavailable when
+CDP rejects the request, it is base64/binary, missing, too large, unsupported,
+or has authentication-related response headers. Records are capped at 128 per
+page, bodies at 64 KiB each and 1 MiB combined, with a 2-second total body-fetch
+deadline per snapshot. `take_network()` clears the buffered history and returns
+the captured records; late requests require another snapshot. Only
+Content-Type, Content-Length and Server headers are retained. URLs lose
+userinfo, query and fragment; sensitive authentication paths are obscured.
+Common credential-shaped JSON keys/values are redacted, and suspicious plain
+text responses are dropped. These are conservative heuristics, **not** a
+guarantee that arbitrary application response data is free of secrets. Request
+bodies are not retained. The current MCP network tools expose summary and
+response headers only; response-body access there requires a separate MCP
+integration change. `BrowserState` stores cookies through
 `Storage.getCookies` / `Storage.setCookies`. `save_state_for_page` captures
 the active top-level HTTP(S) origin's localStorage via its CDP storage key,
 without Runtime or script evaluation; other origins/frames are excluded.
@@ -79,7 +97,9 @@ patchright-driver alternative must be evaluated with the site corpus.
 
 ## Verification
 
-`cargo test -p rustscrapling-browser` runs a local HTTP browser integration
+`cargo test -p rustscrapling-browser` includes a CDP WebSocket mock checking
+network response-body correlation, redaction, type/size limits and session
+isolation, plus a bounded-history unit test. It also runs a local HTTP browser integration
 test with navigation, DOM+Shadow DOM extraction, page reuse, cookie state,
 external CDP attachment and the D-007 command-history assertion. Set
 `RUSTSCRAPLING_CHROME_FOR_TESTING` to an installed Chrome for Testing binary to
