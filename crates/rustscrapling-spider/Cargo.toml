@@ -12,7 +12,7 @@ serde.workspace = true
 serde_json.workspace = true
 url.workspace = true
 regex.workspace = true
-tokio = { version = "1", features = ["sync", "time", "rt", "macros"] }
+tokio = { version = "1", features = ["sync", "time", "rt", "macros", "fs"] }
 futures-util = "0.3"
 blake3 = "1"
 toml = "0.8"

@@ -13,6 +13,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use url::Url;
 
+mod cache;
 mod templates;
 pub use templates::CrawlTemplate;
 
@@ -94,6 +95,14 @@ pub struct CrawlSpec {
     /// Omitted/false is not serialized, retaining legacy checkpoint hashes.
     #[serde(skip_serializing_if = "is_false")]
     pub auto_throttle: bool,
+    /// Replay previously fetched successful pages for extraction development.
+    /// An independent crawl starts on every call; no checkpoint is consumed.
+    #[serde(skip_serializing_if = "is_false")]
+    pub development_mode: bool,
+    /// Optional private on-disk cache root (defaults to crawldir/dev-cache or
+    /// .rustscrapling-dev-cache relative to the current directory).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub development_cache_dir: Option<PathBuf>,
     pub crawldir: Option<PathBuf>,
 }
 
@@ -109,6 +118,8 @@ impl Default for CrawlSpec {
             obey_robots: false,
             delay_ms: 0,
             auto_throttle: false,
+            development_mode: false,
+            development_cache_dir: None,
             crawldir: None,
         }
     }
@@ -631,7 +642,24 @@ where
     F: FnMut(&CrawlItem) -> Result<(), String>,
 {
     spec.validate()?;
-    let state = if let Some(saved) = restore(spec)? {
+    let fetcher: Arc<dyn Fetcher> = if spec.development_mode {
+        let directory = spec
+            .development_cache_dir
+            .clone()
+            .or_else(|| spec.crawldir.as_ref().map(|dir| dir.join("dev-cache")))
+            .unwrap_or_else(|| PathBuf::from(".rustscrapling-dev-cache"));
+        Arc::new(cache::CachingFetcher::new(fetcher, directory)?)
+    } else {
+        fetcher
+    };
+    // Development runs must reprocess the same cached responses, even when
+    // the usual crawldir checkpoint has no remaining requests to visit.
+    let state = if !spec.development_mode {
+        restore(spec)?
+    } else {
+        None
+    };
+    let state = if let Some(saved) = state {
         saved
     } else {
         let seeds = templates::resolve_seeds(spec, &fetcher).await?;
@@ -813,14 +841,16 @@ where
         }
         let mut fingerprints: Vec<String> = visited.iter().cloned().collect();
         fingerprints.sort();
-        persist(
-            spec,
-            &Progress {
-                spec_hash: spec_hash(spec)?,
-                visited_hashes: fingerprints,
-                queue: queue.iter().cloned().collect(),
-            },
-        )?;
+        if !spec.development_mode {
+            persist(
+                spec,
+                &Progress {
+                    spec_hash: spec_hash(spec)?,
+                    visited_hashes: fingerprints,
+                    queue: queue.iter().cloned().collect(),
+                },
+            )?;
+        }
     }
     summary.visited = visited.len();
     summary.remaining = queue.len();
@@ -1000,6 +1030,8 @@ mod tests {
         let default = CrawlSpec::default();
         let json = serde_json::to_value(&default).unwrap();
         assert!(json.get("auto_throttle").is_none());
+        assert!(json.get("development_mode").is_none());
+        assert!(json.get("development_cache_dir").is_none());
         let enabled = CrawlSpec {
             auto_throttle: true,
             ..default.clone()
@@ -1010,6 +1042,71 @@ mod tests {
                 .unwrap()
                 .auto_throttle
         );
+    }
+
+    struct OfflineReplaySource(std::sync::atomic::AtomicUsize);
+
+    impl Fetcher for OfflineReplaySource {
+        fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
+            Box::pin(async move {
+                use std::sync::atomic::Ordering;
+                let calls = self.0.fetch_add(1, Ordering::SeqCst);
+                if calls >= 2 {
+                    return Err("offline source must not be fetched again".into());
+                }
+                Ok(FetchPage {
+                    status: 200,
+                    url: url.to_owned(),
+                    content_type: "text/html".into(),
+                    body: if url.ends_with("/start") {
+                        "<a href='/second'>second</a>".into()
+                    } else {
+                        "<h1>replayed</h1>".into()
+                    },
+                })
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn development_cache_replays_full_crawl_without_checkpoint_short_circuit() {
+        use std::sync::atomic::Ordering;
+        let temp = tempfile::tempdir().unwrap();
+        let source = Arc::new(OfflineReplaySource(std::sync::atomic::AtomicUsize::new(0)));
+        let spec = CrawlSpec {
+            start_urls: vec!["https://example.org/start".into()],
+            max_pages: 2,
+            max_depth: 1,
+            development_mode: true,
+            development_cache_dir: Some(temp.path().join("cached-pages")),
+            crawldir: Some(temp.path().join("state")),
+            ..CrawlSpec::default()
+        };
+        let mut original = Vec::new();
+        assert_eq!(
+            crawl(&spec, source.clone(), |item| {
+                original.push(item.body.clone());
+                Ok(())
+            })
+            .await
+            .unwrap()
+            .successful,
+            2
+        );
+        let mut replayed = Vec::new();
+        assert_eq!(
+            crawl(&spec, source.clone(), |item| {
+                replayed.push(item.body.clone());
+                Ok(())
+            })
+            .await
+            .unwrap()
+            .successful,
+            2
+        );
+        assert_eq!(original, replayed);
+        assert_eq!(source.0.load(Ordering::SeqCst), 2);
+        assert!(!temp.path().join("state/crawl-state.json").exists());
     }
 
     struct ThrottledFetcher(Mutex<Vec<Instant>>);
