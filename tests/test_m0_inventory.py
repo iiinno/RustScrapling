@@ -15,6 +15,8 @@ sys.path.insert(0, str(ROOT / "oracle"))
 from audit_parity import (  # noqa: E402
     action_schema,
     audit,
+    canonical_backend_hash,
+    canonical_catalog_hash,
     compare_args,
     compare_actions,
     executor_action_branches,
@@ -156,6 +158,11 @@ class PinnedSnapshotTests(unittest.TestCase):
         self.assertEqual(present, {"wait_time", "click", "textbox", "press_key"})
         self.assertTrue(all(a["runtime_status"] != "verified" for a in self.report["actions"]))
         self.assertTrue(all(x["status"] != "verified" for x in self.report["methods"]))
+
+    def test_crlf_vs_lf_checkouts_share_audit_fingerprints(self) -> None:
+        backend = b"async fn browser_actions() {\n match action_type {\n \"click\" => { Ok(()) }\n _ => Err(BackendError::new(\"x\", \"y\"))\n }}"
+        self.assertEqual(canonical_backend_hash(backend), canonical_backend_hash(backend.replace(b"\n", b"\r\n")))
+        self.assertEqual(canonical_catalog_hash(b'{"a":1,"b":2}\n'), canonical_catalog_hash(b'{\r\n "b": 2, "a": 1\r\n}'))
 
 
 if __name__ == "__main__":

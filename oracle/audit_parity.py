@@ -109,6 +109,19 @@ def compare_actions(upstream: list[dict], rust_actions: dict[str, dict]) -> list
     return rows
 
 
+def canonical_catalog_hash(data: bytes) -> str:
+    """Hash the JSON structure rather than checkout-dependent whitespace."""
+    parsed = json.loads(data)
+    canonical = json.dumps(parsed, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def canonical_backend_hash(data: bytes) -> str:
+    """Preserve source changes but normalize Git's LF/CRLF checkout policy."""
+    canonical = data.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
 def executor_action_branches(backend: str) -> set[str]:
     """Source-only scan: branch presence does not establish full behavior."""
     start = backend.find("async fn browser_actions(")
@@ -173,8 +186,8 @@ def audit(api: dict, mcp: dict, rust_catalog: list[dict], catalog_bytes: bytes, 
                          "inherited_options_unresolved": command["inherited_or_unknown_decorators"], "status": "unverified"})
     return {
         "schema_version": 1, "upstream_sha": UPSTREAM_SHA,
-        "rust_catalog_sha256": hashlib.sha256(catalog_bytes).hexdigest(),
-        "rust_backend_sha256": hashlib.sha256(backend_bytes).hexdigest(),
+        "rust_catalog_sha256": canonical_catalog_hash(catalog_bytes),
+        "rust_backend_sha256": canonical_backend_hash(backend_bytes),
         "limitations": [
             "Audit compares source-level MCP arguments and schemas, not actual Pydantic runtime schema, description serialization or executor semantics.",
             "Public method inventory covers explicitly selected classes and statically resolved bases; built-in/external bases and module-level functions still need review.",

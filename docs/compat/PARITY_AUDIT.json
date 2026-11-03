@@ -3717,8 +3717,8 @@
       "test_ids": []
     }
   ],
-  "rust_backend_sha256": "cd62211da50b9ef074fa781972d293de04f46202f014dd3a254ee904f00ce3b9",
-  "rust_catalog_sha256": "e3c39cbc8c3861b15846b93a8e13e375c3d408d16b33c7bc8279d45c39946b4b",
+  "rust_backend_sha256": "c81e9f181d30e260a014e48d296e78c99025948b5059c4e1e4527471c031c295",
+  "rust_catalog_sha256": "d61bc242461984ef7b5549b25b1afeefdd83bfe1e6d0b117da9379e1a4109d78",
   "schema_version": 1,
   "unrecognized_executor_action_branches": [],
   "upstream_sha": "95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0"
