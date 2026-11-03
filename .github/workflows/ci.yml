@@ -49,6 +49,8 @@ jobs:
         run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy
       - name: Check formatting
         run: cargo +stable fmt --all -- --check
+      - name: SBOM generation and dependency license audit
+        run: python3 scripts/sbom.py --out "$RUNNER_TEMP/SBOM.cdx.json"
       - name: Run workspace unit and integration tests
         run: cargo +stable test --workspace --lib --tests --locked
       - name: Clippy, including binaries and integration tests
