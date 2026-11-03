@@ -6,6 +6,7 @@
 //! Only the explicitly requested `evaluate` operation enables Runtime.
 
 mod actions;
+pub mod installed;
 mod keys;
 mod settings;
 mod transport;

@@ -22,3 +22,5 @@ rustscrapling-mcp = { path = "../rustscrapling-mcp" }
 clap.workspace = true
 serde_json.workspace = true
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "time"] }
+sha2 = "0.10"
+zip = { version = "2", default-features = false, features = ["deflate"] }

@@ -1893,6 +1893,9 @@ fn default_chrome() -> Option<PathBuf> {
             return Some(path);
         }
     }
+    if let Some(installed) = rustscrapling_browser::installed::installed_chrome() {
+        return Some(installed);
+    }
     #[cfg(windows)]
     for candidate in [
         r"C:\Program Files\Google\Chrome\Application\chrome.exe",

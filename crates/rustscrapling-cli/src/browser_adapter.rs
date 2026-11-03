@@ -119,6 +119,9 @@ fn chrome_executable() -> Option<PathBuf> {
             return Some(executable);
         }
     }
+    if let Some(installed) = rustscrapling_browser::installed::installed_chrome() {
+        return Some(installed);
+    }
     let locations: &[&str] = if cfg!(windows) {
         &[
             "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",

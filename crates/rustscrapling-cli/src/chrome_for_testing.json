@@ -1,0 +1,37 @@
+{
+ "comment": "Chrome for Testing builds pinned by RustScrapling. Chrome for Testing publishes no checksums; each digest was computed from the official storage.googleapis.com archive over verified HTTPS on 2026-11-03 and is pinned here so later downloads are checked against it. Regenerate with scripts/pin_chrome_for_testing.py.",
+ "versions": [
+  {
+   "version": "156.0.8078.80",
+   "channel": "Stable",
+   "recorded": "2026-11-03",
+   "downloads": {
+    "linux64": {
+     "url": "https://storage.googleapis.com/chrome-for-testing-public/156.0.8078.80/linux64/chrome-linux64.zip",
+     "sha256": "b711c720f774be355197f32edf37e0651418ba036d92446ee2da19ac017540a7",
+     "size": 201329937
+    },
+    "mac-arm64": {
+     "url": "https://storage.googleapis.com/chrome-for-testing-public/156.0.8078.80/mac-arm64/chrome-mac-arm64.zip",
+     "sha256": "8bc590d1b1acac042a000234c768f31830f25a3983a83ed5e067114c87c4cad1",
+     "size": 195027080
+    },
+    "mac-x64": {
+     "url": "https://storage.googleapis.com/chrome-for-testing-public/156.0.8078.80/mac-x64/chrome-mac-x64.zip",
+     "sha256": "672b79dc79fdf28bb2ec9787b7fa33810c2b3cfd946a0fb4d3b72775f4e6fd9a",
+     "size": 205782188
+    },
+    "win64": {
+     "url": "https://storage.googleapis.com/chrome-for-testing-public/156.0.8078.80/win64/chrome-win64.zip",
+     "sha256": "16edb57d6107bf1c48a7c149b8d78b155fe614410093796dd72441fd6640540f",
+     "size": 208152768
+    },
+    "win32": {
+     "url": "https://storage.googleapis.com/chrome-for-testing-public/156.0.8078.80/win32/chrome-win32.zip",
+     "sha256": "191a656d22c7ebd345bf13c20f04100bd37ed35170e9070dc0ddfd425109ac66",
+     "size": 188578294
+    }
+   }
+  }
+ ]
+}

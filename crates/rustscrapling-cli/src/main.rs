@@ -6,6 +6,7 @@ mod browser_adapter;
 mod crawler;
 mod curl;
 mod daemon;
+mod install;
 mod network;
 mod sessions;
 mod shell;
@@ -71,6 +72,8 @@ enum Command {
     Session(sessions::SessionArgs),
     /// Serve the upstream-compatible MCP server (16 tools) over stdio.
     Mcp,
+    /// Install Chrome for Testing with version and SHA-256 verification.
+    Install(install::InstallArgs),
     /// Interactive scraping console (upstream `scrapling shell`).
     Shell(shell::ShellArgs),
     /// Search recent daemon-managed upstream requests.
@@ -436,6 +439,7 @@ fn run() -> Result<(), String> {
             .map_err(|error| json!({"schema_version":1,"error":{"kind":"mcp","message":error.to_string()}}).to_string()),
         Command::Network(args) => sessions::run_network(args),
         Command::Shell(args) => shell::run(args),
+        Command::Install(args) => install::run(args),
         Command::Get { url, options } => network::run_request("GET", &url, &options),
         Command::Auto { url, options } => {
             network::run_tier(&url, &options, rustscrapling_fetch::FetchTier::Auto)
