@@ -1,5 +1,10 @@
 # RESULTS.md: 測定と検証の結果
 
+## 2026-11-03 AutoThrottle統合後のVPS全体回帰
+
+- コミット`e1bec53`でVPS Ubuntu 24.04・Rust1.99.1の`cargo test --workspace --lib --tests --locked --offline -- --skip local_browser_navigation_reuse_external_connection_and_shadow_dom --skip browser_get_and_session_if_chrome_is_available`を実行。**87件PASS、0件FAIL、2件filtered out、Chrome data URLの実機試験1件ignored、終了コード0**。`MemoryMax=3000M`、`MemorySwapMax=0`、`CARGO_BUILD_JOBS=2`、`nice -n 12`を使用。
+- `cargo clippy -p rustscrapling-spider --all-targets --locked --offline -- -D warnings`も**終了コード0**。この追加機能のチェックはクレート限定。従来の全workspace strict Clippy通過はAutoThrottle導入前の証跡である点を区別する。HTTPを使用するChrome実機E2Eの安定通過は依然未達。
+
 ## 2026-11-03 Stage6 オプトインAutoThrottle追加
 
 - 統合コミット`05cda33`で`CrawlSpec.auto_throttle`を導入（既定false）。有効化した場合のみホスト別の動的な取得開始間隔を設定し、HTTP 408/429/502/503/504や取得失敗で上限付きバックオフ、200〜399の応答では実測応答時間の半分または既定の最小間隔に向けて平滑化する。`delay_ms`指定値を下回らず、`delay_ms=0`のAutoThrottle時は最小100ms。実行中リクエストはキャンセルせず、次回以降の取得開始時刻に反映する。`Retry-After`解析・分散ジョブ間の共有レート制限は未実装。
