@@ -232,6 +232,9 @@ pub(crate) struct MonitorState {
     next_frame_seq: u64,
     main_frame_seq: u64,
     main_url: Option<String>,
+    /// While set, paused requests of a disabled resource type are failed as
+    /// blocked by the client; all others continue unchanged.
+    pub(crate) block_paused_requests: bool,
 }
 
 pub(crate) struct PageMonitor {
@@ -240,7 +243,7 @@ pub(crate) struct PageMonitor {
 }
 
 impl PageMonitor {
-    fn lock(&self) -> std::sync::MutexGuard<'_, MonitorState> {
+    pub(crate) fn lock(&self) -> std::sync::MutexGuard<'_, MonitorState> {
         self.state
             .lock()
             .unwrap_or_else(|poison| poison.into_inner())
@@ -373,6 +376,39 @@ pub(crate) fn spawn_monitor(
                             state.dialog_error.get_or_insert((index, error.to_string()));
                         }
                         shared.changed.notify_waiters();
+                    });
+                }
+                "Fetch.requestPaused" => {
+                    let Some(request) = event
+                        .params
+                        .get("requestId")
+                        .and_then(Value::as_str)
+                        .map(str::to_owned)
+                    else {
+                        continue;
+                    };
+                    let block = shared.lock().block_paused_requests
+                        && event
+                            .params
+                            .get("resourceType")
+                            .and_then(Value::as_str)
+                            .is_some_and(|kind| {
+                                crate::settings::DISABLED_RESOURCE_TYPES.contains(&kind)
+                            });
+                    let Some(connection) = weak.upgrade() else {
+                        break;
+                    };
+                    let session = session_id.clone();
+                    tokio::spawn(async move {
+                        let (method, params) = if block {
+                            (
+                                "Fetch.failRequest",
+                                json!({"requestId": request, "errorReason": "BlockedByClient"}),
+                            )
+                        } else {
+                            ("Fetch.continueRequest", json!({ "requestId": request }))
+                        };
+                        let _ = connection.send(method, params, Some(&session)).await;
                     });
                 }
                 "Inspector.detached" | "Target.detachedFromTarget" => break,

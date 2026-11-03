@@ -46,6 +46,11 @@ Plan 7.1節の表が正本。実装が進んだコマンドからここへ実装
 - `tools/list`は本家live出力と完全一致。引数検証はJSON Schemaに対し厳格で、本家（Pydantic lax）が型変換で受理する値（例：`"5"`→整数）や未知の追加引数は`invalid_arguments`として拒否する。
 - 入力はCDP `Input`ドメインの信頼イベント。要素判定は分離worldで実行し、`browser_actions`はmain worldの`Runtime.enable`を送らない。応答のないJavaScript dialogは自動でdismissする（Playwright既定と同じ）。
 
+### MCPブラウザ取得オプション（後継セッション）
+
+- 実装済み：`locale`（Emulation＋Accept-Language）、`timezone_id`、`useragent`（未指定のheadlessは`HeadlessChrome`→`Chrome`）、`cookies`（Playwright形式）、`extra_headers`（Refererはnavigation referrerへ移す）、`google_search`（既定で`https://www.google.com/`、`referrerPolicy=unsafeUrl`）、`blocked_domains`（サブドメイン含む）、`disable_resources`（Font/Image/Media/Ping/TextTrack/WebSocket/CSPViolationReport/Stylesheet）、`block_webrtc`/`allow_webgl`/`hide_canvas`（本家と同じChromeフラグ）、`pierce_shadow`（本家`SHADOW_SNAPSHOT_JS`）、`proxy`辞書の`server`、`network_idle`/`wait_selector`（one-shotも）、viewport 1920×1080。
+- 未対応（typed error）：認証付きブラウザproxy（username/password）、空でない`additional_args`、`solve_cloudflare=true`。`real_chrome`は値に関わらずシステムChrome（`executable_path`/`SCRAPLING_EXECUTABLE_PATH`/既定パス）を使う。`load_dom=false`でもloadイベントまで待つ（より厳しい待機）。本家の常時広告ブロック（`block_ads=True`）とHTTPSエラー無視は未実装。
+
 ### Spider rich Request（S-03部分、`7752546`統合）
 
 - `SpiderRequest`はmethod/body/headers/priorityを持ち、URLだけでなくmethod・正規化header・bodyを含むdedupe keyで重複排除する（priorityはkeyに含めない）。旧`[url, depth]`形式checkpointは読み書き互換。

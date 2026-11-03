@@ -7,11 +7,13 @@
 
 mod actions;
 mod keys;
+mod settings;
 mod transport;
 
 pub use actions::{
     ActionError, BrowserAction, ElementState, LoadState, MouseButton, PointerTarget,
 };
+pub use settings::{PageSettings, DISABLED_RESOURCE_TYPES, UPSTREAM_LAUNCH_ARGS};
 pub use transport::{BrowserError, CdpEvent};
 
 use chromiumoxide_cdp::cdp::browser_protocol::{dom, target};
@@ -876,6 +878,18 @@ impl BrowserPage {
         url: &str,
         navigation_timeout: Duration,
     ) -> Result<(), BrowserError> {
+        self.navigate_with_referrer(url, navigation_timeout, None)
+            .await
+    }
+
+    /// [`Self::navigate`] with an explicit `Referer` (upstream
+    /// `google_search=True` uses `https://www.google.com/`).
+    pub async fn navigate_with_referrer(
+        &self,
+        url: &str,
+        navigation_timeout: Duration,
+        referrer: Option<&str>,
+    ) -> Result<(), BrowserError> {
         let parsed =
             url::Url::parse(url).map_err(|e| BrowserError::InvalidArgument(e.to_string()))?;
         if !matches!(
@@ -896,10 +910,18 @@ impl BrowserPage {
         self.network.lock().await.clear();
         let mut receiver = self.events.lock().await;
         while receiver.try_recv().is_ok() {} // discard prior-page events
-        let result =
-            tokio::time::timeout_at(deadline, self.raw("Page.navigate", json!({"url":url})))
-                .await
-                .map_err(|_| BrowserError::Timeout("Page.navigate".into()))??;
+        let result = tokio::time::timeout_at(deadline, {
+            let mut params = json!({ "url": url });
+            if let Some(referrer) = referrer {
+                // As Playwright does, send the referrer verbatim even on
+                // HTTPS -> HTTP navigations.
+                params["referrer"] = referrer.into();
+                params["referrerPolicy"] = "unsafeUrl".into();
+            }
+            self.raw("Page.navigate", params)
+        })
+        .await
+        .map_err(|_| BrowserError::Timeout("Page.navigate".into()))??;
         if let Some(error) = result.get("errorText").and_then(Value::as_str) {
             return Err(BrowserError::Protocol(error.into()));
         }
@@ -938,6 +960,12 @@ impl BrowserPage {
     /// HTML source via DOM.getDocument/getOuterHTML, including open Shadow
     /// DOM where the browser protocol supports includeShadowDOM.
     pub async fn source(&self) -> Result<String, BrowserError> {
+        self.source_with_shadow(true).await
+    }
+
+    /// Document HTML; `include_shadow` serializes open shadow roots as
+    /// declarative `<template shadowrootmode>` (upstream `pierce_shadow`).
+    pub async fn source_with_shadow(&self, include_shadow: bool) -> Result<String, BrowserError> {
         let document = self
             .connection
             .send_typed(
@@ -953,7 +981,7 @@ impl BrowserPage {
             .send_typed(
                 dom::GetOuterHtmlParams::builder()
                     .node_id(document.root.node_id)
-                    .include_shadow_dom(true)
+                    .include_shadow_dom(include_shadow)
                     .build(),
                 Some(&self.session_id),
             )

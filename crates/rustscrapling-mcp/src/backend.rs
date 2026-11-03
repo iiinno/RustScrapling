@@ -10,7 +10,7 @@ use std::{
 use rmcp::model::{CallToolResult, ContentBlock};
 use rustscrapling_browser::{
     detect_block, BrowserAction, BrowserClient, BrowserPage, ElementState, LaunchOptions,
-    LoadState, MouseButton, NetworkRecord, PointerTarget,
+    LoadState, MouseButton, NetworkRecord, PageSettings, PointerTarget, UPSTREAM_LAUNCH_ARGS,
 };
 use rustscrapling_extract::compat::{convert_content, ContentFormat};
 use rustscrapling_http::{HttpClient, HttpOptions, HttpRequest, HttpResponse};
@@ -451,10 +451,12 @@ impl RuntimeBackend {
     }
 
     async fn browser_client(args: &Map<String, Value>) -> Result<BrowserClient, BackendError> {
+        reject_nonempty_object(args, "additional_args")?;
         let path = opt_str(args, "executable_path")?
             .map(PathBuf::from)
             .or_else(default_chrome);
         if let Some(cdp) = opt_str(args, "cdp_url")? {
+            // Upstream: launch settings do not apply to an existing browser.
             return Ok(BrowserClient::connect(cdp).await?);
         }
         let path = path.ok_or_else(|| {
@@ -465,34 +467,108 @@ impl RuntimeBackend {
         })?;
         let mut launch = LaunchOptions::new(path);
         launch.headless = opt_bool(args, "headless", true)?;
-        if let Some(proxy) = opt_str(args, "proxy")? {
-            launch.proxy = Some(proxy.into());
+        match args.get("proxy").filter(|value| !value.is_null()) {
+            None => {}
+            Some(Value::String(proxy)) => launch.proxy = Some(proxy.clone()),
+            Some(Value::Object(proxy)) => {
+                if proxy.get("username").is_some() || proxy.get("password").is_some() {
+                    return Err(BackendError::unsupported("authenticated browser proxy"));
+                }
+                let server = proxy.get("server").and_then(Value::as_str).ok_or_else(|| {
+                    BackendError::new("invalid_arguments", "proxy dictionary needs 'server'")
+                })?;
+                launch.proxy = Some(server.to_owned());
+            }
+            Some(_) => {
+                return Err(BackendError::new(
+                    "invalid_arguments",
+                    "proxy must be a URL or a dictionary",
+                ))
+            }
+        }
+        launch
+            .extra_args
+            .extend(UPSTREAM_LAUNCH_ARGS.iter().map(|arg| (*arg).to_owned()));
+        if opt_bool(args, "block_webrtc", false)? {
+            launch.extra_args.extend([
+                "--webrtc-ip-handling-policy=disable_non_proxied_udp".to_owned(),
+                "--force-webrtc-ip-handling-policy".to_owned(),
+            ]);
+        }
+        if !opt_bool(args, "allow_webgl", true)? {
+            launch.extra_args.extend([
+                "--disable-webgl".to_owned(),
+                "--disable-webgl-image-chromium".to_owned(),
+                "--disable-webgl2".to_owned(),
+            ]);
+        }
+        if opt_bool(args, "hide_canvas", false)? {
+            launch
+                .extra_args
+                .push("--fingerprinting-canvas-image-data-noise".to_owned());
         }
         Ok(BrowserClient::launch(launch).await?)
     }
+
+    /// Session-level page settings shared by `browser_open` and
+    /// `browser_fetch_once` (upstream `StealthySession` options).
+    async fn open_configured_page(
+        client: &BrowserClient,
+        args: &Map<String, Value>,
+    ) -> Result<BrowserPage, BackendError> {
+        let page = client.open_page(true).await?;
+        let cookies = match args.get("cookies").filter(|value| !value.is_null()) {
+            None => Vec::new(),
+            Some(Value::Array(cookies)) => cookies.clone(),
+            Some(_) => {
+                return Err(BackendError::new(
+                    "invalid_arguments",
+                    "cookies must be a list of cookie objects",
+                ))
+            }
+        };
+        let settings = PageSettings {
+            locale: opt_str(args, "locale")?.map(str::to_owned),
+            timezone_id: opt_str(args, "timezone_id")?.map(str::to_owned),
+            user_agent: opt_str(args, "useragent")?.map(str::to_owned),
+            // The headless UA fix applies only to browsers launched here;
+            // an external CDP browser keeps its own identity.
+            headless: opt_bool(args, "headless", true)? && opt_str(args, "cdp_url")?.is_none(),
+            cookies,
+            viewport: opt_str(args, "cdp_url")?.is_none().then_some((1920, 1080)),
+        };
+        if let Err(error) = page.apply_settings(&settings).await {
+            let _ = page.close().await;
+            return Err(error.into());
+        }
+        Ok(page)
+    }
+
     async fn browser_open(&self, args: &Map<String, Value>) -> Outcome {
+        let client = Self::browser_client(args).await?;
+        let page = match Self::open_configured_page(&client, args).await {
+            Ok(page) => page,
+            Err(error) => {
+                let _ = client.shutdown().await;
+                return Err(error);
+            }
+        };
+        let mut settings = Map::new();
         for key in [
+            "headless",
+            "real_chrome",
             "timezone_id",
             "locale",
             "useragent",
-            "cookies",
-            "additional_args",
+            "cdp_url",
+            "hide_canvas",
+            "block_webrtc",
+            "allow_webgl",
         ] {
-            reject_some(args, key)?;
+            if let Some(value) = args.get(key).filter(|v| !v.is_object() && !v.is_array()) {
+                settings.insert(key.to_owned(), value.clone());
+            }
         }
-        allow_defaults(
-            args,
-            &[
-                ("real_chrome", json!(false)),
-                ("hide_canvas", json!(false)),
-                ("block_webrtc", json!(false)),
-                ("allow_webgl", json!(true)),
-            ],
-        )?;
-        let client = Self::browser_client(args).await?;
-        let page = client.open_page(true).await?;
-        let settings =
-            json!({"headless":opt_bool(args,"headless",true)?,"cdp_url":opt_str(args,"cdp_url")?});
         self.add_session(
             args,
             Engine::Browser {
@@ -501,7 +577,7 @@ impl RuntimeBackend {
                 last_url: None,
                 network: NetworkHistory::default(),
             },
-            settings,
+            Value::Object(settings),
             "stealthy",
         )
         .await
@@ -509,35 +585,15 @@ impl RuntimeBackend {
     async fn browser_once(&self, args: &Map<String, Value>) -> Outcome {
         browser_options(args, true)?;
         let client = Self::browser_client(args).await?;
-        let page = client.open_page(true).await?;
-        page.navigate(
-            required(args, "url")?,
-            Duration::from_millis(number(args, "timeout", 30000.0)? as u64),
-        )
-        .await?;
-        let wait = number(args, "wait", 0.0)?;
-        if wait > 0.0 {
-            sleep(Duration::from_millis(wait as u64)).await;
+        let result = async {
+            let page = Self::open_configured_page(&client, args).await?;
+            let fetched = fetch_on_page(&page, args).await;
+            let _ = page.close().await;
+            let fetched = fetched?;
+            check_challenge(&fetched.body, fetched.status)?;
+            render_browser(&fetched.body, &fetched.final_url, fetched.status, args)
         }
-        let body = page.source().await?;
-        let final_url = page.current_url().await?;
-        let events = page.take_network().await;
-        let status = events
-            .iter()
-            .rev()
-            .find(|record| {
-                record.url == final_url && record.resource_type.as_deref() == Some("Document")
-            })
-            .or_else(|| {
-                events
-                    .iter()
-                    .rev()
-                    .find(|record| record.resource_type.as_deref() == Some("Document"))
-            })
-            .and_then(|record| record.status);
-        let result = check_challenge(&body, status)
-            .and_then(|_| render_browser(&body, &final_url, status, args));
-        page.close().await?;
+        .await;
         client.shutdown().await?;
         result
     }
@@ -557,70 +613,14 @@ impl RuntimeBackend {
                 "Expected a browser session",
             ));
         };
-        let url = required(args, "url")?;
-        page.navigate(
-            url,
-            Duration::from_millis(number(args, "timeout", 30000.0)? as u64),
-        )
-        .await?;
-        let timeout_ms = number(args, "timeout", 30000.0)?;
-        // Upstream: both waits are best effort ("continue if the wait fails").
-        if opt_bool(args, "network_idle", false)? {
-            let _ = page
-                .run_actions(
-                    &[BrowserAction::WaitLoad {
-                        state: LoadState::NetworkIdle,
-                        timeout_ms,
-                    }],
-                    false,
-                )
-                .await;
-        }
-        if let Some(selector) = opt_str(args, "wait_selector")? {
-            let state = match opt_str(args, "wait_selector_state")?.unwrap_or("attached") {
-                "attached" => ElementState::Attached,
-                "detached" => ElementState::Detached,
-                "visible" => ElementState::Visible,
-                "hidden" => ElementState::Hidden,
-                other => {
-                    return Err(BackendError::new(
-                        "invalid_arguments",
-                        format!("unknown wait_selector_state '{other}'"),
-                    ))
-                }
-            };
-            let _ = page
-                .run_actions(
-                    &[BrowserAction::WaitElement {
-                        target: format!("{selector} >> nth=0"),
-                        state,
-                        timeout_ms,
-                    }],
-                    false,
-                )
-                .await;
-        }
-        let wait = number(args, "wait", 0.0)?;
-        if wait > 0.0 {
-            sleep(Duration::from_millis(wait as u64)).await;
-        }
-        let body = page.source().await?;
-        let final_url = page.current_url().await?;
-        *last_url = Some(final_url.clone());
-        let captured = page.take_network().await;
-        let status = captured
-            .iter()
-            .rev()
-            .find(|record| {
-                record.url == final_url && record.resource_type.as_deref() == Some("Document")
-            })
-            .or_else(|| {
-                captured
-                    .iter()
-                    .rev()
-                    .find(|record| record.resource_type.as_deref() == Some("Document"))
-            })
-            .and_then(|record| record.status);
+        let fetched = fetch_on_page(page, args).await?;
+        *last_url = Some(fetched.final_url.clone());
+        let (body, final_url, status, captured) = (
+            fetched.body,
+            fetched.final_url,
+            fetched.status,
+            fetched.network,
+        );
         network.append(captured)?;
         check_challenge(&body, status)?;
         if opt_str(args, "extraction_type")? == Some("snapshot") {
@@ -1105,6 +1105,215 @@ fn opt_bool(args: &Map<String, Value>, key: &str, default: bool) -> Result<bool,
     })
 }
 
+/// `SHADOW_SNAPSHOT_JS` from pinned Scrapling
+/// `scrapling/engines/toolbelt/convertor.py` (BSD-3-Clause, see NOTICE).
+const SHADOW_SNAPSHOT_JS: &str = r#"() => {
+    if (!Array.from(document.querySelectorAll('*')).some(node => node.shadowRoot)) return null;
+    const documentCopy = document.implementation.createHTMLDocument('');
+    let roots = 0;
+    function copy(node, pierce = true) {
+        if (node.nodeType !== Node.ELEMENT_NODE) return node.cloneNode(true);
+        const name = node.prefix ? `${node.prefix}:${node.localName}` : node.localName;
+        const target = documentCopy.createElementNS(node.namespaceURI, name);
+        for (const attr of node.attributes) target.setAttributeNS(attr.namespaceURI, attr.name, attr.value);
+        if (pierce && node instanceof HTMLSlotElement && node.getRootNode() instanceof ShadowRoot) {
+            const assigned = node.assignedNodes();
+            for (const child of assigned.length ? assigned : node.childNodes) target.append(copy(child));
+            return target;
+        }
+        if (pierce && node.shadowRoot) {
+            roots++;
+            const shadow = documentCopy.createElement('shadow-root');
+            for (const child of node.shadowRoot.childNodes) shadow.append(copy(child));
+            target.append(shadow);
+        } else {
+            const template = node instanceof HTMLTemplateElement;
+            const source = template ? node.content : node;
+            const destination = template ? target.content : target;
+            for (const child of source.childNodes) destination.append(copy(child, pierce && !template));
+        }
+        return target;
+    }
+    const root = copy(document.documentElement);
+    if (!roots) return null;
+    document.adoptNode(root);
+    const doctype = document.doctype ? new XMLSerializer().serializeToString(document.doctype) : '';
+    return doctype + root.outerHTML;
+}"#;
+
+struct Fetched {
+    body: String,
+    final_url: String,
+    status: Option<u16>,
+    network: Vec<NetworkRecord>,
+}
+
+/// Navigate a configured page with the per-request upstream fetch options
+/// (`google_search`, `extra_headers`, `blocked_domains`,
+/// `disable_resources`, `network_idle`, `wait_selector`, `wait`,
+/// `pierce_shadow`, `timeout`). Request-scoped settings are reset after.
+async fn fetch_on_page(
+    page: &BrowserPage,
+    args: &Map<String, Value>,
+) -> Result<Fetched, BackendError> {
+    let url = required(args, "url")?;
+    let timeout_ms = number(args, "timeout", 30000.0)?;
+    let mut headers = BTreeMap::new();
+    if let Some(extra) = args.get("extra_headers").filter(|value| !value.is_null()) {
+        for (name, value) in extra.as_object().ok_or_else(|| {
+            BackendError::new("invalid_arguments", "extra_headers must be an object")
+        })? {
+            let value = value.as_str().ok_or_else(|| {
+                BackendError::new("invalid_arguments", "extra_headers values must be strings")
+            })?;
+            headers.insert(name.clone(), value.to_owned());
+        }
+    }
+    // Chrome rejects a Referer in Network.setExtraHTTPHeaders, so — like
+    // Playwright — it becomes the navigation referrer instead. Upstream's
+    // `google_search` overrides any supplied referer.
+    let google = opt_bool(args, "google_search", true)?;
+    let supplied_referer = headers
+        .keys()
+        .find(|name| name.eq_ignore_ascii_case("referer"))
+        .cloned()
+        .and_then(|name| headers.remove(&name));
+    let referrer = if google {
+        Some("https://www.google.com/".to_owned())
+    } else {
+        supplied_referer
+    };
+    let blocked: Vec<String> = match args.get("blocked_domains").filter(|v| !v.is_null()) {
+        None => Vec::new(),
+        Some(value) => value
+            .as_array()
+            .ok_or_else(|| {
+                BackendError::new("invalid_arguments", "blocked_domains must be a list")
+            })?
+            .iter()
+            .map(|domain| domain.as_str().map(str::to_owned))
+            .collect::<Option<Vec<_>>>()
+            .ok_or_else(|| {
+                BackendError::new("invalid_arguments", "blocked_domains must contain strings")
+            })?,
+    };
+    let disable_resources = opt_bool(args, "disable_resources", false)?;
+    if !headers.is_empty() {
+        page.set_extra_headers(&headers).await?;
+    }
+    if !blocked.is_empty() {
+        page.set_blocked_domains(&blocked).await?;
+    }
+    if disable_resources {
+        page.set_resources_disabled(true).await?;
+    }
+    let outcome = async {
+        page.navigate_with_referrer(
+            url,
+            Duration::try_from_secs_f64(timeout_ms / 1000.0).unwrap_or(Duration::from_secs(30)),
+            referrer.as_deref(),
+        )
+        .await?;
+        // Upstream: both waits are best effort ("continue if the wait fails").
+        if opt_bool(args, "network_idle", false)? {
+            let _ = page
+                .run_actions(
+                    &[BrowserAction::WaitLoad {
+                        state: LoadState::NetworkIdle,
+                        timeout_ms,
+                    }],
+                    false,
+                )
+                .await;
+        }
+        if let Some(selector) = opt_str(args, "wait_selector")? {
+            let state = match opt_str(args, "wait_selector_state")?.unwrap_or("attached") {
+                "attached" => ElementState::Attached,
+                "detached" => ElementState::Detached,
+                "visible" => ElementState::Visible,
+                "hidden" => ElementState::Hidden,
+                other => {
+                    return Err(BackendError::new(
+                        "invalid_arguments",
+                        format!("unknown wait_selector_state '{other}'"),
+                    ))
+                }
+            };
+            let _ = page
+                .run_actions(
+                    &[BrowserAction::WaitElement {
+                        target: format!("{selector} >> nth=0"),
+                        state,
+                        timeout_ms,
+                    }],
+                    false,
+                )
+                .await;
+        }
+        let wait = number(args, "wait", 0.0)?;
+        if wait > 0.0 {
+            sleep(Duration::from_millis(wait as u64)).await;
+        }
+        // Upstream returns page.content() (no shadow DOM) unless
+        // `pierce_shadow`, which serializes open shadow roots as
+        // <shadow-root> elements via SHADOW_SNAPSHOT_JS.
+        let pierced = if opt_bool(args, "pierce_shadow", false)? {
+            page.evaluate_expression(SHADOW_SNAPSHOT_JS, None, true)
+                .await
+                .ok()
+                .and_then(|value| value.as_str().map(str::to_owned))
+        } else {
+            None
+        };
+        let body = match pierced {
+            Some(body) => body,
+            None => page.source_with_shadow(false).await?,
+        };
+        let final_url = page.current_url().await?;
+        Ok::<_, BackendError>((body, final_url))
+    }
+    .await;
+    // Request-scoped settings never leak into the next session request.
+    if !headers.is_empty() {
+        let _ = page.set_extra_headers(&BTreeMap::new()).await;
+    }
+    if !blocked.is_empty() {
+        let _ = page.set_blocked_domains(&[]).await;
+    }
+    if disable_resources {
+        let _ = page.set_resources_disabled(false).await;
+    }
+    let (body, final_url) = outcome?;
+    let network = page.take_network().await;
+    let status = network
+        .iter()
+        .rev()
+        .find(|record| {
+            record.url == final_url && record.resource_type.as_deref() == Some("Document")
+        })
+        .or_else(|| {
+            network
+                .iter()
+                .rev()
+                .find(|record| record.resource_type.as_deref() == Some("Document"))
+        })
+        .and_then(|record| record.status);
+    Ok(Fetched {
+        body,
+        final_url,
+        status,
+        network,
+    })
+}
+
+fn reject_nonempty_object(args: &Map<String, Value>, key: &str) -> Result<(), BackendError> {
+    match args.get(key) {
+        None | Some(Value::Null) => Ok(()),
+        Some(Value::Object(map)) if map.is_empty() => Ok(()),
+        Some(_) => Err(BackendError::unsupported(key)),
+    }
+}
+
 /// Playwright's default action/navigation timeout used by upstream when a
 /// tool exposes no timeout parameter.
 const DEFAULT_PAGE_TIMEOUT_MS: f64 = 30_000.0;
@@ -1481,41 +1690,8 @@ fn check_challenge(body: &str, status: Option<u16>) -> Result<(), BackendError> 
     Ok(())
 }
 fn browser_options(args: &Map<String, Value>, once: bool) -> Result<(), BackendError> {
-    // Session fetches implement snapshot targets and page waits through the
-    // browser action engine; one-shot fetches do not expose the page yet.
-    if once {
-        reject_some(args, "wait_selector")?;
-    }
-    for key in [
-        "extra_headers",
-        "cookies",
-        "additional_args",
-        "timezone_id",
-        "locale",
-        "useragent",
-        "blocked_domains",
-    ] {
-        reject_some(args, key)?;
-    }
-    let mut defaults = vec![
-        ("google_search", json!(true)),
-        ("disable_resources", json!(false)),
-        ("solve_cloudflare", json!(false)),
-        ("pierce_shadow", json!(false)),
-    ];
-    if once {
-        defaults.push(("network_idle", json!(false)));
-        defaults.push(("wait_selector_state", json!("attached")));
-        defaults.extend([
-            ("real_chrome", json!(false)),
-            ("hide_canvas", json!(false)),
-            ("block_webrtc", json!(false)),
-            ("allow_webgl", json!(true)),
-        ]);
-    } else {
-        defaults.push(("load_dom", json!(true)));
-    }
-    allow_defaults(args, &defaults)
+    let _ = once;
+    allow_defaults(args, &[("solve_cloudflare", json!(false))])
 }
 fn default_chrome() -> Option<PathBuf> {
     for var in [

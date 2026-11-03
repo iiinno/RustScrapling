@@ -71,3 +71,11 @@ Plan.md の「判断済みの事項」は変えていない。ここには段階
 - chromiumoxide: Chrome for Testing 156 を起動し、CDP 経由でページのタイトルと DOM を取得できた（ローカルページ）。D-007 の方針（トランスポート層を直接使う）は実装可能と確認した。
 - wreq: プロキシ経由で example.com への CONNECT と TLS ハンドシェイク開始までは進んだが、BoringSSL の証明書検証が CERTIFICATE_VERIFY_FAILED で失敗した。この環境の出口プロキシは中間者プロキシで、システムの CA バンドル（/etc/ssl/certs/ca-certificates.crt）にはその CA が入っているが、wreq の既定の検証ストアには入っていない。
 - 対処: 段階3の HTTP クライアントは、起動時にシステム CA バンドルを読み込んで検証ストアへ追加する（環境変数で差し替え可能にする）。証明書検証の無効化は既定にしない。
+
+## D-010 ブラウザ起動引数を本家と揃える／`--password-store=basic`（2026-11-03、後継セッション）
+
+- 問題：Chrome155/156でlocalhost遷移が止まる事象は、テスト専用プロファイルに`--password-store=basic`を付けると解消していた（HANDOFF/旧RESULTS）。Plan B-14は「一般ユーザープロファイルへ自動適用しない」ことを求める。
+- 調査：固定SHAの本家は`scrapling/engines/constants.py`の`DEFAULT_ARGS`に`--password-store=basic`を含め、`STEALTH_ARGS`（`--disable-blink-features=AutomationControlled`等54個）と共に**すべての起動**へ付与している。viewport/screenは1920×1080。
+- 決定：RustScraplingが自ら起動するChromeには`UPSTREAM_LAUNCH_ARGS`（本家`DEFAULT_ARGS`+`STEALTH_ARGS`）を付ける。RustScraplingは常に一時プロファイル（起動ごとに新規作成・終了時削除）を使い、利用者の永続プロファイルを開かないため、basic password storeが既存の資格情報保存を弱めることはない。`cdp_url`で外部ブラウザに接続する場合は本家同様に起動設定を適用しない。headless時のUAは`HeadlessChrome`を`Chrome`に置換（本家は生成UA）。
+- 互換影響：本家と同じフラグ構成になり、取得成功率比較（G-04）の前提が揃う。HTTPSエラー無視（本家`ignore_https_errors=True`）は未採用で、TLS検証は維持（差分としてCOMPATに記録、G-04で影響を測定してから再判断）。
+- 戻し方：`rustscrapling-browser::UPSTREAM_LAUNCH_ARGS`の付与を外す。
