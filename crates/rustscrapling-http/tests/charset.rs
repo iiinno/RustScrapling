@@ -62,12 +62,17 @@ async fn content_type_charset_shift_jis_is_decoded() {
 
 #[tokio::test]
 async fn meta_charset_euc_jp_without_header_is_decoded() {
-    let page = format!("<html><head><meta charset=\"EUC-JP\"></head><body><p>{EXPECTED}</p></body></html>");
+    let page = format!(
+        "<html><head><meta charset=\"EUC-JP\"></head><body><p>{EXPECTED}</p></body></html>"
+    );
     let (bytes, _, _) = encoding_rs::EUC_JP.encode(&page);
     let url = serve(reply(None, &bytes)).await;
     let (headers, body, final_url) = fetch(&url).await;
     let (text, encoding) = decode_body(&headers, &body, &final_url);
-    assert!(text.contains(EXPECTED), "decoded text lost the Japanese body");
+    assert!(
+        text.contains(EXPECTED),
+        "decoded text lost the Japanese body"
+    );
     assert_eq!(encoding, "EUC-JP");
 }
 
@@ -78,7 +83,10 @@ async fn utf8_bom_is_decoded_as_utf8() {
     let url = serve(reply(None, &bytes)).await;
     let (headers, body, final_url) = fetch(&url).await;
     let (text, encoding) = decode_body(&headers, &body, &final_url);
-    assert_eq!(text, EXPECTED, "the byte-order mark must not survive decoding");
+    assert_eq!(
+        text, EXPECTED,
+        "the byte-order mark must not survive decoding"
+    );
     assert_eq!(encoding, "UTF-8");
 }
 
@@ -95,7 +103,10 @@ async fn detected_shift_jis_without_any_declaration_is_decoded() {
     let url = serve(reply(None, &bytes)).await;
     let (headers, body, final_url) = fetch(&url).await;
     let (text, encoding) = decode_body(&headers, &body, &final_url);
-    assert!(text.contains(EXPECTED), "guessed encoding {encoding} produced no readable text");
+    assert!(
+        text.contains(EXPECTED),
+        "guessed encoding {encoding} produced no readable text"
+    );
     assert!(
         !text.contains('\u{FFFD}'),
         "guessed encoding {encoding} produced replacement characters"

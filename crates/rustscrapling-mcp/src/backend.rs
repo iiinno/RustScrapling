@@ -13,7 +13,9 @@ use rustscrapling_browser::{
     LoadState, MouseButton, NetworkRecord, PageSettings, PointerTarget,
 };
 use rustscrapling_extract::compat::{convert_content, ContentFormat};
-use rustscrapling_http::{decode_body, CookieJar, HttpClient, HttpOptions, HttpRequest, HttpResponse};
+use rustscrapling_http::{
+    decode_body, CookieJar, HttpClient, HttpOptions, HttpRequest, HttpResponse,
+};
 use serde_json::{json, Map, Value};
 use tokio::{sync::Mutex, time::sleep};
 use uuid::Uuid;
