@@ -4,7 +4,9 @@
 > 生成: `python oracle/inventory_upstream.py --upstream PATH --out docs/compat` と `python oracle/audit_parity.py`。手で編集せず、検証済みの実装対応・test IDは別途監査してから反映する。
 
 - 上流固定SHA: `95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0`
-- 主要公開クラスの直接定義メソッド宣言: **192件**（overload宣言を別行で保持。継承・module-level APIは別途棚卸し）
+- 主要公開クラスの直接定義メソッド宣言: **196件**（overload宣言を別行で保持。継承・module-level APIは別途棚卸し）
+- 選定クラス間で静的に解決できた継承メソッド: **130件**（外部・組込み基底クラスは未監査）
+- export alias: **1件**
 - CLIのコマンド関数: **10件**（既知の共通decoratorはAST展開済み。Click実行時のschemaは未検証）
 - MCP: **16ツール**、BrowserAction: **12種**
 - 本家のメソッド/引数/デコレーターは `UPSTREAM_API_V05.json` と `MCP_ACTIONS_V05.json` に固定。ここではRust側の名前・静的schemaのみ比較。
@@ -111,6 +113,10 @@
 | `AttributesHandler.__iter__` | `scrapling/core/custom_types.py:332` | `rustscrapling-dom` | 未対応付け・未検証 |
 | `AttributesHandler.__len__` | `scrapling/core/custom_types.py:335` | `rustscrapling-dom` | 未対応付け・未検証 |
 | `AttributesHandler.__contains__` | `scrapling/core/custom_types.py:344` | `rustscrapling-dom` | 未対応付け・未検証 |
+| `SelectorsGeneration.generate_css_selector` | `scrapling/core/mixins.py:66` | `rustscrapling-select` | 未対応付け・未検証 |
+| `SelectorsGeneration.generate_full_css_selector` | `scrapling/core/mixins.py:73` | `rustscrapling-select` | 未対応付け・未検証 |
+| `SelectorsGeneration.generate_xpath_selector` | `scrapling/core/mixins.py:80` | `rustscrapling-select` | 未対応付け・未検証 |
+| `SelectorsGeneration.generate_full_xpath_selector` | `scrapling/core/mixins.py:87` | `rustscrapling-select` | 未対応付け・未検証 |
 | `StealthySession.__init__` | `scrapling/engines/_browsers/_stealth.py:39` | `rustscrapling-browser` | 未対応付け・未検証 |
 | `StealthySession.start` | `scrapling/engines/_browsers/_stealth.py:83` | `rustscrapling-browser` | 未対応付け・未検証 |
 | `StealthySession.fetch` | `scrapling/engines/_browsers/_stealth.py:231` | `rustscrapling-browser` | 未対応付け・未検証 |
@@ -259,9 +265,148 @@
 | `SitemapSpider.start_requests` | `scrapling/spiders/templates/sitemap.py:65` | `rustscrapling-spider` | 未対応付け・未検証 |
 | `SitemapSpider.parse` | `scrapling/spiders/templates/sitemap.py:73` | `rustscrapling-spider` | 未対応付け・未検証 |
 
-## 5. 残作業（重要）
+## 5. 継承・エクスポートalias
 
-1. `Unpack[TypedDict]`と共通CLIデコレーターのAST抽出結果、継承公開API、module-level公開関数を本家実行時schemaと照合する。
+| 継承API | 宣言元 | 対応クレート候補 | 実動作 |
+| --- | --- | --- | --- |
+| `AsyncFetcher.__init__` | `BaseFetcher.__init__` via `BaseFetcher` | `rustscrapling-http` | 未検証 |
+| `AsyncFetcher.configure` | `BaseFetcher.configure` via `BaseFetcher` | `rustscrapling-http` | 未検証 |
+| `AsyncFetcher.display_config` | `BaseFetcher.display_config` via `BaseFetcher` | `rustscrapling-http` | 未検証 |
+| `CSVFeedSpider.__init__` | `Spider.__init__` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CSVFeedSpider.configure_sessions` | `Spider.configure_sessions` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CSVFeedSpider.is_blocked` | `Spider.is_blocked` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CSVFeedSpider.on_close` | `Spider.on_close` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CSVFeedSpider.on_error` | `Spider.on_error` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CSVFeedSpider.on_scraped_item` | `Spider.on_scraped_item` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CSVFeedSpider.on_start` | `Spider.on_start` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CSVFeedSpider.pause` | `Spider.pause` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CSVFeedSpider.retry_blocked_request` | `Spider.retry_blocked_request` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CSVFeedSpider.start` | `Spider.start` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CSVFeedSpider.start_requests` | `Spider.start_requests` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CSVFeedSpider.stats` | `Spider.stats` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CSVFeedSpider.stream` | `Spider.stream` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `ContentSpider.configure_sessions` | `Spider.configure_sessions` via `CrawlSpider` | `rustscrapling-spider` | 未検証 |
+| `ContentSpider.is_blocked` | `Spider.is_blocked` via `CrawlSpider` | `rustscrapling-spider` | 未検証 |
+| `ContentSpider.on_close` | `Spider.on_close` via `CrawlSpider` | `rustscrapling-spider` | 未検証 |
+| `ContentSpider.on_error` | `Spider.on_error` via `CrawlSpider` | `rustscrapling-spider` | 未検証 |
+| `ContentSpider.on_start` | `Spider.on_start` via `CrawlSpider` | `rustscrapling-spider` | 未検証 |
+| `ContentSpider.pause` | `Spider.pause` via `CrawlSpider` | `rustscrapling-spider` | 未検証 |
+| `ContentSpider.retry_blocked_request` | `Spider.retry_blocked_request` via `CrawlSpider` | `rustscrapling-spider` | 未検証 |
+| `ContentSpider.start` | `Spider.start` via `CrawlSpider` | `rustscrapling-spider` | 未検証 |
+| `ContentSpider.start_requests` | `Spider.start_requests` via `CrawlSpider` | `rustscrapling-spider` | 未検証 |
+| `ContentSpider.stats` | `Spider.stats` via `CrawlSpider` | `rustscrapling-spider` | 未検証 |
+| `ContentSpider.stream` | `Spider.stream` via `CrawlSpider` | `rustscrapling-spider` | 未検証 |
+| `CrawlSpider.__init__` | `Spider.__init__` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CrawlSpider.configure_sessions` | `Spider.configure_sessions` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CrawlSpider.is_blocked` | `Spider.is_blocked` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CrawlSpider.on_close` | `Spider.on_close` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CrawlSpider.on_error` | `Spider.on_error` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CrawlSpider.on_scraped_item` | `Spider.on_scraped_item` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CrawlSpider.on_start` | `Spider.on_start` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CrawlSpider.pause` | `Spider.pause` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CrawlSpider.retry_blocked_request` | `Spider.retry_blocked_request` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CrawlSpider.start` | `Spider.start` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CrawlSpider.start_requests` | `Spider.start_requests` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CrawlSpider.stats` | `Spider.stats` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `CrawlSpider.stream` | `Spider.stream` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `Fetcher.__init__` | `BaseFetcher.__init__` via `BaseFetcher` | `rustscrapling-http` | 未検証 |
+| `Fetcher.configure` | `BaseFetcher.configure` via `BaseFetcher` | `rustscrapling-http` | 未検証 |
+| `Fetcher.display_config` | `BaseFetcher.display_config` via `BaseFetcher` | `rustscrapling-http` | 未検証 |
+| `Response.__contains__` | `Selector.__contains__` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.__getitem__` | `Selector.__getitem__` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.attrib` | `Selector.attrib` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.below_elements` | `Selector.below_elements` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.children` | `Selector.children` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.css` | `Selector.css` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.find` | `Selector.find` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.find_all` | `Selector.find_all` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.find_ancestor` | `Selector.find_ancestor` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.find_by_regex` | `Selector.find_by_regex` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.find_by_regex@overload:1152` | `Selector.find_by_regex@overload:1152` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.find_by_regex@overload:1161` | `Selector.find_by_regex@overload:1161` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.find_by_text` | `Selector.find_by_text` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.find_by_text@overload:1084` | `Selector.find_by_text@overload:1084` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.find_by_text@overload:1094` | `Selector.find_by_text@overload:1094` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.find_similar` | `Selector.find_similar` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.generate_css_selector` | `SelectorsGeneration.generate_css_selector` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.generate_full_css_selector` | `SelectorsGeneration.generate_full_css_selector` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.generate_full_xpath_selector` | `SelectorsGeneration.generate_full_xpath_selector` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.generate_xpath_selector` | `SelectorsGeneration.generate_xpath_selector` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.get` | `Selector.get` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.get_all_text` | `Selector.get_all_text` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.getall` | `Selector.getall` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.has_class` | `Selector.has_class` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.html_content` | `Selector.html_content` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.iterancestors` | `Selector.iterancestors` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.json` | `Selector.json` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.next` | `Selector.next` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.parent` | `Selector.parent` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.path` | `Selector.path` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.prettify` | `Selector.prettify` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.previous` | `Selector.previous` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.re` | `Selector.re` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.re_first` | `Selector.re_first` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.relocate` | `Selector.relocate` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.relocate@overload:513` | `Selector.relocate@overload:513` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.relocate@overload:518` | `Selector.relocate@overload:518` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.retrieve` | `Selector.retrieve` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.save` | `Selector.save` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.siblings` | `Selector.siblings` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.tag` | `Selector.tag` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.text` | `Selector.text` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.urljoin` | `Selector.urljoin` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Response.xpath` | `Selector.xpath` via `Selector` | `rustscrapling-fetch` | 未検証 |
+| `Selector.generate_css_selector` | `SelectorsGeneration.generate_css_selector` via `SelectorsGeneration` | `rustscrapling-select` | 未検証 |
+| `Selector.generate_full_css_selector` | `SelectorsGeneration.generate_full_css_selector` via `SelectorsGeneration` | `rustscrapling-select` | 未検証 |
+| `Selector.generate_full_xpath_selector` | `SelectorsGeneration.generate_full_xpath_selector` via `SelectorsGeneration` | `rustscrapling-select` | 未検証 |
+| `Selector.generate_xpath_selector` | `SelectorsGeneration.generate_xpath_selector` via `SelectorsGeneration` | `rustscrapling-select` | 未検証 |
+| `ShopifySpider.configure_sessions` | `Spider.configure_sessions` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `ShopifySpider.is_blocked` | `Spider.is_blocked` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `ShopifySpider.on_close` | `Spider.on_close` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `ShopifySpider.on_error` | `Spider.on_error` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `ShopifySpider.on_scraped_item` | `Spider.on_scraped_item` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `ShopifySpider.on_start` | `Spider.on_start` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `ShopifySpider.pause` | `Spider.pause` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `ShopifySpider.retry_blocked_request` | `Spider.retry_blocked_request` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `ShopifySpider.start` | `Spider.start` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `ShopifySpider.stats` | `Spider.stats` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `ShopifySpider.stream` | `Spider.stream` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `SitemapSpider.__init__` | `Spider.__init__` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `SitemapSpider.configure_sessions` | `Spider.configure_sessions` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `SitemapSpider.is_blocked` | `Spider.is_blocked` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `SitemapSpider.on_close` | `Spider.on_close` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `SitemapSpider.on_error` | `Spider.on_error` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `SitemapSpider.on_scraped_item` | `Spider.on_scraped_item` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `SitemapSpider.on_start` | `Spider.on_start` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `SitemapSpider.pause` | `Spider.pause` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `SitemapSpider.retry_blocked_request` | `Spider.retry_blocked_request` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `SitemapSpider.start` | `Spider.start` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `SitemapSpider.stats` | `Spider.stats` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `SitemapSpider.stream` | `Spider.stream` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `StealthyFetcher.__init__` | `BaseFetcher.__init__` via `BaseFetcher` | `rustscrapling-browser` | 未検証 |
+| `StealthyFetcher.configure` | `BaseFetcher.configure` via `BaseFetcher` | `rustscrapling-browser` | 未検証 |
+| `StealthyFetcher.display_config` | `BaseFetcher.display_config` via `BaseFetcher` | `rustscrapling-browser` | 未検証 |
+| `XMLFeedSpider.__init__` | `Spider.__init__` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `XMLFeedSpider.configure_sessions` | `Spider.configure_sessions` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `XMLFeedSpider.is_blocked` | `Spider.is_blocked` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `XMLFeedSpider.on_close` | `Spider.on_close` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `XMLFeedSpider.on_error` | `Spider.on_error` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `XMLFeedSpider.on_scraped_item` | `Spider.on_scraped_item` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `XMLFeedSpider.on_start` | `Spider.on_start` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `XMLFeedSpider.pause` | `Spider.pause` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `XMLFeedSpider.retry_blocked_request` | `Spider.retry_blocked_request` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `XMLFeedSpider.start` | `Spider.start` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `XMLFeedSpider.start_requests` | `Spider.start_requests` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `XMLFeedSpider.stats` | `Spider.stats` via `Spider` | `rustscrapling-spider` | 未検証 |
+| `XMLFeedSpider.stream` | `Spider.stream` via `Spider` | `rustscrapling-spider` | 未検証 |
+
+| 公開alias | 実体 | 出典 |
+| --- | --- | --- |
+| `SiteToMarkdownSpider` | `ContentSpider` | `scrapling/spiders/templates/site_to_markdown.py:96` |
+
+## 6. 残作業（重要）
+
+1. `Unpack[TypedDict]`と共通CLIデコレーターのAST抽出結果、外部基底クラスの継承API、module-level公開関数を本家実行時schemaと照合する。
 2. Rustの実entrypoint・引数の既定値・結果/エラーにunit/fixture/E2Eを紐付ける。名前やschema一致だけでverifiedにしない。
 3. 特にBrowserActionはschema登録済みでも各executorが動く保証はない。`docs/COMPAT.md`のunsupportedを実機テストで解消する。
 4. 最新の統合HEADで再監査し、上流とRustを同一環境で比較する。

@@ -35,13 +35,15 @@ Rust build, Python-Scrapling dependencies, or external network after checkout.
 
 | File | What it proves / does not prove |
 | --- | --- |
-| `UPSTREAM_API_V05.json` | Direct method signatures of selected public classes, expanded known Click decorator options, TypedDict definitions and export names; **not** every inherited/module-level API or runtime behavior |
+| `UPSTREAM_API_V05.json` | Direct method signatures, statically resolvable inheritance within selected classes, public aliases, expanded known Click decorator options, TypedDict definitions and export names; **not** every external-base/module-level API or runtime behavior |
 | `MCP_ACTIONS_V05.json` | Exactly 16 registered upstream tool signatures/descriptions and the 12 action-discriminated TypedDict definitions |
 | `PARITY_AUDIT.json` | Structured static comparison against Rust `tools.json` plus browser action match-arm detection in `backend.rs`; never reports runtime parity as verified |
 | `PARITY_MATRIX.md` | Human-readable audit, worklist and each scoped method's source location and tentative owner crate |
 
 The public method listing includes `@overload` declarations as individual
-source rows (`@overload:LINE`), distinct from runtime implementations.
+source rows (`@overload:LINE`), distinct from runtime implementations. It also
+tracks exposed methods on project-owned bases (`Selector`, `Response`, spider
+template inheritance) without treating the same inherited code as new work.
 
 ## Critical findings and next steps
 
@@ -51,7 +53,7 @@ source rows (`@overload:LINE`), distinct from runtime implementations.
 - The `browser_actions` executor at the audited SHA has only four match-arm
   variants: `click`, `textbox`, `press_key`, `wait_time`; even these are limited
   to some argument values. The other eight variants return unsupported.
-- Continue M0 by inspecting public module-level exports, inheritance, dynamic
+- Continue M0 by inspecting public module-level exports, external inheritance, dynamic
   Click schemas, `Unpack[TypedDict]` runtime behavior and Rust method mapping.
 - Add `rust_entrypoint`, expected input/error/result fixtures and `test_ids` to
   a separately reviewed evidence layer. **Do not** set `verified` simply because

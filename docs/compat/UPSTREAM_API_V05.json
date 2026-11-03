@@ -1418,6 +1418,98 @@
       "source": "scrapling/core/custom_types.py"
     },
     {
+      "decorators": [
+        "property"
+      ],
+      "doc_sha256": "ae4aa50b8142b148fef355e4750d01b1785dd8b1033eec5435516e4e8c8ad973",
+      "doc_summary": "Generate a CSS selector for the current element",
+      "id": "SelectorsGeneration.generate_css_selector",
+      "kind": "sync",
+      "line": 66,
+      "overload_only": false,
+      "parameters": [
+        {
+          "annotation": "Any",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        }
+      ],
+      "returns": "str",
+      "signature": "self: Any",
+      "source": "scrapling/core/mixins.py"
+    },
+    {
+      "decorators": [
+        "property"
+      ],
+      "doc_sha256": "5f8bb059785335aa571dda995ceecad3a86918f33e031002227407fd8c217758",
+      "doc_summary": "Generate a complete CSS selector for the current element",
+      "id": "SelectorsGeneration.generate_full_css_selector",
+      "kind": "sync",
+      "line": 73,
+      "overload_only": false,
+      "parameters": [
+        {
+          "annotation": "Any",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        }
+      ],
+      "returns": "str",
+      "signature": "self: Any",
+      "source": "scrapling/core/mixins.py"
+    },
+    {
+      "decorators": [
+        "property"
+      ],
+      "doc_sha256": "ee6ce3f10a9de0a8fe7c6b1ce13b9e8c6dd3de2a723aab7c7a9a86bf7a4f9596",
+      "doc_summary": "Generate an XPath selector for the current element",
+      "id": "SelectorsGeneration.generate_xpath_selector",
+      "kind": "sync",
+      "line": 80,
+      "overload_only": false,
+      "parameters": [
+        {
+          "annotation": "Any",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        }
+      ],
+      "returns": "str",
+      "signature": "self: Any",
+      "source": "scrapling/core/mixins.py"
+    },
+    {
+      "decorators": [
+        "property"
+      ],
+      "doc_sha256": "f737b6914516fc8cf5e4ee48d7c3dd53f610d1beb01b6f0eee803bec28214170",
+      "doc_summary": "Generate a complete XPath selector for the current element",
+      "id": "SelectorsGeneration.generate_full_xpath_selector",
+      "kind": "sync",
+      "line": 87,
+      "overload_only": false,
+      "parameters": [
+        {
+          "annotation": "Any",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "self"
+        }
+      ],
+      "returns": "str",
+      "signature": "self: Any",
+      "source": "scrapling/core/mixins.py"
+    },
+    {
       "decorators": [],
       "doc_sha256": "ec957019eca7f8b9e8288a997b152de8aeca41d1a5bab970849a8fc4687279e7",
       "doc_summary": "A Browser session manager with page pooling, it's using a persistent browser Context by default with a temporary user profile directory.",
@@ -6375,6 +6467,74 @@
       "source": "scrapling/spiders/templates/sitemap.py"
     }
   ],
+  "class_bases": {
+    "AsyncFetcher": [
+      "BaseFetcher"
+    ],
+    "AsyncStealthySession": [
+      "AsyncSession",
+      "StealthySessionMixin"
+    ],
+    "AttributesHandler": [
+      "Mapping[str, _TextHandlerType]"
+    ],
+    "BaseFetcher": [],
+    "CSVFeedSpider": [
+      "Spider"
+    ],
+    "ContentSpider": [
+      "CrawlSpider"
+    ],
+    "CrawlResult": [],
+    "CrawlRule": [],
+    "CrawlSpider": [
+      "Spider"
+    ],
+    "CrawlerEngine": [],
+    "Fetcher": [
+      "BaseFetcher"
+    ],
+    "FetcherSession": [],
+    "LinkExtractor": [],
+    "Request": [],
+    "Response": [
+      "Selector"
+    ],
+    "Scheduler": [],
+    "Selector": [
+      "SelectorsGeneration"
+    ],
+    "Selectors": [
+      "List[Selector]"
+    ],
+    "SelectorsGeneration": [],
+    "SessionManager": [],
+    "ShopifySpider": [
+      "Spider"
+    ],
+    "SitemapSpider": [
+      "Spider"
+    ],
+    "Spider": [
+      "ABC"
+    ],
+    "StealthyFetcher": [
+      "BaseFetcher"
+    ],
+    "StealthySession": [
+      "SyncSession",
+      "StealthySessionMixin"
+    ],
+    "TextHandler": [
+      "str"
+    ],
+    "TextHandlers": [
+      "List[TextHandler]"
+    ],
+    "XMLFeedSpider": [
+      "Spider"
+    ]
+  },
   "cli_commands": [
     {
       "decorator_options": [
@@ -8148,6 +8308,14 @@
       "source": "scrapling/cli.py"
     }
   ],
+  "exported_aliases": [
+    {
+      "alias": "SiteToMarkdownSpider",
+      "line": 96,
+      "source": "scrapling/spiders/templates/site_to_markdown.py",
+      "target": "ContentSpider"
+    }
+  ],
   "exports": {
     "scrapling/__init__.py": [
       "Selector",
@@ -8184,6 +8352,1048 @@
       "SiteToMarkdownSpider"
     ]
   },
+  "inherited_methods": [
+    {
+      "declared_in": "BaseFetcher.__init__",
+      "id": "AsyncFetcher.__init__",
+      "line": 193,
+      "overload_only": false,
+      "source": "scrapling/engines/toolbelt/custom.py",
+      "via_base": "BaseFetcher"
+    },
+    {
+      "declared_in": "BaseFetcher.configure",
+      "id": "AsyncFetcher.configure",
+      "line": 217,
+      "overload_only": false,
+      "source": "scrapling/engines/toolbelt/custom.py",
+      "via_base": "BaseFetcher"
+    },
+    {
+      "declared_in": "BaseFetcher.display_config",
+      "id": "AsyncFetcher.display_config",
+      "line": 206,
+      "overload_only": false,
+      "source": "scrapling/engines/toolbelt/custom.py",
+      "via_base": "BaseFetcher"
+    },
+    {
+      "declared_in": "Spider.__init__",
+      "id": "CSVFeedSpider.__init__",
+      "line": 106,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.configure_sessions",
+      "id": "CSVFeedSpider.configure_sessions",
+      "line": 218,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.is_blocked",
+      "id": "CSVFeedSpider.is_blocked",
+      "line": 204,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_close",
+      "id": "CSVFeedSpider.on_close",
+      "line": 188,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_error",
+      "id": "CSVFeedSpider.on_error",
+      "line": 192,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_scraped_item",
+      "id": "CSVFeedSpider.on_scraped_item",
+      "line": 200,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_start",
+      "id": "CSVFeedSpider.on_start",
+      "line": 178,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.pause",
+      "id": "CSVFeedSpider.pause",
+      "line": 232,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.retry_blocked_request",
+      "id": "CSVFeedSpider.retry_blocked_request",
+      "line": 210,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.start",
+      "id": "CSVFeedSpider.start",
+      "line": 278,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.start_requests",
+      "id": "CSVFeedSpider.start_requests",
+      "line": 155,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.stats",
+      "id": "CSVFeedSpider.stats",
+      "line": 326,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.stream",
+      "id": "CSVFeedSpider.stream",
+      "line": 304,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.configure_sessions",
+      "id": "ContentSpider.configure_sessions",
+      "line": 218,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "CrawlSpider"
+    },
+    {
+      "declared_in": "Spider.is_blocked",
+      "id": "ContentSpider.is_blocked",
+      "line": 204,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "CrawlSpider"
+    },
+    {
+      "declared_in": "Spider.on_close",
+      "id": "ContentSpider.on_close",
+      "line": 188,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "CrawlSpider"
+    },
+    {
+      "declared_in": "Spider.on_error",
+      "id": "ContentSpider.on_error",
+      "line": 192,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "CrawlSpider"
+    },
+    {
+      "declared_in": "Spider.on_start",
+      "id": "ContentSpider.on_start",
+      "line": 178,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "CrawlSpider"
+    },
+    {
+      "declared_in": "Spider.pause",
+      "id": "ContentSpider.pause",
+      "line": 232,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "CrawlSpider"
+    },
+    {
+      "declared_in": "Spider.retry_blocked_request",
+      "id": "ContentSpider.retry_blocked_request",
+      "line": 210,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "CrawlSpider"
+    },
+    {
+      "declared_in": "Spider.start",
+      "id": "ContentSpider.start",
+      "line": 278,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "CrawlSpider"
+    },
+    {
+      "declared_in": "Spider.start_requests",
+      "id": "ContentSpider.start_requests",
+      "line": 155,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "CrawlSpider"
+    },
+    {
+      "declared_in": "Spider.stats",
+      "id": "ContentSpider.stats",
+      "line": 326,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "CrawlSpider"
+    },
+    {
+      "declared_in": "Spider.stream",
+      "id": "ContentSpider.stream",
+      "line": 304,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "CrawlSpider"
+    },
+    {
+      "declared_in": "Spider.__init__",
+      "id": "CrawlSpider.__init__",
+      "line": 106,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.configure_sessions",
+      "id": "CrawlSpider.configure_sessions",
+      "line": 218,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.is_blocked",
+      "id": "CrawlSpider.is_blocked",
+      "line": 204,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_close",
+      "id": "CrawlSpider.on_close",
+      "line": 188,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_error",
+      "id": "CrawlSpider.on_error",
+      "line": 192,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_scraped_item",
+      "id": "CrawlSpider.on_scraped_item",
+      "line": 200,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_start",
+      "id": "CrawlSpider.on_start",
+      "line": 178,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.pause",
+      "id": "CrawlSpider.pause",
+      "line": 232,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.retry_blocked_request",
+      "id": "CrawlSpider.retry_blocked_request",
+      "line": 210,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.start",
+      "id": "CrawlSpider.start",
+      "line": 278,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.start_requests",
+      "id": "CrawlSpider.start_requests",
+      "line": 155,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.stats",
+      "id": "CrawlSpider.stats",
+      "line": 326,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.stream",
+      "id": "CrawlSpider.stream",
+      "line": 304,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "BaseFetcher.__init__",
+      "id": "Fetcher.__init__",
+      "line": 193,
+      "overload_only": false,
+      "source": "scrapling/engines/toolbelt/custom.py",
+      "via_base": "BaseFetcher"
+    },
+    {
+      "declared_in": "BaseFetcher.configure",
+      "id": "Fetcher.configure",
+      "line": 217,
+      "overload_only": false,
+      "source": "scrapling/engines/toolbelt/custom.py",
+      "via_base": "BaseFetcher"
+    },
+    {
+      "declared_in": "BaseFetcher.display_config",
+      "id": "Fetcher.display_config",
+      "line": 206,
+      "overload_only": false,
+      "source": "scrapling/engines/toolbelt/custom.py",
+      "via_base": "BaseFetcher"
+    },
+    {
+      "declared_in": "Selector.__contains__",
+      "id": "Response.__contains__",
+      "line": 196,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.__getitem__",
+      "id": "Response.__getitem__",
+      "line": 191,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.attrib",
+      "id": "Response.attrib",
+      "line": 339,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.below_elements",
+      "id": "Response.below_elements",
+      "line": 395,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.children",
+      "id": "Response.children",
+      "line": 403,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.css",
+      "id": "Response.css",
+      "line": 571,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.find",
+      "id": "Response.find",
+      "line": 799,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.find_all",
+      "id": "Response.find_all",
+      "line": 701,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.find_ancestor",
+      "id": "Response.find_ancestor",
+      "line": 427,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.find_by_regex",
+      "id": "Response.find_by_regex",
+      "line": 1169,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.find_by_regex@overload:1152",
+      "id": "Response.find_by_regex@overload:1152",
+      "line": 1152,
+      "overload_only": true,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.find_by_regex@overload:1161",
+      "id": "Response.find_by_regex@overload:1161",
+      "line": 1161,
+      "overload_only": true,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.find_by_text",
+      "id": "Response.find_by_text",
+      "line": 1103,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.find_by_text@overload:1084",
+      "id": "Response.find_by_text@overload:1084",
+      "line": 1084,
+      "overload_only": true,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.find_by_text@overload:1094",
+      "id": "Response.find_by_text@overload:1094",
+      "line": 1094,
+      "overload_only": true,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.find_similar",
+      "id": "Response.find_similar",
+      "line": 1022,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "SelectorsGeneration.generate_css_selector",
+      "id": "Response.generate_css_selector",
+      "line": 66,
+      "overload_only": false,
+      "source": "scrapling/core/mixins.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "SelectorsGeneration.generate_full_css_selector",
+      "id": "Response.generate_full_css_selector",
+      "line": 73,
+      "overload_only": false,
+      "source": "scrapling/core/mixins.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "SelectorsGeneration.generate_full_xpath_selector",
+      "id": "Response.generate_full_xpath_selector",
+      "line": 87,
+      "overload_only": false,
+      "source": "scrapling/core/mixins.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "SelectorsGeneration.generate_xpath_selector",
+      "id": "Response.generate_xpath_selector",
+      "line": 80,
+      "overload_only": false,
+      "source": "scrapling/core/mixins.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.get",
+      "id": "Response.get",
+      "line": 467,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.get_all_text",
+      "id": "Response.get_all_text",
+      "line": 284,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.getall",
+      "id": "Response.getall",
+      "line": 476,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.has_class",
+      "id": "Response.has_class",
+      "line": 379,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.html_content",
+      "id": "Response.html_content",
+      "line": 348,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.iterancestors",
+      "id": "Response.iterancestors",
+      "line": 420,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.json",
+      "id": "Response.json",
+      "line": 924,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.next",
+      "id": "Response.next",
+      "line": 444,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.parent",
+      "id": "Response.parent",
+      "line": 389,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.path",
+      "id": "Response.path",
+      "line": 438,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.prettify",
+      "id": "Response.prettify",
+      "line": 364,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.previous",
+      "id": "Response.previous",
+      "line": 456,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.re",
+      "id": "Response.re",
+      "line": 940,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.re_first",
+      "id": "Response.re_first",
+      "line": 956,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.relocate",
+      "id": "Response.relocate",
+      "line": 522,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.relocate@overload:513",
+      "id": "Response.relocate@overload:513",
+      "line": 513,
+      "overload_only": true,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.relocate@overload:518",
+      "id": "Response.relocate@overload:518",
+      "line": 518,
+      "overload_only": true,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.retrieve",
+      "id": "Response.retrieve",
+      "line": 909,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.save",
+      "id": "Response.save",
+      "line": 888,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.siblings",
+      "id": "Response.siblings",
+      "line": 414,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.tag",
+      "id": "Response.tag",
+      "line": 265,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.text",
+      "id": "Response.text",
+      "line": 274,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.urljoin",
+      "id": "Response.urljoin",
+      "line": 334,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "Selector.xpath",
+      "id": "Response.xpath",
+      "line": 631,
+      "overload_only": false,
+      "source": "scrapling/parser.py",
+      "via_base": "Selector"
+    },
+    {
+      "declared_in": "SelectorsGeneration.generate_css_selector",
+      "id": "Selector.generate_css_selector",
+      "line": 66,
+      "overload_only": false,
+      "source": "scrapling/core/mixins.py",
+      "via_base": "SelectorsGeneration"
+    },
+    {
+      "declared_in": "SelectorsGeneration.generate_full_css_selector",
+      "id": "Selector.generate_full_css_selector",
+      "line": 73,
+      "overload_only": false,
+      "source": "scrapling/core/mixins.py",
+      "via_base": "SelectorsGeneration"
+    },
+    {
+      "declared_in": "SelectorsGeneration.generate_full_xpath_selector",
+      "id": "Selector.generate_full_xpath_selector",
+      "line": 87,
+      "overload_only": false,
+      "source": "scrapling/core/mixins.py",
+      "via_base": "SelectorsGeneration"
+    },
+    {
+      "declared_in": "SelectorsGeneration.generate_xpath_selector",
+      "id": "Selector.generate_xpath_selector",
+      "line": 80,
+      "overload_only": false,
+      "source": "scrapling/core/mixins.py",
+      "via_base": "SelectorsGeneration"
+    },
+    {
+      "declared_in": "Spider.configure_sessions",
+      "id": "ShopifySpider.configure_sessions",
+      "line": 218,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.is_blocked",
+      "id": "ShopifySpider.is_blocked",
+      "line": 204,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_close",
+      "id": "ShopifySpider.on_close",
+      "line": 188,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_error",
+      "id": "ShopifySpider.on_error",
+      "line": 192,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_scraped_item",
+      "id": "ShopifySpider.on_scraped_item",
+      "line": 200,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_start",
+      "id": "ShopifySpider.on_start",
+      "line": 178,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.pause",
+      "id": "ShopifySpider.pause",
+      "line": 232,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.retry_blocked_request",
+      "id": "ShopifySpider.retry_blocked_request",
+      "line": 210,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.start",
+      "id": "ShopifySpider.start",
+      "line": 278,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.stats",
+      "id": "ShopifySpider.stats",
+      "line": 326,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.stream",
+      "id": "ShopifySpider.stream",
+      "line": 304,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.__init__",
+      "id": "SitemapSpider.__init__",
+      "line": 106,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.configure_sessions",
+      "id": "SitemapSpider.configure_sessions",
+      "line": 218,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.is_blocked",
+      "id": "SitemapSpider.is_blocked",
+      "line": 204,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_close",
+      "id": "SitemapSpider.on_close",
+      "line": 188,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_error",
+      "id": "SitemapSpider.on_error",
+      "line": 192,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_scraped_item",
+      "id": "SitemapSpider.on_scraped_item",
+      "line": 200,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_start",
+      "id": "SitemapSpider.on_start",
+      "line": 178,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.pause",
+      "id": "SitemapSpider.pause",
+      "line": 232,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.retry_blocked_request",
+      "id": "SitemapSpider.retry_blocked_request",
+      "line": 210,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.start",
+      "id": "SitemapSpider.start",
+      "line": 278,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.stats",
+      "id": "SitemapSpider.stats",
+      "line": 326,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.stream",
+      "id": "SitemapSpider.stream",
+      "line": 304,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "BaseFetcher.__init__",
+      "id": "StealthyFetcher.__init__",
+      "line": 193,
+      "overload_only": false,
+      "source": "scrapling/engines/toolbelt/custom.py",
+      "via_base": "BaseFetcher"
+    },
+    {
+      "declared_in": "BaseFetcher.configure",
+      "id": "StealthyFetcher.configure",
+      "line": 217,
+      "overload_only": false,
+      "source": "scrapling/engines/toolbelt/custom.py",
+      "via_base": "BaseFetcher"
+    },
+    {
+      "declared_in": "BaseFetcher.display_config",
+      "id": "StealthyFetcher.display_config",
+      "line": 206,
+      "overload_only": false,
+      "source": "scrapling/engines/toolbelt/custom.py",
+      "via_base": "BaseFetcher"
+    },
+    {
+      "declared_in": "Spider.__init__",
+      "id": "XMLFeedSpider.__init__",
+      "line": 106,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.configure_sessions",
+      "id": "XMLFeedSpider.configure_sessions",
+      "line": 218,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.is_blocked",
+      "id": "XMLFeedSpider.is_blocked",
+      "line": 204,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_close",
+      "id": "XMLFeedSpider.on_close",
+      "line": 188,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_error",
+      "id": "XMLFeedSpider.on_error",
+      "line": 192,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_scraped_item",
+      "id": "XMLFeedSpider.on_scraped_item",
+      "line": 200,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.on_start",
+      "id": "XMLFeedSpider.on_start",
+      "line": 178,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.pause",
+      "id": "XMLFeedSpider.pause",
+      "line": 232,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.retry_blocked_request",
+      "id": "XMLFeedSpider.retry_blocked_request",
+      "line": 210,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.start",
+      "id": "XMLFeedSpider.start",
+      "line": 278,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.start_requests",
+      "id": "XMLFeedSpider.start_requests",
+      "line": 155,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.stats",
+      "id": "XMLFeedSpider.stats",
+      "line": 326,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    },
+    {
+      "declared_in": "Spider.stream",
+      "id": "XMLFeedSpider.stream",
+      "line": 304,
+      "overload_only": false,
+      "source": "scrapling/spiders/spider.py",
+      "via_base": "Spider"
+    }
+  ],
   "mcp_tool_names": [
     "browser_open",
     "browser_save_state",

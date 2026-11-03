@@ -18,6 +18,7 @@ from inventory_upstream import UPSTREAM_SHA
 
 
 CLASS_CRATE = {
+    "SelectorsGeneration": "rustscrapling-select",
     "Selector": "rustscrapling-select", "Selectors": "rustscrapling-select",
     "TextHandler": "rustscrapling-dom", "TextHandlers": "rustscrapling-dom",
     "AttributesHandler": "rustscrapling-dom", "Response": "rustscrapling-fetch",
@@ -155,6 +156,15 @@ def audit(api: dict, mcp: dict, rust_catalog: list[dict], catalog_bytes: bytes, 
             "rust_crate_candidate": CLASS_CRATE.get(cls), "rust_entrypoint": None,
             "test_ids": [], "status": "unverified",
         })
+    inherited_rows = []
+    for method in api["inherited_methods"]:
+        cls = method["id"].split(".", 1)[0]
+        inherited_rows.append({
+            "id": method["id"], "declared_in": method["declared_in"],
+            "via_base": method["via_base"], "source": method["source"], "line": method["line"],
+            "rust_crate_candidate": CLASS_CRATE.get(cls), "rust_entrypoint": None,
+            "test_ids": [], "status": "unverified",
+        })
     cli_rows = []
     for command in api["cli_commands"]:
         cli_rows.append({"id": command["id"], "source": command["source"], "line": command["line"],
@@ -167,11 +177,12 @@ def audit(api: dict, mcp: dict, rust_catalog: list[dict], catalog_bytes: bytes, 
         "rust_backend_sha256": hashlib.sha256(backend_bytes).hexdigest(),
         "limitations": [
             "Audit compares source-level MCP arguments and schemas, not actual Pydantic runtime schema, description serialization or executor semantics.",
-            "Public method inventory covers the explicit 27 classes, not yet every exported module-level function or inherited method.",
+            "Public method inventory covers explicitly selected classes and statically resolved bases; built-in/external bases and module-level functions still need review.",
             "Known Click decorator factories are expanded statically; Click runtime/schema validation remains necessary.",
             "All runtime statuses deliberately remain unverified until evidence links to passing tests.",
         ],
-        "methods": rows, "cli": cli_rows, "mcp": mcp_rows, "actions": action_rows,
+        "methods": rows, "inherited_methods": inherited_rows, "exported_aliases": api["exported_aliases"],
+        "cli": cli_rows, "mcp": mcp_rows, "actions": action_rows,
         "extra_rust_mcp_tools": sorted(set(tools) - {t["name"] for t in mcp["tools"]}),
         "extra_rust_browser_actions": sorted(set(browser_actions) - {a["type"] for a in mcp["actions"]}),
         "unrecognized_executor_action_branches": sorted(branches - {a["type"] for a in mcp["actions"]}),
@@ -180,6 +191,7 @@ def audit(api: dict, mcp: dict, rust_catalog: list[dict], catalog_bytes: bytes, 
 
 def markdown(report: dict) -> str:
     methods = report["methods"]
+    inherited = report["inherited_methods"]
     mcp = report["mcp"]
     actions = report["actions"]
     lines = [
@@ -188,6 +200,8 @@ def markdown(report: dict) -> str:
         "> 生成: `python oracle/inventory_upstream.py --upstream PATH --out docs/compat` と `python oracle/audit_parity.py`。手で編集せず、検証済みの実装対応・test IDは別途監査してから反映する。",
         "", f"- 上流固定SHA: `{report['upstream_sha']}`",
         f"- 主要公開クラスの直接定義メソッド宣言: **{len(methods)}件**（overload宣言を別行で保持。継承・module-level APIは別途棚卸し）",
+        f"- 選定クラス間で静的に解決できた継承メソッド: **{len(inherited)}件**（外部・組込み基底クラスは未監査）",
+        f"- export alias: **{len(report['exported_aliases'])}件**",
         f"- CLIのコマンド関数: **{len(report['cli'])}件**（既知の共通decoratorはAST展開済み。Click実行時のschemaは未検証）",
         f"- MCP: **{len(mcp)}ツール**、BrowserAction: **{len(actions)}種**",
         "- 本家のメソッド/引数/デコレーターは `UPSTREAM_API_V05.json` と `MCP_ACTIONS_V05.json` に固定。ここではRust側の名前・静的schemaのみ比較。",
@@ -214,8 +228,15 @@ def markdown(report: dict) -> str:
     lines += ["", "## 4. 公開クラスのメソッド別追跡", "", "| 上流API | ソース | 対応クレート候補 | Rustの実entrypoint・テスト |", "| --- | --- | --- | --- |"]
     for row in methods:
         lines.append(f"| `{row['id']}` | `{row['source']}:{row['line']}` | `{row['rust_crate_candidate'] or '未分類'}` | 未対応付け・未検証 |")
-    lines += ["", "## 5. 残作業（重要）", "",
-              "1. `Unpack[TypedDict]`と共通CLIデコレーターのAST抽出結果、継承公開API、module-level公開関数を本家実行時schemaと照合する。",
+    lines += ["", "## 5. 継承・エクスポートalias", "", "| 継承API | 宣言元 | 対応クレート候補 | 実動作 |", "| --- | --- | --- | --- |"]
+    for row in inherited:
+        lines.append(f"| `{row['id']}` | `{row['declared_in']}` via `{row['via_base']}` | `{row['rust_crate_candidate'] or '未分類'}` | 未検証 |")
+    if report["exported_aliases"]:
+        lines += ["", "| 公開alias | 実体 | 出典 |", "| --- | --- | --- |"]
+        for alias in report["exported_aliases"]:
+            lines.append(f"| `{alias['alias']}` | `{alias['target']}` | `{alias['source']}:{alias['line']}` |")
+    lines += ["", "## 6. 残作業（重要）", "",
+              "1. `Unpack[TypedDict]`と共通CLIデコレーターのAST抽出結果、外部基底クラスの継承API、module-level公開関数を本家実行時schemaと照合する。",
               "2. Rustの実entrypoint・引数の既定値・結果/エラーにunit/fixture/E2Eを紐付ける。名前やschema一致だけでverifiedにしない。",
               "3. 特にBrowserActionはschema登録済みでも各executorが動く保証はない。`docs/COMPAT.md`のunsupportedを実機テストで解消する。",
               "4. 最新の統合HEADで再監査し、上流とRustを同一環境で比較する。", ""]

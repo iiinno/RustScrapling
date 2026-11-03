@@ -133,10 +133,15 @@ class PinnedSnapshotTests(unittest.TestCase):
         self.assertEqual(self.mcp["tool_count"], 16)
         self.assertEqual(self.mcp["action_count"], 12)
         self.assertEqual(len(self.api["api_methods"]), len({m["id"] for m in self.api["api_methods"]}))
-        self.assertEqual(len(self.api["api_methods"]), 192)
+        self.assertEqual(len(self.api["api_methods"]), 196)
+        self.assertEqual(len(self.api["inherited_methods"]), 130)
+        self.assertTrue(any(m["id"] == "Selector.generate_css_selector" for m in self.api["inherited_methods"]))
+        self.assertTrue(any(m["id"] == "Response.css" for m in self.api["inherited_methods"]))
+        self.assertTrue(any(a["alias"] == "SiteToMarkdownSpider" and a["target"] == "ContentSpider" for a in self.api["exported_aliases"]))
         self.assertEqual(len(self.api["cli_commands"]), 10)
         self.assertTrue(any(c["expanded_decorator_factories"] for c in self.api["cli_commands"]))
         self.assertEqual(len(self.report["methods"]), len(self.api["api_methods"]))
+        self.assertEqual(len(self.report["inherited_methods"]), len(self.api["inherited_methods"]))
 
     def test_rust_catalog_and_rust_backend_unchanged(self) -> None:
         tool_bytes = (ROOT / "crates" / "rustscrapling-mcp" / "src" / "tools.json").read_bytes()

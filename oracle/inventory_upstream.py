@@ -20,6 +20,7 @@ from pathlib import Path
 
 UPSTREAM_SHA = "95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0"
 API_CLASSES = {
+    "scrapling/core/mixins.py": ("SelectorsGeneration",),
     "scrapling/parser.py": ("Selector", "Selectors"),
     "scrapling/core/custom_types.py": ("TextHandler", "TextHandlers", "AttributesHandler"),
     "scrapling/engines/toolbelt/custom.py": ("Response", "BaseFetcher"),
@@ -285,11 +286,13 @@ def build(upstream: Path) -> tuple[dict, dict]:
         raise ValueError(f"Source SHA mismatch: expected {UPSTREAM_SHA}, got {sha}")
     source = parse_sources(upstream)
     methods = []
+    class_bases = {}
     for rel, target_classes in API_CLASSES.items():
         classes = {n.name: n for n in source[rel].body if isinstance(n, ast.ClassDef)}
         for cls_name in target_classes:
             if cls_name not in classes:
                 raise ValueError(f"Missing {rel}:{cls_name}")
+            class_bases[cls_name] = [name(base) for base in classes[cls_name].bases]
             for fn in classes[cls_name].body:
                 if isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)) and (not fn.name.startswith("_") or fn.name in ALLOWED_DUNDERS):
                     item = method_item(fn, rel, cls_name)
@@ -303,6 +306,67 @@ def build(upstream: Path) -> tuple[dict, dict]:
                         item["overload_only"] = False
                     methods.append(item)
     methods.sort(key=lambda m: (m["source"], m["line"], m["id"]))
+    direct_by_class = {}
+    for item in methods:
+        direct_by_class.setdefault(item["id"].split(".", 1)[0], []).append(item)
+
+    def method_name(item: dict) -> str:
+        return item["id"].split(".", 1)[1].split("@overload:")[0]
+
+    # Resolve inheritance where both classes are part of this inventory. In
+    # particular, Selector exposes methods defined on SelectorsGeneration,
+    # Response inherits Selector, and Spider templates inherit Spider hooks.
+    inherited = []
+    def effective(cls: str, visiting: set[str]) -> list[dict]:
+        if cls in visiting:
+            raise ValueError("Cycle in selected public class inheritance: " + cls)
+        own = direct_by_class.get(cls, [])
+        own_names = {method_name(m) for m in own}
+        prior = []
+        seen = set(own_names)
+        for base in class_bases.get(cls, []):
+            if base not in class_bases:
+                continue
+            for item in effective(base, visiting | {cls}):
+                label = method_name(item)
+                if label in seen:
+                    continue
+                prior.append(item)
+            seen.update(method_name(m) for m in prior)
+        return own + prior
+
+    for cls in class_bases:
+        own_names = {method_name(m) for m in direct_by_class.get(cls, [])}
+        seen = set(own_names)
+        for base in class_bases[cls]:
+            if base not in class_bases:
+                continue
+            grouped = {}
+            for item in effective(base, {cls}):
+                label = method_name(item)
+                grouped.setdefault(label, []).append(item)
+            for label, overloads in grouped.items():
+                if label in seen:
+                    continue
+                for item in overloads:
+                    inherited.append({
+                        "id": f"{cls}.{label}" + (f"@overload:{item['line']}" if item["overload_only"] else ""),
+                        "declared_in": item["id"], "source": item["source"], "line": item["line"],
+                        "via_base": base, "overload_only": item["overload_only"],
+                    })
+                seen.add(label)
+    inherited.sort(key=lambda item: (item["id"], item["source"], item["line"]))
+
+    aliases = []
+    for rel, tree in source.items():
+        published = set(exported_names(tree))
+        for node in tree.body:
+            if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.Name):
+                continue
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id in published and target.id != node.value.id:
+                    aliases.append({"alias": target.id, "target": node.value.id, "source": rel, "line": node.lineno})
+    aliases.sort(key=lambda item: (item["source"], item["alias"]))
     actions_defs = typed_dict_classes(source[ACTION_FILE], ACTION_FILE)
     action_names = action_variants(source[ACTION_FILE])
     variants = []
@@ -330,7 +394,8 @@ def build(upstream: Path) -> tuple[dict, dict]:
         "schema_version": 1, "upstream_sha": UPSTREAM_SHA,
         "notes": ["AST signatures are declarations, not tested runtime schemas", "Unpack[TypedDict] is resolved in typed_dicts; known CLI decorator factories are expanded, but Click runtime validation remains required", "Presence in this manifest does not establish Rust parity"],
         "exports": {rel: exported_names(source[rel]) for rel in sorted(EXPORTED_MODULES)},
-        "api_methods": methods, "typed_dicts": types, "cli_commands": cli,
+        "api_methods": methods, "inherited_methods": inherited, "class_bases": class_bases,
+        "exported_aliases": aliases, "typed_dicts": types, "cli_commands": cli,
         "mcp_tool_names": [t["name"] for t in registered],
     }
     mcp = {"schema_version": 1, "upstream_sha": UPSTREAM_SHA, "tool_count": len(registered), "action_count": len(variants), "tools": registered, "actions": variants}
@@ -358,7 +423,7 @@ def main() -> None:
                 raise SystemExit(f"STALE: {target}")
         else:
             write_manifest(target, obj)
-    print(f"Pinned {UPSTREAM_SHA}: {len(api['api_methods'])} method signatures, {len(api['cli_commands'])} CLI functions, {len(mcp['tools'])} MCP tools, {len(mcp['actions'])} actions")
+    print(f"Pinned {UPSTREAM_SHA}: {len(api['api_methods'])} direct + {len(api['inherited_methods'])} inherited signatures, {len(api['cli_commands'])} CLI functions, {len(mcp['tools'])} MCP tools, {len(mcp['actions'])} actions")
 
 
 if __name__ == "__main__":
