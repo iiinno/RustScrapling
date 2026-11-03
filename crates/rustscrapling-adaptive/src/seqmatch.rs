@@ -182,7 +182,7 @@ impl<'a, T: Eq + Hash> SequenceMatcher<'a, T> {
             (&mut rows_l[0], &mut rows_r[0]);
         let (mut tcur, mut tnxt): (&mut SmallVec<[usize; 64]>, &mut SmallVec<[usize; 64]>) =
             (&mut tch_l[0], &mut tch_r[0]);
-        for (i, &ch) in a.iter().enumerate().take(ahi).skip(alo) {
+        for i in alo..ahi {
             tnxt.clear();
             if let Some(indices) = self.b2j.get(&self.a[i]) {
                 for &j in indices {
@@ -376,7 +376,7 @@ fn tiny_ratio(a: &[char], b: &[char]) -> f64 {
         let mut tch = [[0usize; MAX]; 2];
         let mut ntch = [0usize; 2];
         let mut ci = 0usize;
-        for i in alo..ahi {
+        for (i, &ch) in a.iter().enumerate().take(ahi).skip(alo) {
             let ni = 1 - ci;
             ntch[ni] = 0;
             for &j in find_indices(ch) {
