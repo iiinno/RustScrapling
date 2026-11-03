@@ -469,3 +469,97 @@ fn daemon_cli_startup_failure_is_typed_and_never_claims_success() {
     );
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn network_search_cli_queries_daemon_across_processes() {
+    let fixture = Fixture::new();
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let root = std::env::temp_dir().join(format!(
+        "rustscrapling-daemon-search-{}-{stamp}",
+        std::process::id()
+    ));
+    let state = root.join("private").join("daemon.json");
+    let _cleanup = Cleanup(state.clone());
+    assert_eq!(
+        error_kind(&command(&["network", "search"], &state)),
+        "not_running"
+    );
+    json_ok(&command(&["daemon", "start", "--direct"], &state));
+    let url = format!("http://{}/trace?key=not-shared", fixture.addr);
+    assert_eq!(json_ok(&command(&["get", &url], &state))["status"], 200);
+    let found = json_ok(&command(
+        &[
+            "network",
+            "search",
+            "--url-contains",
+            "/trace",
+            "--limit",
+            "1",
+        ],
+        &state,
+    ));
+    assert_eq!(found["network"]["source"], "daemon_fetch");
+    assert_eq!(found["network"]["in_memory"], true);
+    assert_eq!(found["network"]["captures_browser_subrequests"], false);
+    let records = found["network"]["records"].as_array().unwrap();
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0]["url"], format!("http://{}/trace", fixture.addr));
+    assert_eq!(records[0]["method"], "GET");
+    assert_eq!(records[0]["status"], 200);
+    assert!(!found.to_string().contains("not-shared"));
+    let absent = json_ok(&command(
+        &["network", "search", "--url-contains", "/no-match"],
+        &state,
+    ));
+    assert!(absent["network"]["records"].as_array().unwrap().is_empty());
+    assert_eq!(
+        error_kind(&command(&["network", "search", "--limit", "0"], &state)),
+        "invalid_request"
+    );
+    let private_state = std::fs::read_to_string(&state).unwrap();
+    let token = serde_json::from_str::<Value>(&private_state).unwrap()["token"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    std::fs::write(&state, private_state.replace(&token, &"0".repeat(64))).unwrap();
+    let denied = command(&["network", "search"], &state);
+    std::fs::write(&state, private_state).unwrap();
+    assert_eq!(error_kind(&denied), "unauthorized");
+    assert!(!String::from_utf8_lossy(&denied.stderr).contains(&token));
+    assert_eq!(
+        json_ok(&command(&["daemon", "stop"], &state))["daemon"]["stopping"],
+        true
+    );
+    wait_for_stop(&state);
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn session_cli_never_reports_a_disposable_browser_as_persistent() {
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let state = std::env::temp_dir().join(format!(
+        "rustscrapling-session-unused-{}-{stamp}.json",
+        std::process::id()
+    ));
+    for args in [
+        vec!["session", "open"],
+        vec!["session", "close", "demo"],
+        vec!["session", "list"],
+        vec!["session", "save-state", "demo", "snapshot.json"],
+        vec!["session", "load-state", "demo", "snapshot.json"],
+    ] {
+        let result = command(&args, &state);
+        assert_eq!(error_kind(&result), "unsupported", "{args:?}");
+        assert!(
+            result.stdout.is_empty(),
+            "unsupported operations cannot return success"
+        );
+    }
+    assert!(!state.exists());
+}

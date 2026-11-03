@@ -88,6 +88,14 @@ authenticated and removes the state file when the loop exits.
   are excluded from disk. The database lives in the private state directory,
   uses file mode `0600` on Unix, and rejects symlinks. A damaged database
   returns a typed `storage` startup error and does not overwrite it.
+* **Recent daemon requests**: `rustscrapling network search --url-contains /path
+  --limit 20` queries the 128 most recent completed upstream fetches through
+  authenticated daemon IPC. Results contain URL (without query, fragment or
+  credentials), HTTP method, status and fetch tier; no headers or bodies.
+  This in-memory record is cleared when the daemon stops. It records daemon
+  fetches only, not browser subrequests or a persistent browser session.
+  CLI `session open/close/list/save-state/load-state` currently return a typed
+  `unsupported` error until a persistent browser session host exists.
 
 Per-site rate-limit schedules are still in memory. Network-level authenticated
 proxies, large-body disk spill, and throughput comparison against Scrapling's

@@ -2,10 +2,11 @@ use crate::persistence::{
     safe_request, safe_response, Persistence, Restored, MAX_CACHE_BODY, MAX_CACHE_ENTRIES,
 };
 use crate::protocol::{
-    DaemonError, DaemonRequest, DaemonResponse, FetchRequest, FetchResult, FetchTier, Status,
+    DaemonError, DaemonRequest, DaemonResponse, FetchRequest, FetchResult, FetchTier,
+    NetworkRecord, Status,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::future::Future;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -20,6 +21,8 @@ use tokio::time::{sleep_until, timeout, Instant};
 use url::Url;
 
 const MAX_FRAME: usize = 16 * 1024 * 1024;
+const MAX_NETWORK_RECORDS: usize = 128;
+const MAX_NETWORK_RESULTS: usize = 100;
 
 pub type FetchFuture<'a> =
     Pin<Box<dyn Future<Output = Result<FetchResult, DaemonError>> + Send + 'a>>;
@@ -84,6 +87,7 @@ struct Shared {
     hosts: Mutex<HashMap<String, Arc<Mutex<Instant>>>>,
     cache: Mutex<HashMap<String, Cached>>,
     learning: Mutex<HashMap<String, Learned>>,
+    network: Mutex<VecDeque<NetworkRecord>>,
     requests: AtomicU64,
     upstream: AtomicU64,
     coalesced: AtomicU64,
@@ -123,6 +127,7 @@ impl Shared {
                     })
                     .collect(),
             ),
+            network: Mutex::new(VecDeque::new()),
             requests: AtomicU64::new(0),
             upstream: AtomicU64::new(0),
             coalesced: AtomicU64::new(0),
@@ -265,6 +270,7 @@ impl Shared {
             .map_err(|_| DaemonError::new("timeout", "fallback fetch exceeded deadline"))?;
         }
         let result = result?;
+        self.record_network(&request, &result).await;
         if result.status == 304 {
             if let Some(cache) = cached {
                 // Keep fresh validators if the server provided replacements.
@@ -350,6 +356,54 @@ impl Shared {
     async fn evict_cache(&self, key: &str) {
         self.cache.lock().await.remove(key);
         self.persistence.evict_cache(key.to_owned()).await;
+    }
+
+    async fn record_network(&self, request: &FetchRequest, result: &FetchResult) {
+        let Ok(mut url) = Url::parse(&request.url) else {
+            return;
+        };
+        // Metadata is kept only in daemon memory. Never expose request headers,
+        // query parameters, URL credentials or response bodies in search results.
+        let _ = url.set_username("");
+        let _ = url.set_password(None);
+        url.set_query(None);
+        url.set_fragment(None);
+        if url.as_str().len() > 2048 {
+            // Keep history bounded even when a client supplies a huge URL.
+            return;
+        }
+        let record = NetworkRecord {
+            url: url.to_string(),
+            method: request.method.clone(),
+            status: result.status,
+            tier: result.tier,
+        };
+        let mut network = self.network.lock().await;
+        if network.len() == MAX_NETWORK_RECORDS {
+            network.pop_front();
+        }
+        network.push_back(record);
+    }
+
+    async fn network_search(
+        &self,
+        url_contains: &str,
+        limit: usize,
+    ) -> Result<Vec<NetworkRecord>, DaemonError> {
+        if !(1..=MAX_NETWORK_RESULTS).contains(&limit) || url_contains.len() > 1024 {
+            return Err(DaemonError::new(
+                "invalid_request",
+                "network search requires limit 1..100 and filter up to 1024 bytes",
+            ));
+        }
+        let records = self.network.lock().await;
+        Ok(records
+            .iter()
+            .rev()
+            .filter(|record| record.url.contains(url_contains))
+            .take(limit)
+            .cloned()
+            .collect())
     }
 
     async fn status(&self, address: &str) -> Status {
@@ -526,6 +580,13 @@ async fn handle(
             }
             DaemonRequest::Fetch { request } => match shared.fetch(request).await {
                 Ok(reply) => DaemonResponse::Fetch(reply),
+                Err(err) => DaemonResponse::Error(err),
+            },
+            DaemonRequest::NetworkSearch {
+                url_contains,
+                limit,
+            } => match shared.network_search(&url_contains, limit).await {
+                Ok(records) => DaemonResponse::NetworkSearch(records),
                 Err(err) => DaemonResponse::Error(err),
             },
         },
@@ -766,6 +827,27 @@ impl DaemonClient {
         match self.call(DaemonRequest::Fetch { request }).await? {
             DaemonResponse::Fetch(result) => Ok(result),
             _ => Err(DaemonError::new("protocol", "expected fetch result")),
+        }
+    }
+
+    /// Search recent completed daemon fetches; browser CDP subrequests are not captured.
+    pub async fn network_search(
+        &self,
+        url_contains: impl Into<String>,
+        limit: usize,
+    ) -> Result<Vec<NetworkRecord>, DaemonError> {
+        match self
+            .call(DaemonRequest::NetworkSearch {
+                url_contains: url_contains.into(),
+                limit,
+            })
+            .await?
+        {
+            DaemonResponse::NetworkSearch(records) => Ok(records),
+            _ => Err(DaemonError::new(
+                "protocol",
+                "expected network search result",
+            )),
         }
     }
 }

@@ -9,7 +9,8 @@ mod protocol;
 mod service;
 
 pub use protocol::{
-    DaemonError, DaemonRequest, DaemonResponse, FetchRequest, FetchResult, FetchTier, Status,
+    DaemonError, DaemonRequest, DaemonResponse, FetchRequest, FetchResult, FetchTier,
+    NetworkRecord, Status,
 };
 pub use service::{DaemonClient, DaemonConfig, DaemonServer, FetchBackend, FetchFuture};
 

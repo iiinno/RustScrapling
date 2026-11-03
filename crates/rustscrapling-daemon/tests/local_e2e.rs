@@ -212,6 +212,66 @@ fn stable_wire_request_and_typed_error() {
 }
 
 #[tokio::test]
+async fn network_search_tracks_completed_fetches_without_query_strings() {
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let dir = std::env::temp_dir().join(format!(
+        "rustscrapling-daemon-network-{}-{stamp}",
+        std::process::id()
+    ));
+    let config = DaemonConfig {
+        state_file: dir.join("state.json"),
+        site_interval: Duration::ZERO,
+        learning_ttl: Duration::from_secs(5),
+        request_timeout: Duration::from_secs(5),
+    };
+    let server = DaemonServer::start(config.clone(), Arc::new(FixtureBackend::default()))
+        .await
+        .unwrap();
+    let client = DaemonClient::from_state_file(&config.state_file).unwrap();
+    assert!(client.network_search("", 20).await.unwrap().is_empty());
+    let request = FetchRequest::get("https://example.test/path?key=not-in-history");
+    assert_eq!(client.fetch(request).await.unwrap().status, 200);
+    assert!(client
+        .network_search("missing", 20)
+        .await
+        .unwrap()
+        .is_empty());
+    let records = client
+        .network_search("example.test/path", 20)
+        .await
+        .unwrap();
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0].url, "https://example.test/path");
+    assert_eq!(records[0].method, "GET");
+    assert_eq!(records[0].status, 200);
+    assert_eq!(records[0].tier, FetchTier::Http);
+    assert!(!serde_json::to_string(&records)
+        .unwrap()
+        .contains("not-in-history"));
+    assert_eq!(
+        client.network_search("", 0).await.unwrap_err().kind,
+        "invalid_request"
+    );
+    assert_eq!(
+        client.network_search("", 101).await.unwrap_err().kind,
+        "invalid_request"
+    );
+    client.stop().await.unwrap();
+    server.wait().await.unwrap();
+    let restarted = DaemonServer::start(config.clone(), Arc::new(FixtureBackend::default()))
+        .await
+        .unwrap();
+    let client = DaemonClient::from_state_file(&config.state_file).unwrap();
+    assert!(client.network_search("", 20).await.unwrap().is_empty());
+    client.stop().await.unwrap();
+    restarted.wait().await.unwrap();
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[tokio::test]
 async fn discover_returns_none_without_state_file() {
     let stamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)

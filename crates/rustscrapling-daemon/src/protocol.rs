@@ -63,12 +63,23 @@ pub struct Status {
     pub learned_sites: usize,
 }
 
+/// Sanitized metadata for one completed upstream daemon fetch.
+/// Request and response headers, body, credentials and query strings are not recorded.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NetworkRecord {
+    pub url: String,
+    pub method: String,
+    pub status: u16,
+    pub tier: FetchTier,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case")]
 pub enum DaemonRequest {
     Status,
     Stop,
     Fetch { request: FetchRequest },
+    NetworkSearch { url_contains: String, limit: usize },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -77,6 +88,7 @@ pub enum DaemonResponse {
     Status(Status),
     Stopping,
     Fetch(FetchResult),
+    NetworkSearch(Vec<NetworkRecord>),
     Error(DaemonError),
 }
 

@@ -6,6 +6,7 @@ mod browser_adapter;
 mod crawler;
 mod daemon;
 mod network;
+mod sessions;
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -64,6 +65,10 @@ struct Cli {
 enum Command {
     /// Manage the authenticated local fetch daemon.
     Daemon(daemon::DaemonArgs),
+    /// Manage reusable browser sessions (requires a persistent browser host).
+    Session(sessions::SessionArgs),
+    /// Search recent daemon-managed upstream requests.
+    Network(sessions::NetworkArgs),
     /// HTTP GET and article extraction (no browser).
     Get {
         url: String,
@@ -416,6 +421,8 @@ fn run() -> Result<(), String> {
     let cli = Cli::parse();
     match cli.command {
         Command::Daemon(args) => daemon::run(args),
+        Command::Session(args) => sessions::run_session(args),
+        Command::Network(args) => sessions::run_network(args),
         Command::Get { url, options } => network::run_request("GET", &url, &options),
         Command::Auto { url, options } => {
             network::run_tier(&url, &options, rustscrapling_fetch::FetchTier::Auto)
