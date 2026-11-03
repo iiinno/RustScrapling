@@ -437,6 +437,45 @@ mod tests {
         }
     }
     #[test]
+    fn a_javascript_shell_is_too_thin_to_trust() {
+        let body = br#"<!DOCTYPE html><html><head><script src="/static/jquery.js"></script>
+            <script>$(document).ready(function(){ $.getJSON("/api/quotes", function(d){}); });</script>
+            </head><body><div class="container"><div class="row"><h1>Quotes to Scrape</h1>
+            <p><a href="/login">Login</a></p></div></div></body></html>"#;
+        let visible = visible_text_len(body).expect("markup must be recognised");
+        assert!(visible < MIN_USEFUL_TEXT, "visible text was {visible}");
+        let response = FetchResponse {
+            status: 200,
+            final_url: "https://quotes.toscrape.com/js/".into(),
+            headers: vec![],
+            body: body.to_vec(),
+            tier: FetchTier::Http,
+            protocol: None,
+        };
+        assert!(needs_browser(&response));
+    }
+
+    #[test]
+    fn a_real_article_is_not_escalated() {
+        let prose = "This article explains how a crawler resolves links. ".repeat(20);
+        let body = format!("<html><body><article><p>{prose}</p></article></body></html>");
+        let response = FetchResponse {
+            status: 200,
+            final_url: "https://example.com/article".into(),
+            headers: vec![],
+            body: body.into_bytes(),
+            tier: FetchTier::Http,
+            protocol: None,
+        };
+        assert!(!needs_browser(&response));
+    }
+
+    #[test]
+    fn a_json_body_is_never_judged_by_length() {
+        assert_eq!(visible_text_len(br#"{"total":0,"quotes":[]}"#), None);
+    }
+
+    #[test]
     fn block_detector_does_not_confuse_articles_with_challenges() {
         assert!(is_challenge(b"<title>Just a moment</title> Cloudflare"));
         assert!(!is_challenge(b"<article>How CAPTCHA works</article>"));
