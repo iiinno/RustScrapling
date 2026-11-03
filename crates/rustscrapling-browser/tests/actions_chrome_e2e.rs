@@ -25,13 +25,16 @@ async fn real_chrome_click_and_unicode_input_without_implicit_runtime() {
         </body></html>"#;
     let target = format!(
         "data:text/html,{}",
-        url::form_urlencoded::byte_serialize(html.as_bytes()).collect::<String>()
+        // Form URL encoding renders spaces as '+', which a data: URL treats
+        // literally. Use %20 so HTML attributes remain valid.
+        url::form_urlencoded::byte_serialize(html.as_bytes())
+            .collect::<String>()
+            .replace('+', "%20")
     );
     page.navigate(&target, Duration::from_secs(15))
         .await
         .unwrap();
     let source = page.source().await.unwrap();
-    eprintln!("real Chrome data fixture source: {source}");
     assert!(
         source.contains("id=\"push\""),
         "fixture HTML not loaded: {source}"

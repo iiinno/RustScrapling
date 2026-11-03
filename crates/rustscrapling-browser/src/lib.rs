@@ -920,12 +920,7 @@ impl BrowserPage {
                 "CSS selector must be 1..=2048 bytes and contain no NUL".into(),
             ));
         }
-        // Chrome's DOM.querySelector requires a document tree whose nodes
-        // have been requested. A depth-0 snapshot can resolve no matches
-        // even while DOM.getOuterHTML contains the element.
-        let root = self
-            .raw("DOM.getDocument", json!({"depth":-1,"pierce":true}))
-            .await?;
+        let root = self.raw("DOM.getDocument", json!({"depth":0})).await?;
         let root_id = root
             .pointer("/root/nodeId")
             .and_then(Value::as_u64)
@@ -937,12 +932,6 @@ impl BrowserPage {
                 json!({"nodeId":root_id,"selector":selector}),
             )
             .await?;
-        if std::env::var_os("RUSTSCRAPLING_TRACE_CDP_METHODS").is_some() {
-            eprintln!(
-                "DOM.querySelector root={root_id}, response nodeId={:?}",
-                queried.get("nodeId")
-            );
-        }
         queried
             .get("nodeId")
             .and_then(Value::as_u64)
