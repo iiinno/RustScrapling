@@ -5416,7 +5416,7 @@
       "test_ids": []
     }
   ],
-  "rust_backend_sha256": "ead1d421c4591a6d16386eebaac1cc599f87813876de22d600cb2976b417c5e0",
+  "rust_backend_sha256": "4d7d2d7569f8b593c290c1970cf1c58146e009959573a4c9da027862bcd90172",
   "rust_catalog_sha256": "e0eebf4fc8388e22903f11a0963b0bdd09b6dd6f91f3f1b5972b1fd35fbbca3c",
   "schema_version": 1,
   "unrecognized_executor_action_branches": [],

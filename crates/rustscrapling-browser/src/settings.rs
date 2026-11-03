@@ -305,7 +305,10 @@ impl Fingerprint {
     pub fn headers(&self) -> Vec<(String, String)> {
         let mut headers = vec![
             ("user-agent".to_owned(), self.user_agent.to_owned()),
-            ("accept-language".to_owned(), self.accept_language.to_owned()),
+            (
+                "accept-language".to_owned(),
+                self.accept_language.to_owned(),
+            ),
         ];
         for (name, value) in [
             ("sec-ch-ua", self.sec_chua),
