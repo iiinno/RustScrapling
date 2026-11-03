@@ -202,6 +202,13 @@ impl Fetcher {
         tier: FetchTier,
     ) -> Result<FetchResponse, FetchError> {
         let _ = domain(&request.url)?;
+        if std::env::var_os("RUSTSCRAPLING_TRACE_TIER").is_some() {
+            eprintln!(
+                "trace enter tier={:?} browser_present={}",
+                tier,
+                self.browser.is_some()
+            );
+        }
         if tier != FetchTier::Auto {
             return self.attempt(&request, tier).await;
         }
@@ -227,6 +234,27 @@ impl Fetcher {
             match self.attempt(&request, choice).await {
                 Ok(response) => {
                     let escalate = self.options.detect_blocks && needs_browser(&response);
+                    if std::env::var_os("RUSTSCRAPLING_TRACE_TIER").is_some() {
+                        eprintln!(
+                            "trace choice={:?} detect={} blocked={} visible={:?} escalate={}",
+                            choice,
+                            self.options.detect_blocks,
+                            response.blocked(),
+                            visible_text_len(&response.body),
+                            escalate
+                        );
+                    }
+                    if std::env::var_os("RUSTSCRAPLING_TRACE_TIER").is_some() {
+                        eprintln!(
+                            "trace choice={:?} detect_blocks={} blocked={} visible={:?} escalate={}",
+                            choice,
+                            self.options.detect_blocks,
+                            response.blocked(),
+                            visible_text_len(&response.body),
+                            escalate
+                        );
+                        eprintln!("trace browser_present={}", self.browser.is_some());
+                    }
                     if !escalate {
                         if response.success() {
                             self.remember(&request.url, choice).await;
