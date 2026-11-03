@@ -702,7 +702,34 @@
     return [rect.x + window.scrollX, rect.y + window.scrollY, rect.width, rect.height];
   }
 
+  // Delivery probe for element clicks: counts trusted pointer/mouse down
+  // events reaching the element's document. A cold compositor can drop
+  // input dispatched right after a navigation; the caller then retries.
+  let probe = null;
+  function armProbe(element) {
+    disarmProbe();
+    const view = (element.ownerDocument || document).defaultView || window;
+    const state = { count: 0, view };
+    state.handler = (event) => { if (event.isTrusted) state.count++; };
+    view.addEventListener('pointerdown', state.handler, true);
+    view.addEventListener('mousedown', state.handler, true);
+    probe = state;
+    return true;
+  }
+  function disarmProbe() {
+    if (!probe) return 0;
+    const { count, view, handler } = probe;
+    view.removeEventListener('pointerdown', handler, true);
+    view.removeEventListener('mousedown', handler, true);
+    probe = null;
+    return count;
+  }
+  function nextFrame() {
+    return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))));
+  }
+
   globalThis.__rsx = {
+    armProbe, readProbe: () => disarmProbe(), nextFrame,
     snapshot, strictError, pageRect,
     stableRect, outerHTML: (element) => element.outerHTML,
     query, preview, isVisible, check, hitTarget, retarget, fillPrepare, focus, checkedState, selectOptions,

@@ -932,6 +932,63 @@ impl BrowserPage {
         enabled: bool,
         retarget: bool,
     ) -> Result<(f64, f64), BrowserError> {
+        Ok(self
+            .element_pointer_target(selector, timeout_ms, enabled, retarget)
+            .await?
+            .0)
+    }
+
+    /// Click an element and confirm a trusted pointer event reached its
+    /// document. If none did (input dropped, e.g. while a cold compositor
+    /// has not yet presented the new document), wait for frames and retry;
+    /// nothing reached the page, so a retry cannot double-apply the click.
+    async fn element_click(
+        &self,
+        selector: &str,
+        timeout_ms: f64,
+        button: MouseButton,
+        click_count: u32,
+        delay_ms: f64,
+    ) -> Result<(), BrowserError> {
+        const ATTEMPTS: u32 = 4;
+        let started = std::time::Instant::now();
+        for attempt in 1..=ATTEMPTS {
+            let remaining = (timeout_ms - started.elapsed().as_secs_f64() * 1000.0).max(1.0);
+            let ((x, y), object) = self
+                .element_pointer_target(selector, remaining, true, false)
+                .await?;
+            let armed = self.element_call(&object, "armProbe", &[]).await.is_ok();
+            let result = self.mouse_click(x, y, button, click_count, delay_ms).await;
+            if result.is_err() {
+                self.release_button(button).await;
+                return result;
+            }
+            if !armed {
+                return Ok(());
+            }
+            match self.element_call(&object, "readProbe", &[]).await {
+                // Delivered, or the document went away (navigation): done.
+                Ok(value) if value.get("value").and_then(Value::as_u64) != Some(0) => return Ok(()),
+                Err(_) => return Ok(()),
+                Ok(_) if attempt < ATTEMPTS => {
+                    let _ = self.element_call(&object, "nextFrame", &[]).await;
+                    tokio::time::sleep(millis(50.0 * f64::from(attempt))).await;
+                }
+                Ok(_) => {}
+            }
+        }
+        Err(BrowserError::Protocol(format!(
+            "click on {selector:?} was not delivered to the page after {ATTEMPTS} attempts"
+        )))
+    }
+
+    async fn element_pointer_target(
+        &self,
+        selector: &str,
+        timeout_ms: f64,
+        enabled: bool,
+        retarget: bool,
+    ) -> Result<((f64, f64), String), BrowserError> {
         let mut waiter = Waiter::new(timeout_ms);
         let states: &[&str] = if enabled {
             &["visible", "enabled"]
@@ -949,7 +1006,7 @@ impl BrowserPage {
                 )
                 .await?
             {
-                Ok(point) => return Ok(point),
+                Ok(point) => return Ok((point, object)),
                 Err(reason) => waiter.retry(&reason).await?,
             }
         }
@@ -1317,22 +1374,21 @@ impl BrowserPage {
                 button,
                 click_count,
                 delay_ms,
-            } => {
-                let (x, y) = match target {
-                    PointerTarget::Point { x, y } => (*x, *y),
-                    PointerTarget::Selector(selector) => {
-                        self.element_pointer(selector, *timeout_ms, true, false)
-                            .await?
+            } => match target {
+                PointerTarget::Point { x, y } => {
+                    let result = self
+                        .mouse_click(*x, *y, *button, *click_count, *delay_ms)
+                        .await;
+                    if result.is_err() {
+                        self.release_button(*button).await;
                     }
-                };
-                let result = self
-                    .mouse_click(x, y, *button, *click_count, *delay_ms)
-                    .await;
-                if result.is_err() {
-                    self.release_button(*button).await;
+                    result
                 }
-                result
-            }
+                PointerTarget::Selector(selector) => {
+                    self.element_click(selector, *timeout_ms, *button, *click_count, *delay_ms)
+                        .await
+                }
+            },
             BrowserAction::Textbox {
                 target,
                 value,

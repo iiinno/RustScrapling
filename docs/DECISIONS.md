@@ -111,3 +111,10 @@ Plan.md の「判断済みの事項」は変えていない。ここには段階
 - 証拠：`mcp/tests/network_policy.rs`（127.0.0.1/localhost/::1/169.254.169.254/10.0.0.1拒否、許可ホストのみ通過、許可ホストから別内部名へのリダイレクト拒否、既定ポリシーは不変）。
 - 既知の限界：ブラウザ取得は初回URLのみ検査（サブリソース・JS遷移は未検査）、DNS再解決TOCTOUは未対策（THREAT_MODELに記載）。
 - 戻し方：CLIの`policy`を`NetworkPolicy::default()`にする。
+
+## D-015 要素クリックの配送確認と再試行（2026-11-03、後継セッション）
+
+- 問題：CI（GitHub runner、非root・サンドボックス有効・Xvfb）でheadedセッション再利用試験がChrome 155/156とも**round 1で決定的に失敗**（遷移直後の要素clickがエラー無しで無効）。ローカルでは非rootユーザーでMesaシェーダキャッシュ（`~/.cache/mesa_shader_cache`）を消すと3/3で再現＝コールドな合成処理で、遷移直後に送った座標入力がページへ届かず破棄される。D-011（PaintHolding無効化）だけでは不十分だった。
+- 決定：セレクタ指定のclickでは、クリック前に要素の所属ドキュメントのwindowへ信頼済み`pointerdown`/`mousedown`の計数リスナー（utility world）を付け、クリック後に0件ならダブルrAFでフレームを待って再試行（最大4回、Waiterの残り時間内）。何もページに届いていないため再試行で二重適用は起きない。読み出し不能（遷移で文脈消滅）は配送済みとみなす。4回とも未配送なら`click ... was not delivered`のtyped error（無言の成功にしない）。座標指定clickはiframe上で誤判定し得るため対象外。
+- 証拠：コールド条件の非root headedで修正前3/3失敗→修正後3/3成功（各10ラウンド）。全workspace 166 PASS、Chrome 156マトリクス全PASS（headed/headless再利用、extract fetch含む）。
+- 戻し方：`BrowserAction::Click`のセレクタ分岐を`element_pointer`＋`mouse_click`へ戻す。
