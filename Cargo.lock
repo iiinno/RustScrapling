@@ -2399,6 +2399,7 @@ name = "rustscrapling-spider"
 version = "0.1.0"
 dependencies = [
  "blake3",
+ "chrono",
  "csv",
  "futures-util",
  "regex",
