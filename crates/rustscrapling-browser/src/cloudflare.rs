@@ -47,9 +47,13 @@ pub fn detect_cloudflare(html: &str) -> Option<CloudflareChallenge> {
             return Some(challenge);
         }
     }
-    if html
-        .to_ascii_lowercase()
-        .contains("challenges.cloudflare.com/turnstile/v")
+    // The generic markers must match `detect_block`, or a page is reported as
+    // blocked and then judged to have no challenge, so the solver returns
+    // immediately and the caller still sees the interstitial.
+    let lowered = html.to_ascii_lowercase();
+    if lowered.contains("challenges.cloudflare.com/turnstile/v")
+        || lowered.contains("challenge-platform")
+        || lowered.contains("cf-chl-")
     {
         return Some(CloudflareChallenge::Embedded);
     }
@@ -192,6 +196,22 @@ mod tests {
             detect_cloudflare(
                 r#"<script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script>"#
             ),
+            Some(CloudflareChallenge::Embedded)
+        );
+    }
+
+    #[test]
+    fn generic_cloudflare_markers_are_recognised() {
+        // nowsecure.nl ships its own Turnstile page without a cType field; the
+        // solver must still treat it as a challenge or it returns immediately.
+        assert_eq!(
+            detect_cloudflare(
+                r#"<script src="https://challenges.cloudflare.com/cdn-cgi/challenge-platform/x.js"></script>"#
+            ),
+            Some(CloudflareChallenge::Embedded)
+        );
+        assert_eq!(
+            detect_cloudflare(r#"<div id="cf-chl-widget-abc"></div>"#),
             Some(CloudflareChallenge::Embedded)
         );
     }
