@@ -9412,6 +9412,1376 @@
     "browser_network_request",
     "browser_screenshot"
   ],
+  "module_functions": [
+    {
+      "decorators": [
+        "command(help=\"Install all Scrapling's Fetchers dependencies\")",
+        "option('-f', '--force', 'force', is_flag=True, default=False, type=bool, help='Force Scrapling to reinstall all Fetchers dependencies')"
+      ],
+      "doc_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "doc_summary": "",
+      "exported_via_all": false,
+      "id": "scrapling.cli.install",
+      "kind": "sync",
+      "line": 120,
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "force"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": null,
+      "signature": "force",
+      "source": "scrapling/cli.py"
+    },
+    {
+      "decorators": [
+        "command(help=\"Run Scrapling's MCP server (Check the docs for more info).\")",
+        "option('--http', is_flag=True, default=False, help='Whether to run the MCP server in streamable-http transport or leave it as stdio (Default: False)')",
+        "option('--host', type=str, default='127.0.0.1', help=\"The host to use if streamable-http transport is enabled. Pass '0.0.0.0' to accept connections from the network (Default: '127.0.0.1')\")",
+        "option('--port', type=int, default=8000, help='The port to use if streamable-http transport is enabled (Default: 8000)')",
+        "option('--executable-path', type=str, default=None, help='Path to a custom Chromium-compatible browser executable for browser-based MCP tools')",
+        "option('--auth-token', type=str, default=None, help='Require clients to send this token as `Authorization: Bearer <token>` (streamable-http only). Setting the SCRAPLING_MCP_AUTH_TOKEN environment variable instead keeps it out of the process list')",
+        "option('--allowed-host', type=str, multiple=True, help=\"Enable DNS-rebinding protection and accept requests for this host only, like 'mcp.example.com:8000' (repeatable). Recommended whenever the server listens on a public address\")",
+        "option('--no-auth', is_flag=True, default=False, help='Serve the streamable-http transport without authentication (not recommended). Without it, `--http` refuses to start unless a token is given')"
+      ],
+      "doc_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "doc_summary": "",
+      "exported_via_all": false,
+      "id": "scrapling.cli.mcp",
+      "kind": "sync",
+      "line": 189,
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "http"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "host"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "port"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "executable_path"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "auth_token"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "allowed_host"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "no_auth"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": null,
+      "signature": "http, host, port, executable_path, auth_token, allowed_host, no_auth",
+      "source": "scrapling/cli.py"
+    },
+    {
+      "decorators": [
+        "command(help='Interactive scraping console')",
+        "option('-c', '--code', 'code', is_flag=False, default='', type=str, help='Evaluate the code in the shell, print the result and exit')",
+        "option('-L', '--loglevel', 'level', is_flag=False, default='debug', type=Choice(['debug', 'info', 'warning', 'error', 'critical', 'fatal'], case_sensitive=False), help='Log level (default: DEBUG)')"
+      ],
+      "doc_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "doc_summary": "",
+      "exported_via_all": false,
+      "id": "scrapling.cli.shell",
+      "kind": "sync",
+      "line": 219,
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "code"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "level"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": null,
+      "signature": "code, level",
+      "source": "scrapling/cli.py"
+    },
+    {
+      "decorators": [
+        "group(help='Fetch web pages using various fetchers and extract full/selected HTML content as HTML, Markdown, or extract text content.')"
+      ],
+      "doc_sha256": "7bea3ea8c5e7704b687763019651338a8879c4dfe08ae6bc394225b567f01cf1",
+      "doc_summary": "Extract content from web pages and save to files",
+      "exported_via_all": false,
+      "id": "scrapling.cli.extract",
+      "kind": "sync",
+      "line": 229,
+      "parameters": [],
+      "public_by_convention": true,
+      "returns": null,
+      "signature": "",
+      "source": "scrapling/cli.py"
+    },
+    {
+      "decorators": [
+        "extract.command(help=f'Perform a GET request and save the content to a file.\\n\\n{__OUTPUT_FILE_HELP__}')",
+        "argument('url', required=True)",
+        "argument('output_file', required=True)",
+        "_common_http_options"
+      ],
+      "doc_sha256": "cb84b5b98ef719e70bb9a47d1a2549a01d5e74eafc8e47988e18272da3f524d6",
+      "doc_summary": "Perform a GET request and save the content to a file.",
+      "exported_via_all": false,
+      "id": "scrapling.cli.get",
+      "kind": "sync",
+      "line": 403,
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "url"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "output_file"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "headers"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "cookies"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "timeout"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "proxy"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "css_selector"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "params"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "follow_redirects"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "verify"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "impersonate"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "stealthy_headers"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "ai_targeted"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": null,
+      "signature": "url, output_file, headers, cookies, timeout, proxy, css_selector, params, follow_redirects, verify, impersonate, stealthy_headers, ai_targeted",
+      "source": "scrapling/cli.py"
+    },
+    {
+      "decorators": [
+        "extract.command(help=f'Perform a POST request and save the content to a file.\\n\\n{__OUTPUT_FILE_HELP__}')",
+        "argument('url', required=True)",
+        "argument('output_file', required=True)",
+        "_data_options",
+        "_common_http_options"
+      ],
+      "doc_sha256": "820a7d216a81184484375c1ee9bc1edb91336bb2872d7815c05f10be8ff7c435",
+      "doc_summary": "Perform a POST request and save the content to a file.",
+      "exported_via_all": false,
+      "id": "scrapling.cli.post",
+      "kind": "sync",
+      "line": 439,
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "url"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "output_file"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "data"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "json"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "headers"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "cookies"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "timeout"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "proxy"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "css_selector"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "params"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "follow_redirects"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "verify"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "impersonate"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "stealthy_headers"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "ai_targeted"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": null,
+      "signature": "url, output_file, data, json, headers, cookies, timeout, proxy, css_selector, params, follow_redirects, verify, impersonate, stealthy_headers, ai_targeted",
+      "source": "scrapling/cli.py"
+    },
+    {
+      "decorators": [
+        "extract.command(help=f'Perform a PUT request and save the content to a file.\\n\\n{__OUTPUT_FILE_HELP__}')",
+        "argument('url', required=True)",
+        "argument('output_file', required=True)",
+        "_data_options",
+        "_common_http_options"
+      ],
+      "doc_sha256": "7afa72136eb929182679065bf5feb2f3866166f40c9f55dad077a2966b422df1",
+      "doc_summary": "Perform a PUT request and save the content to a file.",
+      "exported_via_all": false,
+      "id": "scrapling.cli.put",
+      "kind": "sync",
+      "line": 478,
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "url"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "output_file"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "data"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "json"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "headers"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "cookies"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "timeout"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "proxy"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "css_selector"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "params"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "follow_redirects"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "verify"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "impersonate"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "stealthy_headers"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "ai_targeted"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": null,
+      "signature": "url, output_file, data, json, headers, cookies, timeout, proxy, css_selector, params, follow_redirects, verify, impersonate, stealthy_headers, ai_targeted",
+      "source": "scrapling/cli.py"
+    },
+    {
+      "decorators": [
+        "extract.command(help=f'Perform a DELETE request and save the content to a file.\\n\\n{__OUTPUT_FILE_HELP__}')",
+        "argument('url', required=True)",
+        "argument('output_file', required=True)",
+        "_common_http_options"
+      ],
+      "doc_sha256": "cf3a5d3540dda55fd96b3ab8123263ad2351887c850d4abfdbaf0cad68a839f6",
+      "doc_summary": "Perform a DELETE request and save the content to a file.",
+      "exported_via_all": false,
+      "id": "scrapling.cli.delete",
+      "kind": "sync",
+      "line": 516,
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "url"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "output_file"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "headers"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "cookies"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "timeout"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "proxy"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "css_selector"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "params"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "follow_redirects"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "verify"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "impersonate"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "stealthy_headers"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "ai_targeted"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": null,
+      "signature": "url, output_file, headers, cookies, timeout, proxy, css_selector, params, follow_redirects, verify, impersonate, stealthy_headers, ai_targeted",
+      "source": "scrapling/cli.py"
+    },
+    {
+      "decorators": [
+        "extract.command(help=f'Use StealthyFetcher to fetch content with advanced stealth features.\\n\\n{__OUTPUT_FILE_HELP__}')",
+        "argument('url', required=True)",
+        "argument('output_file', required=True)",
+        "option('--block-webrtc/--allow-webrtc', default=False, help='Block WebRTC entirely (default: False)')",
+        "option('--solve-cloudflare/--no-solve-cloudflare', default=False, help='Solve Cloudflare challenges (default: False)')",
+        "option('--allow-webgl/--block-webgl', default=True, help='Allow WebGL (default: True)')",
+        "option('--hide-canvas/--show-canvas', default=False, help='Add noise to canvas operations (default: False)')",
+        "_common_browser_options"
+      ],
+      "doc_sha256": "d2d0f6e77b3effa77df859a3625a28ea50cf70c618f71ac3794654461e3ee53d",
+      "doc_summary": "Opens up a browser with advanced stealth features and fetch content using StealthyFetcher.",
+      "exported_via_all": false,
+      "id": "scrapling.cli.fetch",
+      "kind": "sync",
+      "line": 609,
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "url"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "output_file"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "headless"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "disable_resources"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "network_idle"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "pierce_shadow"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "timeout"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "wait"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "css_selector"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "wait_selector"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "locale"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "real_chrome"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "proxy"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "extra_headers"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "block_webrtc"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "solve_cloudflare"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "allow_webgl"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "hide_canvas"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "ai_targeted"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "executable_path"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "dns_over_https"
+        },
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "block_ads"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": null,
+      "signature": "url, output_file, headless, disable_resources, network_idle, pierce_shadow, timeout, wait, css_selector, wait_selector, locale, real_chrome, proxy, extra_headers, block_webrtc, solve_cloudflare, allow_webgl, hide_canvas, ai_targeted, executable_path, dns_over_https, block_ads",
+      "source": "scrapling/cli.py"
+    },
+    {
+      "decorators": [
+        "group()",
+        "version_option(version=__version__, prog_name='Scrapling')"
+      ],
+      "doc_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "doc_summary": "",
+      "exported_via_all": false,
+      "id": "scrapling.cli.main",
+      "kind": "sync",
+      "line": 666,
+      "parameters": [],
+      "public_by_convention": true,
+      "returns": null,
+      "signature": "",
+      "source": "scrapling/cli.py"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "doc_summary": "",
+      "exported_via_all": false,
+      "id": "scrapling.core.shell.show_page_in_browser",
+      "kind": "sync",
+      "line": 416,
+      "parameters": [
+        {
+          "annotation": "Selector",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "page"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": null,
+      "signature": "page: Selector",
+      "source": "scrapling/core/shell.py"
+    },
+    {
+      "decorators": [
+        "lru_cache(maxsize=256)"
+      ],
+      "doc_sha256": "a6f3b9a70e38c8d27875cb61c122b56f743b5a1aeeee30a520da93c3d6553637",
+      "doc_summary": "Return the translated XPath version of a given CSS query",
+      "exported_via_all": false,
+      "id": "scrapling.core.translator.css_to_xpath",
+      "kind": "sync",
+      "line": 132,
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "query"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "str",
+      "signature": "query: str",
+      "source": "scrapling/core/translator.py"
+    },
+    {
+      "decorators": [
+        "lru_cache(1, typed=True)"
+      ],
+      "doc_sha256": "3f32ad4250714278c5190acee492664dc623ec8f3c0448804aaa772f221bc55c",
+      "doc_summary": "Create and configure a logger with a standard format.",
+      "exported_via_all": false,
+      "id": "scrapling.core.utils._utils.setup_logger",
+      "kind": "sync",
+      "line": 20,
+      "parameters": [],
+      "public_by_convention": true,
+      "returns": null,
+      "signature": "",
+      "source": "scrapling/core/utils/_utils.py"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "3584e82bd239068deea842cd3485e4fff8439cfa67bdd2d519d7f235091da746",
+      "doc_summary": "Set the current context logger. Returns token for reset.",
+      "exported_via_all": false,
+      "id": "scrapling.core.utils._utils.set_logger",
+      "kind": "sync",
+      "line": 51,
+      "parameters": [
+        {
+          "annotation": "logging.Logger",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "logger"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "Token",
+      "signature": "logger: logging.Logger",
+      "source": "scrapling/core/utils/_utils.py"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "844e3960b0272c1fd81d96bc4812f80301287f971734d4fd4d14056413d0225a",
+      "doc_summary": "Reset logger to previous state using token.",
+      "exported_via_all": false,
+      "id": "scrapling.core.utils._utils.reset_logger",
+      "kind": "sync",
+      "line": 56,
+      "parameters": [
+        {
+          "annotation": "Token",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "token"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "None",
+      "signature": "token: Token",
+      "source": "scrapling/core/utils/_utils.py"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "doc_summary": "",
+      "exported_via_all": false,
+      "id": "scrapling.core.utils._utils.flatten",
+      "kind": "sync",
+      "line": 61,
+      "parameters": [
+        {
+          "annotation": "Iterable[Any]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "lst"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "List[Any]",
+      "signature": "lst: Iterable[Any]",
+      "source": "scrapling/core/utils/_utils.py"
+    },
+    {
+      "decorators": [
+        "lru_cache(128, typed=True)"
+      ],
+      "doc_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "doc_summary": "",
+      "exported_via_all": false,
+      "id": "scrapling.core.utils._utils.clean_spaces",
+      "kind": "sync",
+      "line": 118,
+      "parameters": [
+        {
+          "annotation": null,
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "string"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": null,
+      "signature": "string",
+      "source": "scrapling/core/utils/_utils.py"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "doc_summary": "",
+      "exported_via_all": false,
+      "id": "scrapling.engines._browsers._validators.validate_fetch",
+      "kind": "sync",
+      "line": 179,
+      "parameters": [
+        {
+          "annotation": "Dict | PlaywrightFetchParams | StealthFetchParams",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "method_kwargs"
+        },
+        {
+          "annotation": "Any",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "session"
+        },
+        {
+          "annotation": "type[PlaywrightConfig] | type[StealthConfig]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "model"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "_fetch_params",
+      "signature": "method_kwargs: Dict | PlaywrightFetchParams | StealthFetchParams, session: Any, model: type[PlaywrightConfig] | type[StealthConfig]",
+      "source": "scrapling/engines/_browsers/_validators.py"
+    },
+    {
+      "decorators": [
+        "overload"
+      ],
+      "doc_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "doc_summary": "",
+      "exported_via_all": false,
+      "id": "scrapling.engines._browsers._validators.validate",
+      "kind": "sync",
+      "line": 242,
+      "parameters": [
+        {
+          "annotation": "Dict",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "params"
+        },
+        {
+          "annotation": "type[StealthConfig]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "model"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "StealthConfig",
+      "signature": "params: Dict, model: type[StealthConfig]",
+      "source": "scrapling/engines/_browsers/_validators.py"
+    },
+    {
+      "decorators": [
+        "overload"
+      ],
+      "doc_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "doc_summary": "",
+      "exported_via_all": false,
+      "id": "scrapling.engines._browsers._validators.validate",
+      "kind": "sync",
+      "line": 246,
+      "parameters": [
+        {
+          "annotation": "Dict",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "params"
+        },
+        {
+          "annotation": "type[PlaywrightConfig]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "model"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "PlaywrightConfig",
+      "signature": "params: Dict, model: type[PlaywrightConfig]",
+      "source": "scrapling/engines/_browsers/_validators.py"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "doc_summary": "",
+      "exported_via_all": false,
+      "id": "scrapling.engines._browsers._validators.validate",
+      "kind": "sync",
+      "line": 249,
+      "parameters": [
+        {
+          "annotation": "Dict",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "params"
+        },
+        {
+          "annotation": "type[PlaywrightConfig] | type[StealthConfig]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "model"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "PlaywrightConfig | StealthConfig",
+      "signature": "params: Dict, model: type[PlaywrightConfig] | type[StealthConfig]",
+      "source": "scrapling/engines/_browsers/_validators.py"
+    },
+    {
+      "decorators": [
+        "lru_cache(1, typed=True)"
+      ],
+      "doc_sha256": "4f774c9fc21fd8b1a4767280d43c8eb1d30fbdb6779c810331b04f7fefe14754",
+      "doc_summary": "Get the current OS name in the same format needed for browserforge, if the OS is Unknown, return all the OSes browserforge supports.",
+      "exported_via_all": false,
+      "id": "scrapling.engines.toolbelt.fingerprints.get_os_name",
+      "kind": "sync",
+      "line": 25,
+      "parameters": [],
+      "public_by_convention": true,
+      "returns": "OSName | Tuple",
+      "signature": "",
+      "source": "scrapling/engines/toolbelt/fingerprints.py"
+    },
+    {
+      "decorators": [
+        "lru_cache(2, typed=True)"
+      ],
+      "doc_sha256": "6448d335c7d1a957c418b93e39728407014f595a422fd6907278d70f07f357d6",
+      "doc_summary": "Get the Chromium major version the installed automation package drives, read from its bundled `browsers.json`.",
+      "exported_via_all": false,
+      "id": "scrapling.engines.toolbelt.fingerprints.driven_browser_version",
+      "kind": "sync",
+      "line": 46,
+      "parameters": [
+        {
+          "annotation": "str",
+          "default": "'patchright'",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "package"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "int | None",
+      "signature": "package: str='patchright'",
+      "source": "scrapling/engines/toolbelt/fingerprints.py"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "44800b077e61eaf65aa6448d12b4271f513f5d6792bb205163b4e418326cf1cd",
+      "doc_summary": "Generate real browser-like headers using browserforge's generator",
+      "exported_via_all": false,
+      "id": "scrapling.engines.toolbelt.fingerprints.generate_headers",
+      "kind": "sync",
+      "line": 66,
+      "parameters": [
+        {
+          "annotation": "bool | str",
+          "default": "False",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "browser_mode"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "Dict",
+      "signature": "browser_mode: bool | str=False",
+      "source": "scrapling/engines/toolbelt/fingerprints.py"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "71e3cd9a436c4690345c4041fe94dd53922b2a286046346051c3bb02a7fd1f89",
+      "doc_summary": "Create a route handler that blocks both resource types and specific domains.",
+      "exported_via_all": false,
+      "id": "scrapling.engines.toolbelt.navigation.create_intercept_handler",
+      "kind": "sync",
+      "line": 43,
+      "parameters": [
+        {
+          "annotation": "bool",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "disable_resources"
+        },
+        {
+          "annotation": "Optional[Set[str]]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "blocked_domains"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "Callable",
+      "signature": "disable_resources: bool, blocked_domains: Optional[Set[str]]=None",
+      "source": "scrapling/engines/toolbelt/navigation.py"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "a85393e3e7fc052d0b02ba419f20a3a9c9f3716f01a03847d3897bfdb96363f8",
+      "doc_summary": "Create an async route handler that blocks both resource types and specific domains.",
+      "exported_via_all": false,
+      "id": "scrapling.engines.toolbelt.navigation.create_async_intercept_handler",
+      "kind": "sync",
+      "line": 70,
+      "parameters": [
+        {
+          "annotation": "bool",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "disable_resources"
+        },
+        {
+          "annotation": "Optional[Set[str]]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "blocked_domains"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "Callable",
+      "signature": "disable_resources: bool, blocked_domains: Optional[Set[str]]=None",
+      "source": "scrapling/engines/toolbelt/navigation.py"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "c1b23a65a277e255c2f44045ac1d76948751e76d6e16893cef28f53edfad58be",
+      "doc_summary": "Validate a proxy and return it in the acceptable format for Playwright",
+      "exported_via_all": false,
+      "id": "scrapling.engines.toolbelt.navigation.construct_proxy_dict",
+      "kind": "sync",
+      "line": 97,
+      "parameters": [
+        {
+          "annotation": "str | Dict[str, str] | Tuple",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "proxy_string"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "Dict",
+      "signature": "proxy_string: str | Dict[str, str] | Tuple",
+      "source": "scrapling/engines/toolbelt/navigation.py"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "afdac3ee3a857f1fffada8253d98027443cc6fa9d2932d7dfec060bd636cbe93",
+      "doc_summary": "Check if an error is proxy-related. Works for both HTTP and browser errors.",
+      "exported_via_all": false,
+      "id": "scrapling.engines.toolbelt.proxy_rotation.is_proxy_error",
+      "kind": "sync",
+      "line": 27,
+      "parameters": [
+        {
+          "annotation": "Exception",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "error"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "bool",
+      "signature": "error: Exception",
+      "source": "scrapling/engines/toolbelt/proxy_rotation.py"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "af77f2b72e2355e747c3558930af9471ca83f24817eb58dcecdd4d515999103e",
+      "doc_summary": "Default cyclic rotation strategy - iterates through proxies sequentially, wrapping around at the end.",
+      "exported_via_all": false,
+      "id": "scrapling.engines.toolbelt.proxy_rotation.cyclic_rotation",
+      "kind": "sync",
+      "line": 33,
+      "parameters": [
+        {
+          "annotation": "List[ProxyType]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "proxies"
+        },
+        {
+          "annotation": "int",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "current_index"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "Tuple[ProxyType, int]",
+      "signature": "proxies: List[ProxyType], current_index: int",
+      "source": "scrapling/engines/toolbelt/proxy_rotation.py"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "834d237fd3f7cc2e3992694ab2c80f8c152339114e65b364f4aa2dd0f179211a",
+      "doc_summary": "Convert a Scrapy response to a Scrapling `Response` object.",
+      "exported_via_all": true,
+      "id": "scrapling.integrations.scrapy.convert_response",
+      "kind": "sync",
+      "line": 24,
+      "parameters": [
+        {
+          "annotation": "ScrapyResponse",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "response"
+        },
+        {
+          "annotation": "Any",
+          "default": null,
+          "has_default": false,
+          "kind": "var_keyword",
+          "name": "selector_config"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "Response",
+      "signature": "response: ScrapyResponse, **selector_config: Any",
+      "source": "scrapling/integrations/scrapy.py"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "6fe1dc306b2856e0e988379fc4b3d5b201590f0f0602f0e841dd5946f316ecbb",
+      "doc_summary": "Decorator that converts the Scrapy response passed to a spider callback into a Scrapling `Response`.",
+      "exported_via_all": true,
+      "id": "scrapling.integrations.scrapy.scrapling_response",
+      "kind": "sync",
+      "line": 59,
+      "parameters": [
+        {
+          "annotation": "Optional[Callable]",
+          "default": "None",
+          "has_default": true,
+          "kind": "positional_or_keyword",
+          "name": "func"
+        },
+        {
+          "annotation": "Any",
+          "default": null,
+          "has_default": false,
+          "kind": "var_keyword",
+          "name": "selector_config"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "Callable",
+      "signature": "func: Optional[Callable]=None, **selector_config: Any",
+      "source": "scrapling/integrations/scrapy.py"
+    },
+    {
+      "decorators": [],
+      "doc_sha256": "041f9bb52dd077e70ef2f8d00d18645f120b70cae8181de5ca5fc814025d4fb7",
+      "doc_summary": "Return how many seconds a `Retry-After` header asks us to wait, or `None` when it's missing or unreadable.",
+      "exported_via_all": false,
+      "id": "scrapling.spiders.throttle.parse_retry_after",
+      "kind": "sync",
+      "line": 10,
+      "parameters": [
+        {
+          "annotation": "Mapping[str, str]",
+          "default": null,
+          "has_default": false,
+          "kind": "positional_or_keyword",
+          "name": "headers"
+        }
+      ],
+      "public_by_convention": true,
+      "returns": "Optional[float]",
+      "signature": "headers: Mapping[str, str]",
+      "source": "scrapling/spiders/throttle.py"
+    }
+  ],
   "notes": [
     "AST signatures are declarations, not tested runtime schemas",
     "Unpack[TypedDict] is resolved in typed_dicts; known CLI decorator factories are expanded, but Click runtime validation remains required",

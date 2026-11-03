@@ -1705,7 +1705,7 @@
   ],
   "limitations": [
     "Audit compares source-level MCP arguments and schemas, not actual Pydantic runtime schema, description serialization or executor semantics.",
-    "Public method inventory covers explicitly selected classes and statically resolved bases; built-in/external bases and module-level functions still need review.",
+    "Selected classes and public-by-convention module functions are inventoried; built-in/external inherited APIs and dynamic exports still need review.",
     "Known Click decorator factories are expanded statically; Click runtime/schema validation remains necessary.",
     "All runtime statuses deliberately remain unverified until evidence links to passing tests."
   ],
@@ -3713,6 +3713,296 @@
       "rust_crate_candidate": "rustscrapling-spider",
       "rust_entrypoint": null,
       "source": "scrapling/spiders/templates/sitemap.py",
+      "status": "unverified",
+      "test_ids": []
+    }
+  ],
+  "module_functions": [
+    {
+      "explicit_export": false,
+      "id": "scrapling.cli.install",
+      "line": 120,
+      "rust_entrypoint": null,
+      "source": "scrapling/cli.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.cli.mcp",
+      "line": 189,
+      "rust_entrypoint": null,
+      "source": "scrapling/cli.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.cli.shell",
+      "line": 219,
+      "rust_entrypoint": null,
+      "source": "scrapling/cli.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.cli.extract",
+      "line": 229,
+      "rust_entrypoint": null,
+      "source": "scrapling/cli.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.cli.get",
+      "line": 403,
+      "rust_entrypoint": null,
+      "source": "scrapling/cli.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.cli.post",
+      "line": 439,
+      "rust_entrypoint": null,
+      "source": "scrapling/cli.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.cli.put",
+      "line": 478,
+      "rust_entrypoint": null,
+      "source": "scrapling/cli.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.cli.delete",
+      "line": 516,
+      "rust_entrypoint": null,
+      "source": "scrapling/cli.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.cli.fetch",
+      "line": 609,
+      "rust_entrypoint": null,
+      "source": "scrapling/cli.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.cli.main",
+      "line": 666,
+      "rust_entrypoint": null,
+      "source": "scrapling/cli.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.core.shell.show_page_in_browser",
+      "line": 416,
+      "rust_entrypoint": null,
+      "source": "scrapling/core/shell.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.core.translator.css_to_xpath",
+      "line": 132,
+      "rust_entrypoint": null,
+      "source": "scrapling/core/translator.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.core.utils._utils.setup_logger",
+      "line": 20,
+      "rust_entrypoint": null,
+      "source": "scrapling/core/utils/_utils.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.core.utils._utils.set_logger",
+      "line": 51,
+      "rust_entrypoint": null,
+      "source": "scrapling/core/utils/_utils.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.core.utils._utils.reset_logger",
+      "line": 56,
+      "rust_entrypoint": null,
+      "source": "scrapling/core/utils/_utils.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.core.utils._utils.flatten",
+      "line": 61,
+      "rust_entrypoint": null,
+      "source": "scrapling/core/utils/_utils.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.core.utils._utils.clean_spaces",
+      "line": 118,
+      "rust_entrypoint": null,
+      "source": "scrapling/core/utils/_utils.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.engines._browsers._validators.validate_fetch",
+      "line": 179,
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/_browsers/_validators.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.engines._browsers._validators.validate",
+      "line": 242,
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/_browsers/_validators.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.engines._browsers._validators.validate",
+      "line": 246,
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/_browsers/_validators.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.engines._browsers._validators.validate",
+      "line": 249,
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/_browsers/_validators.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.engines.toolbelt.fingerprints.get_os_name",
+      "line": 25,
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/toolbelt/fingerprints.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.engines.toolbelt.fingerprints.driven_browser_version",
+      "line": 46,
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/toolbelt/fingerprints.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.engines.toolbelt.fingerprints.generate_headers",
+      "line": 66,
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/toolbelt/fingerprints.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.engines.toolbelt.navigation.create_intercept_handler",
+      "line": 43,
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/toolbelt/navigation.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.engines.toolbelt.navigation.create_async_intercept_handler",
+      "line": 70,
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/toolbelt/navigation.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.engines.toolbelt.navigation.construct_proxy_dict",
+      "line": 97,
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/toolbelt/navigation.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.engines.toolbelt.proxy_rotation.is_proxy_error",
+      "line": 27,
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/toolbelt/proxy_rotation.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.engines.toolbelt.proxy_rotation.cyclic_rotation",
+      "line": 33,
+      "rust_entrypoint": null,
+      "source": "scrapling/engines/toolbelt/proxy_rotation.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": true,
+      "id": "scrapling.integrations.scrapy.convert_response",
+      "line": 24,
+      "rust_entrypoint": null,
+      "source": "scrapling/integrations/scrapy.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": true,
+      "id": "scrapling.integrations.scrapy.scrapling_response",
+      "line": 59,
+      "rust_entrypoint": null,
+      "source": "scrapling/integrations/scrapy.py",
+      "status": "unverified",
+      "test_ids": []
+    },
+    {
+      "explicit_export": false,
+      "id": "scrapling.spiders.throttle.parse_retry_after",
+      "line": 10,
+      "rust_entrypoint": null,
+      "source": "scrapling/spiders/throttle.py",
       "status": "unverified",
       "test_ids": []
     }

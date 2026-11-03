@@ -178,6 +178,11 @@ def audit(api: dict, mcp: dict, rust_catalog: list[dict], catalog_bytes: bytes, 
             "rust_crate_candidate": CLASS_CRATE.get(cls), "rust_entrypoint": None,
             "test_ids": [], "status": "unverified",
         })
+    module_rows = [{
+        "id": item["id"], "source": item["source"], "line": item["line"],
+        "explicit_export": item["exported_via_all"], "rust_entrypoint": None,
+        "test_ids": [], "status": "unverified",
+    } for item in api["module_functions"]]
     cli_rows = []
     for command in api["cli_commands"]:
         cli_rows.append({"id": command["id"], "source": command["source"], "line": command["line"],
@@ -190,11 +195,11 @@ def audit(api: dict, mcp: dict, rust_catalog: list[dict], catalog_bytes: bytes, 
         "rust_backend_sha256": canonical_backend_hash(backend_bytes),
         "limitations": [
             "Audit compares source-level MCP arguments and schemas, not actual Pydantic runtime schema, description serialization or executor semantics.",
-            "Public method inventory covers explicitly selected classes and statically resolved bases; built-in/external bases and module-level functions still need review.",
+            "Selected classes and public-by-convention module functions are inventoried; built-in/external inherited APIs and dynamic exports still need review.",
             "Known Click decorator factories are expanded statically; Click runtime/schema validation remains necessary.",
             "All runtime statuses deliberately remain unverified until evidence links to passing tests.",
         ],
-        "methods": rows, "inherited_methods": inherited_rows, "exported_aliases": api["exported_aliases"],
+        "methods": rows, "inherited_methods": inherited_rows, "module_functions": module_rows, "exported_aliases": api["exported_aliases"],
         "cli": cli_rows, "mcp": mcp_rows, "actions": action_rows,
         "extra_rust_mcp_tools": sorted(set(tools) - {t["name"] for t in mcp["tools"]}),
         "extra_rust_browser_actions": sorted(set(browser_actions) - {a["type"] for a in mcp["actions"]}),
@@ -205,6 +210,7 @@ def audit(api: dict, mcp: dict, rust_catalog: list[dict], catalog_bytes: bytes, 
 def markdown(report: dict) -> str:
     methods = report["methods"]
     inherited = report["inherited_methods"]
+    functions = report["module_functions"]
     mcp = report["mcp"]
     actions = report["actions"]
     lines = [
@@ -214,6 +220,7 @@ def markdown(report: dict) -> str:
         "", f"- 上流固定SHA: `{report['upstream_sha']}`",
         f"- 主要公開クラスの直接定義メソッド宣言: **{len(methods)}件**（overload宣言を別行で保持。継承・module-level APIは別途棚卸し）",
         f"- 選定クラス間で静的に解決できた継承メソッド: **{len(inherited)}件**（外部・組込み基底クラスは未監査）",
+        f"- `scrapling/`全Pythonモジュール内の非privateトップレベル関数: **{len(functions)}件**（パッケージ直下からのimportを保証しない）",
         f"- export alias: **{len(report['exported_aliases'])}件**",
         f"- CLIのコマンド関数: **{len(report['cli'])}件**（既知の共通decoratorはAST展開済み。Click実行時のschemaは未検証）",
         f"- MCP: **{len(mcp)}ツール**、BrowserAction: **{len(actions)}種**",
@@ -248,7 +255,10 @@ def markdown(report: dict) -> str:
         lines += ["", "| 公開alias | 実体 | 出典 |", "| --- | --- | --- |"]
         for alias in report["exported_aliases"]:
             lines.append(f"| `{alias['alias']}` | `{alias['target']}` | `{alias['source']}:{alias['line']}` |")
-    lines += ["", "## 6. 残作業（重要）", "",
+    lines += ["", "## 6. モジュールレベル関数", "", "| 関数 | 参照元 | `__all__`明示 | Rust対応・テスト |", "| --- | --- | --- | --- |"]
+    for func in functions:
+        lines.append(f"| `{func['id']}` | `{func['source']}:{func['line']}` | {'Yes' if func['explicit_export'] else 'No'} | 未検証 |")
+    lines += ["", "## 7. 残作業（重要）", "",
               "1. `Unpack[TypedDict]`と共通CLIデコレーターのAST抽出結果、外部基底クラスの継承API、module-level公開関数を本家実行時schemaと照合する。",
               "2. Rustの実entrypoint・引数の既定値・結果/エラーにunit/fixture/E2Eを紐付ける。名前やschema一致だけでverifiedにしない。",
               "3. 特にBrowserActionはschema登録済みでも各executorが動く保証はない。`docs/COMPAT.md`のunsupportedを実機テストで解消する。",

@@ -6,6 +6,7 @@
 - 上流固定SHA: `95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0`
 - 主要公開クラスの直接定義メソッド宣言: **196件**（overload宣言を別行で保持。継承・module-level APIは別途棚卸し）
 - 選定クラス間で静的に解決できた継承メソッド: **130件**（外部・組込み基底クラスは未監査）
+- `scrapling/`全Pythonモジュール内の非privateトップレベル関数: **32件**（パッケージ直下からのimportを保証しない）
 - export alias: **1件**
 - CLIのコマンド関数: **10件**（既知の共通decoratorはAST展開済み。Click実行時のschemaは未検証）
 - MCP: **16ツール**、BrowserAction: **12種**
@@ -404,7 +405,44 @@
 | --- | --- | --- |
 | `SiteToMarkdownSpider` | `ContentSpider` | `scrapling/spiders/templates/site_to_markdown.py:96` |
 
-## 6. 残作業（重要）
+## 6. モジュールレベル関数
+
+| 関数 | 参照元 | `__all__`明示 | Rust対応・テスト |
+| --- | --- | --- | --- |
+| `scrapling.cli.install` | `scrapling/cli.py:120` | No | 未検証 |
+| `scrapling.cli.mcp` | `scrapling/cli.py:189` | No | 未検証 |
+| `scrapling.cli.shell` | `scrapling/cli.py:219` | No | 未検証 |
+| `scrapling.cli.extract` | `scrapling/cli.py:229` | No | 未検証 |
+| `scrapling.cli.get` | `scrapling/cli.py:403` | No | 未検証 |
+| `scrapling.cli.post` | `scrapling/cli.py:439` | No | 未検証 |
+| `scrapling.cli.put` | `scrapling/cli.py:478` | No | 未検証 |
+| `scrapling.cli.delete` | `scrapling/cli.py:516` | No | 未検証 |
+| `scrapling.cli.fetch` | `scrapling/cli.py:609` | No | 未検証 |
+| `scrapling.cli.main` | `scrapling/cli.py:666` | No | 未検証 |
+| `scrapling.core.shell.show_page_in_browser` | `scrapling/core/shell.py:416` | No | 未検証 |
+| `scrapling.core.translator.css_to_xpath` | `scrapling/core/translator.py:132` | No | 未検証 |
+| `scrapling.core.utils._utils.setup_logger` | `scrapling/core/utils/_utils.py:20` | No | 未検証 |
+| `scrapling.core.utils._utils.set_logger` | `scrapling/core/utils/_utils.py:51` | No | 未検証 |
+| `scrapling.core.utils._utils.reset_logger` | `scrapling/core/utils/_utils.py:56` | No | 未検証 |
+| `scrapling.core.utils._utils.flatten` | `scrapling/core/utils/_utils.py:61` | No | 未検証 |
+| `scrapling.core.utils._utils.clean_spaces` | `scrapling/core/utils/_utils.py:118` | No | 未検証 |
+| `scrapling.engines._browsers._validators.validate_fetch` | `scrapling/engines/_browsers/_validators.py:179` | No | 未検証 |
+| `scrapling.engines._browsers._validators.validate` | `scrapling/engines/_browsers/_validators.py:242` | No | 未検証 |
+| `scrapling.engines._browsers._validators.validate` | `scrapling/engines/_browsers/_validators.py:246` | No | 未検証 |
+| `scrapling.engines._browsers._validators.validate` | `scrapling/engines/_browsers/_validators.py:249` | No | 未検証 |
+| `scrapling.engines.toolbelt.fingerprints.get_os_name` | `scrapling/engines/toolbelt/fingerprints.py:25` | No | 未検証 |
+| `scrapling.engines.toolbelt.fingerprints.driven_browser_version` | `scrapling/engines/toolbelt/fingerprints.py:46` | No | 未検証 |
+| `scrapling.engines.toolbelt.fingerprints.generate_headers` | `scrapling/engines/toolbelt/fingerprints.py:66` | No | 未検証 |
+| `scrapling.engines.toolbelt.navigation.create_intercept_handler` | `scrapling/engines/toolbelt/navigation.py:43` | No | 未検証 |
+| `scrapling.engines.toolbelt.navigation.create_async_intercept_handler` | `scrapling/engines/toolbelt/navigation.py:70` | No | 未検証 |
+| `scrapling.engines.toolbelt.navigation.construct_proxy_dict` | `scrapling/engines/toolbelt/navigation.py:97` | No | 未検証 |
+| `scrapling.engines.toolbelt.proxy_rotation.is_proxy_error` | `scrapling/engines/toolbelt/proxy_rotation.py:27` | No | 未検証 |
+| `scrapling.engines.toolbelt.proxy_rotation.cyclic_rotation` | `scrapling/engines/toolbelt/proxy_rotation.py:33` | No | 未検証 |
+| `scrapling.integrations.scrapy.convert_response` | `scrapling/integrations/scrapy.py:24` | Yes | 未検証 |
+| `scrapling.integrations.scrapy.scrapling_response` | `scrapling/integrations/scrapy.py:59` | Yes | 未検証 |
+| `scrapling.spiders.throttle.parse_retry_after` | `scrapling/spiders/throttle.py:10` | No | 未検証 |
+
+## 7. 残作業（重要）
 
 1. `Unpack[TypedDict]`と共通CLIデコレーターのAST抽出結果、外部基底クラスの継承API、module-level公開関数を本家実行時schemaと照合する。
 2. Rustの実entrypoint・引数の既定値・結果/エラーにunit/fixture/E2Eを紐付ける。名前やschema一致だけでverifiedにしない。

@@ -144,6 +144,10 @@ class PinnedSnapshotTests(unittest.TestCase):
         self.assertTrue(any(c["expanded_decorator_factories"] for c in self.api["cli_commands"]))
         self.assertEqual(len(self.report["methods"]), len(self.api["api_methods"]))
         self.assertEqual(len(self.report["inherited_methods"]), len(self.api["inherited_methods"]))
+        self.assertEqual(len(self.report["module_functions"]), len(self.api["module_functions"]))
+        self.assertFalse(any(item["id"] == "scrapling.parser._escape_css_string" for item in self.api["module_functions"]))
+        self.assertTrue(any(item["source"] == "scrapling/cli.py" and item["id"] == "scrapling.cli.install" for item in self.api["module_functions"]))
+        self.assertTrue(all(not item["id"].rsplit(".", 1)[-1].startswith("_") for item in self.api["module_functions"]))
 
     def test_rust_catalog_and_rust_backend_unchanged(self) -> None:
         tool_bytes = (ROOT / "crates" / "rustscrapling-mcp" / "src" / "tools.json").read_bytes()

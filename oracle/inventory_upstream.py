@@ -271,7 +271,11 @@ def exported_names(tree: ast.Module) -> list[str]:
 
 def parse_sources(upstream: Path) -> dict:
     sources = {}
-    paths = set(API_CLASSES) | EXPORTED_MODULES | {SERVER_FILE, ACTION_FILE, CLI_FILE, TYPED_DICT_FILE}
+    # Parse *all* Python modules for public module-level functions. Previously
+    # only selected class files were inspected, silently omitting helpers
+    # exposed as scrapling.some_module.some_function.
+    paths = {p.relative_to(upstream).as_posix() for p in (upstream / "scrapling").rglob("*.py")}
+    paths.update(set(API_CLASSES) | EXPORTED_MODULES | {SERVER_FILE, ACTION_FILE, CLI_FILE, TYPED_DICT_FILE})
     for rel in paths:
         file = upstream / rel
         if not file.is_file():
@@ -285,6 +289,16 @@ def build(upstream: Path) -> tuple[dict, dict]:
     if sha != UPSTREAM_SHA:
         raise ValueError(f"Source SHA mismatch: expected {UPSTREAM_SHA}, got {sha}")
     source = parse_sources(upstream)
+    module_functions = []
+    for rel, tree in sorted(source.items()):
+        module_name = rel.removesuffix("/__init__.py").removesuffix(".py").replace("/", ".")
+        for fn in tree.body:
+            if isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)) and not fn.name.startswith("_"):
+                item = method_item(fn, rel, module_name)
+                item["public_by_convention"] = True
+                item["exported_via_all"] = fn.name in exported_names(tree)
+                module_functions.append(item)
+    module_functions.sort(key=lambda it: (it["source"], it["line"]))
     methods = []
     class_bases = {}
     for rel, target_classes in API_CLASSES.items():
@@ -394,7 +408,8 @@ def build(upstream: Path) -> tuple[dict, dict]:
         "schema_version": 1, "upstream_sha": UPSTREAM_SHA,
         "notes": ["AST signatures are declarations, not tested runtime schemas", "Unpack[TypedDict] is resolved in typed_dicts; known CLI decorator factories are expanded, but Click runtime validation remains required", "Presence in this manifest does not establish Rust parity"],
         "exports": {rel: exported_names(source[rel]) for rel in sorted(EXPORTED_MODULES)},
-        "api_methods": methods, "inherited_methods": inherited, "class_bases": class_bases,
+        "api_methods": methods, "module_functions": module_functions,
+        "inherited_methods": inherited, "class_bases": class_bases,
         "exported_aliases": aliases, "typed_dicts": types, "cli_commands": cli,
         "mcp_tool_names": [t["name"] for t in registered],
     }
@@ -423,7 +438,7 @@ def main() -> None:
                 raise SystemExit(f"STALE: {target}")
         else:
             write_manifest(target, obj)
-    print(f"Pinned {UPSTREAM_SHA}: {len(api['api_methods'])} direct + {len(api['inherited_methods'])} inherited signatures, {len(api['cli_commands'])} CLI functions, {len(mcp['tools'])} MCP tools, {len(mcp['actions'])} actions")
+    print(f"Pinned {UPSTREAM_SHA}: {len(api['api_methods'])} direct + {len(api['inherited_methods'])} inherited signatures, {len(api['module_functions'])} module functions, {len(api['cli_commands'])} CLI functions, {len(mcp['tools'])} MCP tools, {len(mcp['actions'])} actions")
 
 
 if __name__ == "__main__":
