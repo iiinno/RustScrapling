@@ -1,6 +1,6 @@
 # RustScrapling
 
-Rust-native web acquisition and extraction for research agents, following [Plan.md](Plan.md) (revision 2). It uses the original Python Scrapling only for differential testing; production code is Rust.
+Rust-native web acquisition and extraction for research agents, following [Plan.md](Plan.md) (revision 3). It uses the original Python Scrapling only for differential testing; production code is Rust.
 
 > **Development status:** This is an integration build, not a claim that all Plan.md stage-8 requirements are complete. In particular, bot-evasion success rates, the 200-URL corpus, 24-hour stability test and some compatibility/performance thresholds need further evidence. See [docs/RESULTS.md](docs/RESULTS.md), [docs/QA_AUDIT.md](docs/QA_AUDIT.md), and [docs/INTEGRATION.md](docs/INTEGRATION.md).
 
