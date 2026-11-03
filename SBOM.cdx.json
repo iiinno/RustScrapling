@@ -283,6 +283,23 @@
   },
   {
    "type": "library",
+   "name": "async-trait",
+   "version": "0.1.92",
+   "purl": "pkg:cargo/async-trait@0.1.92",
+   "licenses": [
+    {
+     "expression": "MIT OR Apache-2.0"
+    }
+   ],
+   "properties": [
+    {
+     "name": "source",
+     "value": "registry+https://github.com/rust-lang/crates.io-index"
+    }
+   ]
+  },
+  {
+   "type": "library",
    "name": "atomic-waker",
    "version": "1.1.2",
    "purl": "pkg:cargo/atomic-waker@1.1.2",
@@ -354,6 +371,23 @@
    "name": "base64",
    "version": "0.22.1",
    "purl": "pkg:cargo/base64@0.22.1",
+   "licenses": [
+    {
+     "expression": "MIT OR Apache-2.0"
+    }
+   ],
+   "properties": [
+    {
+     "name": "source",
+     "value": "registry+https://github.com/rust-lang/crates.io-index"
+    }
+   ]
+  },
+  {
+   "type": "library",
+   "name": "base64",
+   "version": "0.23.1",
+   "purl": "pkg:cargo/base64@0.23.1",
    "licenses": [
     {
      "expression": "MIT OR Apache-2.0"
@@ -2142,6 +2176,57 @@
    "licenses": [
     {
      "expression": "MIT OR Apache-2.0"
+    }
+   ],
+   "properties": [
+    {
+     "name": "source",
+     "value": "registry+https://github.com/rust-lang/crates.io-index"
+    }
+   ]
+  },
+  {
+   "type": "library",
+   "name": "httpdate",
+   "version": "1.0.3",
+   "purl": "pkg:cargo/httpdate@1.0.3",
+   "licenses": [
+    {
+     "expression": "MIT OR Apache-2.0"
+    }
+   ],
+   "properties": [
+    {
+     "name": "source",
+     "value": "registry+https://github.com/rust-lang/crates.io-index"
+    }
+   ]
+  },
+  {
+   "type": "library",
+   "name": "hyper",
+   "version": "1.12.0",
+   "purl": "pkg:cargo/hyper@1.12.0",
+   "licenses": [
+    {
+     "expression": "MIT"
+    }
+   ],
+   "properties": [
+    {
+     "name": "source",
+     "value": "registry+https://github.com/rust-lang/crates.io-index"
+    }
+   ]
+  },
+  {
+   "type": "library",
+   "name": "hyper-util",
+   "version": "0.1.21",
+   "purl": "pkg:cargo/hyper-util@0.1.21",
+   "licenses": [
+    {
+     "expression": "MIT"
     }
    ],
    "properties": [
@@ -4652,6 +4737,23 @@
   },
   {
    "type": "library",
+   "name": "sse-stream",
+   "version": "0.2.6",
+   "purl": "pkg:cargo/sse-stream@0.2.6",
+   "licenses": [
+    {
+     "expression": "MIT OR Apache-2.0"
+    }
+   ],
+   "properties": [
+    {
+     "name": "source",
+     "value": "registry+https://github.com/rust-lang/crates.io-index"
+    }
+   ]
+  },
+  {
+   "type": "library",
    "name": "stable_deref_trait",
    "version": "1.2.1",
    "purl": "pkg:cargo/stable_deref_trait@1.2.1",
@@ -5114,6 +5216,23 @@
    "name": "tokio-socks",
    "version": "0.5.3",
    "purl": "pkg:cargo/tokio-socks@0.5.3",
+   "licenses": [
+    {
+     "expression": "MIT"
+    }
+   ],
+   "properties": [
+    {
+     "name": "source",
+     "value": "registry+https://github.com/rust-lang/crates.io-index"
+    }
+   ]
+  },
+  {
+   "type": "library",
+   "name": "tokio-stream",
+   "version": "0.1.19",
+   "purl": "pkg:cargo/tokio-stream@0.1.19",
    "licenses": [
     {
      "expression": "MIT"

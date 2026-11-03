@@ -42,6 +42,9 @@
 | 存在しないsessionでの操作・偽成功 | 実sessionが無ければtyped error、IDを捏造しない | `mcp/tests/runtime.rs::browser_session_operations_require_a_real_session` |
 | 未実装機能の偽成功 | `unsupported` typed error（認証付きブラウザproxy、`additional_args`等） | `mcp/tests/browser_options.rs::browser_session_and_fetch_options_take_effect`（opt-in Chrome） |
 
+| MCP streamable-HTTPの無認証公開 | `mcp --http`はtoken（`--auth-token`/`SCRAPLING_MCP_AUTH_TOKEN`）が無ければ本家同文で起動拒否、`--no-auth`で明示解除。Bearer tokenを定数時間比較、`/mcp`以外は404 | `cli/tests/mcp_command.rs::mcp_streamable_http_requires_token_and_checks_hosts`、`mcp/src/http_transport.rs::tests` |
+| DNSリバインディング | loopback bind時はloopback Hostのみ受理、`--allowed-host`指定時はHostとOriginを許可リストで検査（本家`TransportSecuritySettings`相当） | 同上（`Host: evil.example`→403） |
+
 ## (e) daemon IPCとstate file
 
 | 脅威 | 対策 | 回帰テスト |
@@ -65,7 +68,7 @@
 
 ## 既知の残余リスク（G-11をPASSにしない理由）
 
-- 外部公開MCP HTTP transportは未実装のため、そのSSRF allowlist/認証の試験は対象外（実装時に追加必須）。
+- MCP HTTP transportを外部公開した場合、認証済みクライアントは本家同様に任意URL取得（ローカルネットワーク含む）が可能。SSRF対策はtoken認証とHost/Origin許可（DNSリバインディング防御）までで、取得先のprivate-range制限は未実装（Plan 7.1の「外部公開MCP HTTP/APIでのloopback/private-range制御」は未充足）。
 - ネットワーク秘匿はヒューリスティック（URL query・既知キー名）であり、アプリ固有の秘密を完全には伏せない。
 - 認証付きブラウザproxyは`unsupported`（資格情報をCDP経由で扱う設計が未完）。
 - Chrome サンドボックス：root実行環境ではChromeが`--no-sandbox`無しで起動しない。テスト用ラッパーのみで付与し、本番起動では付与しない（Playwright/本家は既定で`--no-sandbox`）。

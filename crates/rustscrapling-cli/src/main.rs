@@ -54,6 +54,90 @@ struct OutputOptions {
     max_chars: Option<usize>,
 }
 
+/// Upstream `scrapling mcp` options.
+#[derive(Args)]
+struct McpArgs {
+    /// Serve the streamable-http transport instead of stdio.
+    #[arg(long)]
+    http: bool,
+    /// Host to bind with --http ('0.0.0.0' accepts network connections).
+    #[arg(long, default_value = "127.0.0.1")]
+    host: String,
+    /// Port to bind with --http.
+    #[arg(long, default_value_t = 8000)]
+    port: u16,
+    /// Chromium-compatible browser for the browser tools.
+    #[arg(long)]
+    executable_path: Option<String>,
+    /// Require `Authorization: Bearer <token>` (--http only). SCRAPLING_MCP_AUTH_TOKEN
+    /// keeps it out of the process list.
+    #[arg(long)]
+    auth_token: Option<String>,
+    /// Enable DNS-rebinding protection for this host, e.g. 'mcp.example.com:8000' (repeatable).
+    #[arg(long = "allowed-host")]
+    allowed_host: Vec<String>,
+    /// Serve --http without authentication (not recommended).
+    #[arg(long)]
+    no_auth: bool,
+}
+
+fn run_mcp(args: McpArgs) -> Result<(), String> {
+    let typed = |kind: &str, message: String, hint: &str| {
+        json!({"schema_version":1,"error":{"kind":kind,"message":message,"hint":hint}}).to_string()
+    };
+    if let Some(path) = &args.executable_path {
+        // The browser tools read this as the server-wide default executable.
+        std::env::set_var("SCRAPLING_EXECUTABLE_PATH", path);
+    }
+    let token = args.auth_token.clone().or_else(|| {
+        std::env::var(rustscrapling_mcp::http_transport::MCP_AUTH_TOKEN_ENV)
+            .ok()
+            .filter(|t| !t.is_empty())
+    });
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .map_err(|_| {
+            typed(
+                "runtime",
+                "Tokio runtime initialization failed".into(),
+                "Retry",
+            )
+        })?;
+    let server = rustscrapling_mcp::RustScraplingMcp::default();
+    if !args.http {
+        if token.is_some() {
+            eprintln!("WARNING: The authentication token only applies to the streamable-http transport, so it's ignored with stdio.");
+        }
+        return runtime
+            .block_on(rustscrapling_mcp::serve_stdio(server))
+            .map_err(|e| typed("mcp", e.to_string(), "Check the MCP client"));
+    }
+    let options = rustscrapling_mcp::http_transport::HttpServeOptions {
+        host: args.host,
+        port: args.port,
+        auth_token: token,
+        allowed_hosts: args.allowed_host,
+        allow_unauthenticated: args.no_auth,
+    };
+    rustscrapling_mcp::http_transport::check_auth_policy(&options).map_err(|message| {
+        typed(
+            "invalid_arguments",
+            message,
+            "Pass --auth-token or --no-auth",
+        )
+    })?;
+    runtime
+        .block_on(rustscrapling_mcp::http_transport::serve_http(
+            server,
+            options,
+            |address| {
+                eprintln!("MCP streamable-http server listening on http://{address}/mcp");
+            },
+        ))
+        .map_err(|message| typed("mcp", message, "Check the host and port"))
+}
+
 #[derive(Parser)]
 #[command(
     name = "rustscrapling",
@@ -71,8 +155,8 @@ enum Command {
     Daemon(daemon::DaemonArgs),
     /// Manage reusable browser/HTTP sessions hosted by the daemon.
     Session(sessions::SessionArgs),
-    /// Serve the upstream-compatible MCP server (16 tools) over stdio.
-    Mcp,
+    /// Serve the upstream-compatible MCP server (16 tools) over stdio or streamable HTTP.
+    Mcp(McpArgs),
     /// Fetch a page and save HTML/Markdown/text to a file (upstream `scrapling extract`).
     Extract(extract::ExtractArgs),
     /// Install Chrome for Testing with version and SHA-256 verification.
@@ -434,12 +518,7 @@ fn run() -> Result<(), String> {
     match cli.command {
         Command::Daemon(args) => daemon::run(args),
         Command::Session(args) => sessions::run_session(args),
-        Command::Mcp => tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .map_err(|_| json!({"schema_version":1,"error":{"kind":"runtime","message":"Tokio runtime initialization failed"}}).to_string())?
-            .block_on(rustscrapling_mcp::serve_stdio(rustscrapling_mcp::RustScraplingMcp::default()))
-            .map_err(|error| json!({"schema_version":1,"error":{"kind":"mcp","message":error.to_string()}}).to_string()),
+        Command::Mcp(args) => run_mcp(args),
         Command::Network(args) => sessions::run_network(args),
         Command::Shell(args) => shell::run(args),
         Command::Install(args) => install::run(args),

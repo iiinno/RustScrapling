@@ -16,6 +16,7 @@ use rmcp::{
 use serde_json::{json, Map, Value};
 
 mod backend;
+pub mod http_transport;
 pub use backend::RuntimeBackend;
 
 /// Tool definitions: the pinned upstream server's live `tools/list` catalog
