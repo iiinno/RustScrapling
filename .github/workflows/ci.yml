@@ -28,6 +28,8 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_m0_inventory.py -v
       - name: Ensure pinned upstream inventory is reproducible
         run: python3 oracle/inventory_upstream.py --upstream upstream-scrapling --out docs/compat --check
+      - name: Validate G-01 evidence links (tests exist, ids in inventory)
+        run: python3 oracle/check_evidence.py --check
       - name: Verify Rust API and MCP static audit snapshots
         run: python3 oracle/audit_parity.py --check
 

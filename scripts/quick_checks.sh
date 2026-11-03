@@ -8,4 +8,5 @@ cd "$(dirname "$0")/.."
 cargo fmt --all -- --check
 python3 oracle/audit_parity.py --check
 python3 -m unittest discover -s tests -p "test_m0_*.py"
+python3 oracle/check_evidence.py --check
 echo "quick checks OK"
