@@ -489,9 +489,23 @@ impl BrowserClient {
         if let Some(mut child) = self.owned_child.take() {
             let _ = child.kill().await;
             if let Some(profile) = self.owned_profile.take() {
-                tokio::fs::remove_dir_all(profile)
-                    .await
-                    .map_err(|e| BrowserError::Io(e.to_string()))?;
+                // Chrome's renderer and utility subprocesses may still be
+                // releasing files after the browser parent exits. A single
+                // recursive delete can race with their last profile writes.
+                for attempt in 0..10 {
+                    match tokio::fs::remove_dir_all(&profile).await {
+                        Ok(()) => break,
+                        Err(error) if error.kind() == std::io::ErrorKind::NotFound => break,
+                        Err(error)
+                            if (error.kind() == std::io::ErrorKind::DirectoryNotEmpty
+                                || error.kind() == std::io::ErrorKind::PermissionDenied)
+                                && attempt < 9 =>
+                        {
+                            sleep(Duration::from_millis(100)).await;
+                        }
+                        Err(error) => return Err(BrowserError::Io(error.to_string())),
+                    }
+                }
             }
         }
         Ok(())
