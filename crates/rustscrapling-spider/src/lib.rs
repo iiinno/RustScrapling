@@ -19,9 +19,54 @@ pub use templates::CrawlTemplate;
 
 pub type FetchFuture<'a> = Pin<Box<dyn Future<Output = Result<FetchPage, String>> + Send + 'a>>;
 
+/// An explicit failure for adapters that only implement the legacy URL-only API.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SpiderFetchError {
+    Unsupported(&'static str),
+    InvalidRequest(&'static str),
+    SensitivePersistenceDenied,
+    FrontierCapacityExceeded,
+    Backend(String),
+}
+
+impl std::fmt::Display for SpiderFetchError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Unsupported(feature) => write!(f, "unsupported spider request: {feature}"),
+            Self::InvalidRequest(reason) => write!(f, "invalid spider request: {reason}"),
+            Self::SensitivePersistenceDenied => write!(
+                f,
+                "cannot checkpoint request body or headers without persist_sensitive_requests opt-in"
+            ),
+            Self::FrontierCapacityExceeded => write!(f, "spider request frontier payload exceeds 32 MiB"),
+            Self::Backend(reason) => write!(f, "spider fetch failed: {reason}"),
+        }
+    }
+}
+
+impl std::error::Error for SpiderFetchError {}
+
+pub type RequestFetchFuture<'a> =
+    Pin<Box<dyn Future<Output = Result<FetchPage, SpiderFetchError>> + Send + 'a>>;
+
 /// Adapter for the HTTP / automatic acquisition crate. Tests use a deterministic mock.
 pub trait Fetcher: Send + Sync {
     fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a>;
+
+    /// Override to support HTTP methods, bodies, and headers. A legacy fetcher
+    /// must fail explicitly instead of silently turning a POST into a GET.
+    fn fetch_request<'a>(&'a self, request: &'a SpiderRequest) -> RequestFetchFuture<'a> {
+        Box::pin(async move {
+            if !request.is_plain_get_transport() {
+                return Err(SpiderFetchError::Unsupported(
+                    "method, body, or headers require fetch_request support",
+                ));
+            }
+            self.fetch(&request.url)
+                .await
+                .map_err(SpiderFetchError::Backend)
+        })
+    }
 }
 
 /// Adapter that connects the crawler to RustScrapling's HTTP / browser tier
@@ -32,14 +77,36 @@ pub struct AutoFetcher(pub rustscrapling_fetch::Fetcher);
 impl Fetcher for AutoFetcher {
     fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
         Box::pin(async move {
+            let request = SpiderRequest::new(url);
+            self.fetch_request(&request)
+                .await
+                .map_err(|e| e.to_string())
+        })
+    }
+
+    fn fetch_request<'a>(&'a self, request: &'a SpiderRequest) -> RequestFetchFuture<'a> {
+        Box::pin(async move {
+            let mut request = request.clone();
+            request.validate_fields()?;
+            let http_request = rustscrapling_http::HttpRequest {
+                method: request.method.clone(),
+                url: request.url.clone(),
+                headers: request.headers.clone(),
+                body: request.body.clone(),
+            };
+            // The browser backend only understands URL navigation. Keeping
+            // rich requests on HTTP avoids losing headers or sending a GET
+            // after a failed POST.
+            let tier = if request.is_plain_get_transport() {
+                rustscrapling_fetch::FetchTier::Auto
+            } else {
+                rustscrapling_fetch::FetchTier::Http
+            };
             let response = self
                 .0
-                .fetch(
-                    rustscrapling_http::HttpRequest::get(url),
-                    rustscrapling_fetch::FetchTier::Auto,
-                )
+                .fetch(http_request, tier)
                 .await
-                .map_err(|error| error.to_string())?;
+                .map_err(|error| SpiderFetchError::Backend(error.to_string()))?;
             let content_type = response
                 .headers
                 .iter()
@@ -110,6 +177,10 @@ pub struct CrawlSpec {
     /// An independent crawl starts on every call; no checkpoint is consumed.
     #[serde(skip_serializing_if = "is_false")]
     pub development_mode: bool,
+    /// Explicit permission to store request bodies and headers in plaintext
+    /// in owner-only checkpoint files. Omitted/false preserves old spec hashes.
+    #[serde(skip_serializing_if = "is_false")]
+    pub persist_sensitive_requests: bool,
     /// Optional private on-disk cache root (defaults to crawldir/dev-cache or
     /// .rustscrapling-dev-cache relative to the current directory).
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -132,6 +203,7 @@ impl Default for CrawlSpec {
             delay_ms: 0,
             auto_throttle: false,
             development_mode: false,
+            persist_sensitive_requests: false,
             development_cache_dir: None,
             crawldir: None,
         }
@@ -231,14 +303,119 @@ pub struct CrawlItem {
 
 /// A follow-up URL yielded from a custom spider parser. Relative URLs are
 /// resolved against the final fetched URL; all normal crawl limits apply.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SpiderRequest {
     pub url: String,
+    #[serde(default = "default_request_method")]
+    pub method: String,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub headers: BTreeMap<String, String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub body: Option<Vec<u8>>,
+    #[serde(default, skip_serializing_if = "is_zero_priority")]
+    pub priority: i32,
+}
+
+impl std::fmt::Debug for SpiderRequest {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SpiderRequest")
+            .field("url", &"<redacted>")
+            .field("method", &self.method)
+            .field("header_names", &self.headers.keys().collect::<Vec<_>>())
+            .field("body_bytes", &self.body.as_ref().map(Vec::len))
+            .field("priority", &self.priority)
+            .finish()
+    }
+}
+
+fn default_request_method() -> String {
+    "GET".into()
+}
+
+fn is_zero_priority(priority: &i32) -> bool {
+    *priority == 0
 }
 
 impl SpiderRequest {
     pub fn new(url: impl Into<String>) -> Self {
-        Self { url: url.into() }
+        Self {
+            url: url.into(),
+            method: default_request_method(),
+            headers: BTreeMap::new(),
+            body: None,
+            priority: 0,
+        }
+    }
+
+    pub fn method(mut self, method: impl Into<String>) -> Self {
+        self.method = method.into();
+        self
+    }
+
+    pub fn header(mut self, name: impl Into<String>, value: impl Into<String>) -> Self {
+        self.headers.insert(name.into(), value.into());
+        self
+    }
+
+    pub fn body(mut self, body: impl Into<Vec<u8>>) -> Self {
+        self.body = Some(body.into());
+        self
+    }
+
+    pub fn priority(mut self, priority: i32) -> Self {
+        self.priority = priority;
+        self
+    }
+
+    /// The priority is a scheduler hint; it cannot change HTTP identity.
+    fn is_plain_get_transport(&self) -> bool {
+        self.method == "GET" && self.headers.is_empty() && self.body.is_none()
+    }
+
+    fn validate_fields(&mut self) -> Result<(), SpiderFetchError> {
+        if self.method.is_empty()
+            || self.method.len() > 32
+            || !self.method.bytes().all(|b| b.is_ascii_alphabetic())
+        {
+            return Err(SpiderFetchError::InvalidRequest("invalid HTTP method"));
+        }
+        self.method.make_ascii_uppercase();
+        if self
+            .body
+            .as_ref()
+            .is_some_and(|body| body.len() > 8 * 1024 * 1024)
+        {
+            return Err(SpiderFetchError::InvalidRequest("body exceeds 8 MiB"));
+        }
+        let mut header_names = HashSet::new();
+        if self.headers.len() > 64
+            || self.headers.iter().any(|(name, value)| {
+                name.is_empty()
+                    || name.len() > 256
+                    || !name
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&b))
+                    || value.len() > 8192
+                    || value
+                        .bytes()
+                        .any(|byte| matches!(byte, b'\r' | b'\n' | b'\0'))
+                    || !header_names.insert(name.to_ascii_lowercase())
+            })
+        {
+            return Err(SpiderFetchError::InvalidRequest("invalid request headers"));
+        }
+        Ok(())
+    }
+
+    fn ensure_checkpoint_privacy(&self, spec: &CrawlSpec) -> Result<(), SpiderFetchError> {
+        if spec.crawldir.is_some()
+            && !spec.development_mode
+            && !spec.persist_sensitive_requests
+            && (self.body.is_some() || !self.headers.is_empty())
+        {
+            return Err(SpiderFetchError::SensitivePersistenceDenied);
+        }
+        Ok(())
     }
 }
 
@@ -273,7 +450,50 @@ struct Progress {
     #[serde(default)]
     spec_hash: String,
     visited_hashes: Vec<String>,
-    queue: Vec<(String, usize)>,
+    queue: Vec<StoredRequest>,
+}
+
+/// The old JSON checkpoint queue is an array of [url, depth] pairs. Rich
+/// entries are JSON objects; GET-only checkpoints keep their exact shape.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+enum StoredRequest {
+    Legacy((String, usize)),
+    Rich {
+        request: SpiderRequest,
+        depth: usize,
+    },
+}
+
+#[derive(Clone, Debug)]
+struct QueuedRequest {
+    request: SpiderRequest,
+    depth: usize,
+}
+
+impl From<StoredRequest> for QueuedRequest {
+    fn from(value: StoredRequest) -> Self {
+        match value {
+            StoredRequest::Legacy((url, depth)) => Self {
+                request: SpiderRequest::new(url),
+                depth,
+            },
+            StoredRequest::Rich { request, depth } => Self { request, depth },
+        }
+    }
+}
+
+impl From<QueuedRequest> for StoredRequest {
+    fn from(value: QueuedRequest) -> Self {
+        if value.request.is_plain_get_transport() && value.request.priority == 0 {
+            StoredRequest::Legacy((value.request.url, value.depth))
+        } else {
+            StoredRequest::Rich {
+                request: value.request,
+                depth: value.depth,
+            }
+        }
+    }
 }
 
 /// Summary excludes response bodies, so it stays bounded for long crawls.
@@ -366,6 +586,50 @@ fn valid_url(raw: &str) -> Result<Url, String> {
 
 fn key(url: &str) -> String {
     blake3::hash(url.as_bytes()).to_hex().to_string()
+}
+
+const MAX_RESERVED_REQUEST_PAYLOAD_BYTES: usize = 32 * 1024 * 1024;
+
+fn request_payload_bytes(request: &SpiderRequest) -> usize {
+    let headers = request
+        .headers
+        .iter()
+        .map(|(name, value)| name.len().saturating_add(value.len()))
+        .fold(0usize, usize::saturating_add);
+    headers.saturating_add(request.body.as_ref().map_or(0, Vec::len))
+}
+
+/// Preserve the legacy GET digest while distinguishing requests with a
+/// different method, body or headers. Priority is intentionally excluded.
+fn request_key(request: &SpiderRequest) -> String {
+    if request.is_plain_get_transport() {
+        return key(&request.url);
+    }
+    let mut hasher = blake3::Hasher::new();
+    hasher.update(b"rustscrapling-spider-request-v1\0");
+    let mut field = |value: &[u8]| {
+        hasher.update(&(value.len() as u64).to_le_bytes());
+        hasher.update(value);
+    };
+    field(request.method.to_ascii_uppercase().as_bytes());
+    field(request.url.as_bytes());
+    field(&(request.headers.len() as u64).to_le_bytes());
+    let mut headers: Vec<_> = request
+        .headers
+        .iter()
+        .map(|(name, value)| (name.to_ascii_lowercase(), value))
+        .collect();
+    headers.sort_unstable_by(|left, right| left.0.cmp(&right.0));
+    for (name, value) in &headers {
+        field(name.as_bytes());
+        field(value.as_bytes());
+    }
+    // Disambiguate absent body from a present zero-length body.
+    field(if request.body.is_some() { b"1" } else { b"0" });
+    if let Some(body) = &request.body {
+        field(body);
+    }
+    hasher.finalize().to_hex().to_string()
 }
 
 #[derive(Clone, Debug)]
@@ -700,6 +964,13 @@ fn persist(spec: &CrawlSpec, progress: &Progress) -> Result<(), String> {
     let Some(path) = state_path(spec) else {
         return Ok(());
     };
+    for entry in &progress.queue {
+        if let StoredRequest::Rich { request, .. } = entry {
+            request
+                .ensure_checkpoint_privacy(spec)
+                .map_err(|err| err.to_string())?;
+        }
+    }
     let parent = path.parent().ok_or("state has no parent directory")?;
     let parent_existed = parent.exists();
     std::fs::create_dir_all(parent).map_err(|e| format!("creating crawldir: {e}"))?;
@@ -777,37 +1048,77 @@ fn persist(spec: &CrawlSpec, progress: &Progress) -> Result<(), String> {
 struct Frontier<'a> {
     visited: &'a HashSet<String>,
     queued: &'a mut HashSet<String>,
-    queue: &'a mut VecDeque<(String, usize)>,
+    queue: &'a mut VecDeque<QueuedRequest>,
+    reserved_payload_bytes: &'a mut usize,
+    nonzero_priority_count: &'a mut usize,
 }
 
 fn enqueue_spider_request(
-    raw: &str,
+    mut request: SpiderRequest,
     base: &str,
     depth: usize,
     spec: &CrawlSpec,
     rules: &LinkRules,
     frontier: Frontier<'_>,
-) {
+) -> Result<(), String> {
     if depth >= spec.max_depth
         || frontier.visited.len().saturating_add(frontier.queue.len()) >= spec.max_pages
     {
-        return;
+        return Ok(());
     }
     let Ok(base) = valid_url(base) else {
-        return;
+        return Ok(());
     };
-    let Ok(mut url) = base.join(raw.trim()) else {
-        return;
+    let Ok(mut url) = base.join(request.url.trim()) else {
+        return Ok(());
     };
     url.set_fragment(None);
     if valid_url(url.as_str()).is_err() || !host_allowed(spec, &url) || !rules.permitted(&url) {
-        return;
+        return Ok(());
     }
-    let normalized = url.to_string();
-    let fingerprint = key(&normalized);
-    if !frontier.visited.contains(&fingerprint) && frontier.queued.insert(fingerprint) {
-        frontier.queue.push_back((normalized, depth + 1));
+    request.url = url.to_string();
+    request.validate_fields().map_err(|err| err.to_string())?;
+    request
+        .ensure_checkpoint_privacy(spec)
+        .map_err(|err| err.to_string())?;
+    let fingerprint = request_key(&request);
+    if !frontier.visited.contains(&fingerprint) && !frontier.queued.contains(&fingerprint) {
+        let total = frontier
+            .reserved_payload_bytes
+            .checked_add(request_payload_bytes(&request))
+            .filter(|total| *total <= MAX_RESERVED_REQUEST_PAYLOAD_BYTES)
+            .ok_or_else(|| SpiderFetchError::FrontierCapacityExceeded.to_string())?;
+        *frontier.reserved_payload_bytes = total;
+        frontier.queued.insert(fingerprint);
+        if request.priority != 0 {
+            *frontier.nonzero_priority_count += 1;
+        }
+        frontier.queue.push_back(QueuedRequest {
+            request,
+            depth: depth + 1,
+        });
     }
+    Ok(())
+}
+
+/// Stable ordering among equal priorities retains the previous FIFO behavior.
+fn pop_next_request(
+    queue: &mut VecDeque<QueuedRequest>,
+    nonzero_priority_count: &mut usize,
+) -> Option<QueuedRequest> {
+    // The common URL-only crawl remains O(1) FIFO, even with a huge queue.
+    if *nonzero_priority_count == 0 {
+        return queue.pop_front();
+    }
+    let priority = queue.iter().map(|entry| entry.request.priority).max()?;
+    let index = queue
+        .iter()
+        .position(|entry| entry.request.priority == priority)?;
+    let next = queue.remove(index)?;
+    if next.request.priority != 0 {
+        *nonzero_priority_count -= 1;
+    }
+    Some(next)
 }
 
 /// Crawl using bounded batches of concurrent fetches. The callback is invoked
@@ -893,7 +1204,7 @@ where
                     let normalized = url.to_string();
                     seen_seeds
                         .insert(key(&normalized))
-                        .then_some((normalized, 0))
+                        .then_some(StoredRequest::Legacy((normalized, 0)))
                 })
                 .take(spec.max_pages)
                 .collect(),
@@ -901,8 +1212,30 @@ where
         }
     };
     let mut visited: HashSet<String> = state.visited_hashes.into_iter().collect();
-    let mut queued: HashSet<String> = state.queue.iter().map(|(url, _)| key(url)).collect();
-    let mut queue: VecDeque<(String, usize)> = state.queue.into();
+    let mut queue: VecDeque<QueuedRequest> = state.queue.into_iter().map(Into::into).collect();
+    for pending in &mut queue {
+        pending
+            .request
+            .validate_fields()
+            .map_err(|e| e.to_string())?;
+        pending
+            .request
+            .ensure_checkpoint_privacy(spec)
+            .map_err(|e| e.to_string())?;
+    }
+    let mut reserved_payload_bytes = queue.iter().try_fold(0usize, |sum, pending| {
+        sum.checked_add(request_payload_bytes(&pending.request))
+            .filter(|total| *total <= MAX_RESERVED_REQUEST_PAYLOAD_BYTES)
+            .ok_or_else(|| SpiderFetchError::FrontierCapacityExceeded.to_string())
+    })?;
+    let mut nonzero_priority_count = queue
+        .iter()
+        .filter(|pending| pending.request.priority != 0)
+        .count();
+    let mut queued: HashSet<String> = queue
+        .iter()
+        .map(|entry| request_key(&entry.request))
+        .collect();
     let mut summary = CrawlSummary::default();
     // Shared per-host gates must run in the futures themselves. A timestamp
     // computed while filling a batch can be stale before the first poll.
@@ -912,20 +1245,35 @@ where
         let mut batch = FuturesUnordered::new();
         while batch.len() < spec.concurrency && !queue.is_empty() && visited.len() < spec.max_pages
         {
-            let (raw, depth) = queue.pop_front().unwrap();
-            queued.remove(&key(&raw));
+            let mut pending = pop_next_request(&mut queue, &mut nonzero_priority_count).unwrap();
+            let request_size = request_payload_bytes(&pending.request);
+            let raw = pending.request.url.clone();
+            let depth = pending.depth;
+            queued.remove(&request_key(&pending.request));
             let url = match valid_url(&raw) {
                 Ok(u) => u,
-                Err(_) => continue,
+                Err(_) => {
+                    reserved_payload_bytes = reserved_payload_bytes.saturating_sub(request_size);
+                    continue;
+                }
             };
             if depth > spec.max_depth || !host_allowed(spec, &url) {
+                reserved_payload_bytes = reserved_payload_bytes.saturating_sub(request_size);
                 continue;
             }
-            let digest = key(url.as_str());
+            // Persisted rich requests have already been normalized. Recheck
+            // their transport bounds before dispatching an untrusted file.
+            pending
+                .request
+                .validate_fields()
+                .map_err(|e| e.to_string())?;
+            let digest = request_key(&pending.request);
             if !visited.insert(digest) {
+                reserved_payload_bytes = reserved_payload_bytes.saturating_sub(request_size);
                 continue;
             }
             if spec.obey_robots && !robots_allowed(&url, &fetcher, &mut robot_cache).await {
+                reserved_payload_bytes = reserved_payload_bytes.saturating_sub(request_size);
                 summary.failed += 1;
                 emit(SpiderEvent::Page(&CrawlItem {
                     url: raw,
@@ -969,6 +1317,7 @@ where
             .max(robots_minimum);
             let auto_throttle = spec.auto_throttle;
             let backend = Arc::clone(&fetcher);
+            let request = pending.request;
             batch.push(async move {
                 if let Some(ref host_clock) = host_clock {
                     // Do not keep the gate locked during sleep: an earlier
@@ -1000,7 +1349,10 @@ where
                     // have been spaced apart.
                 }
                 let started = Instant::now();
-                let result = backend.fetch(url.as_str()).await;
+                let result = backend
+                    .fetch_request(&request)
+                    .await
+                    .map_err(|err| err.to_string());
                 if auto_throttle {
                     if let Some(ref host_clock) = host_clock {
                         let status = result.as_ref().ok().map(|response| response.status);
@@ -1016,10 +1368,13 @@ where
                         );
                     }
                 }
-                (url.to_string(), depth, result)
+                (url.to_string(), depth, result, request_size)
             });
         }
-        while let Some((url, depth, result)) = batch.next().await {
+        while let Some((url, depth, result, request_size)) = batch.next().await {
+            // An in-flight request retains its reservation until it completes;
+            // otherwise high concurrency can exceed the frontier memory cap.
+            reserved_payload_bytes = reserved_payload_bytes.saturating_sub(request_size);
             let (item, response_base) = match result {
                 Ok(response) => {
                     let response_base = parser.map(|_| response.url.clone());
@@ -1082,7 +1437,10 @@ where
                         && !visited.contains(&key(link))
                         && queued.insert(key(link))
                     {
-                        queue.push_back((link.clone(), depth + 1));
+                        queue.push_back(QueuedRequest {
+                            request: SpiderRequest::new(link.clone()),
+                            depth: depth + 1,
+                        });
                     }
                 }
             }
@@ -1097,7 +1455,7 @@ where
                     for output in parser.parse(&item).await? {
                         match output {
                             SpiderOutput::Request(request) => enqueue_spider_request(
-                                &request.url,
+                                request,
                                 response_base.as_deref().unwrap_or(&item.url),
                                 depth,
                                 spec,
@@ -1106,8 +1464,10 @@ where
                                     visited: &visited,
                                     queued: &mut queued,
                                     queue: &mut queue,
+                                    reserved_payload_bytes: &mut reserved_payload_bytes,
+                                    nonzero_priority_count: &mut nonzero_priority_count,
                                 },
-                            ),
+                            )?,
                             SpiderOutput::Item(value) => emit(SpiderEvent::Item(&value))?,
                         }
                     }
@@ -1122,7 +1482,7 @@ where
                 &Progress {
                     spec_hash: spec_hash(spec)?,
                     visited_hashes: fingerprints,
-                    queue: queue.iter().cloned().collect(),
+                    queue: queue.iter().cloned().map(Into::into).collect(),
                 },
             )?;
         }
@@ -2122,5 +2482,404 @@ mod tests {
                 "https://example.com/final/sub/child"
             ]
         );
+    }
+
+    struct RichRecorder(Mutex<Vec<SpiderRequest>>);
+
+    impl Fetcher for RichRecorder {
+        fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
+            Box::pin(async move { panic!("rich path must call fetch_request, got URL-only {url}") })
+        }
+
+        fn fetch_request<'a>(&'a self, request: &'a SpiderRequest) -> RequestFetchFuture<'a> {
+            Box::pin(async move {
+                self.0.lock().unwrap().push(request.clone());
+                Ok(FetchPage {
+                    headers: Default::default(),
+                    status: 200,
+                    url: request.url.clone(),
+                    content_type: "text/plain".into(),
+                    body: "ok".into(),
+                })
+            })
+        }
+    }
+
+    struct RichParser;
+
+    impl SpiderParser for RichParser {
+        fn parse<'a>(&'a self, page: &'a CrawlItem) -> ParseFuture<'a> {
+            Box::pin(async move {
+                if page.depth != 0 {
+                    return Ok(Vec::new());
+                }
+                let post = SpiderRequest::new("/same#fragment")
+                    .method("post")
+                    .header("x-test", "first")
+                    .body(b"alpha".to_vec())
+                    .priority(10);
+                Ok(vec![
+                    SpiderOutput::Request(SpiderRequest::new("/same")),
+                    SpiderOutput::Request(post.clone()),
+                    // Changed scheduling priority cannot bypass dedupe.
+                    SpiderOutput::Request(post.priority(20)),
+                    SpiderOutput::Request(
+                        SpiderRequest::new("/same")
+                            .method("POST")
+                            .header("x-test", "first")
+                            .body(b"beta".to_vec())
+                            .priority(5),
+                    ),
+                    SpiderOutput::Request(
+                        SpiderRequest::new("/same")
+                            .method("POST")
+                            .header("x-test", "first")
+                            .body(b"gamma".to_vec())
+                            .priority(5),
+                    ),
+                    SpiderOutput::Request(
+                        SpiderRequest::new("/same")
+                            .method("POST")
+                            .header("x-test", "second")
+                            .body(b"alpha".to_vec())
+                            .priority(7),
+                    ),
+                    SpiderOutput::Request(
+                        SpiderRequest::new("/same")
+                            .method("PUT")
+                            .header("x-test", "first")
+                            .body(b"alpha".to_vec())
+                            .priority(1),
+                    ),
+                ])
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn rich_requests_reach_fetcher_with_headers_body_priority_and_distinct_dedupe() {
+        let fetcher = Arc::new(RichRecorder(Mutex::new(Vec::new())));
+        let spec = CrawlSpec {
+            start_urls: vec!["https://example.org/start".into()],
+            max_pages: 7,
+            max_depth: 1,
+            concurrency: 1,
+            ..CrawlSpec::default()
+        };
+        let summary = crawl_with_parser(&spec, fetcher.clone(), &RichParser, |_| Ok(()))
+            .await
+            .unwrap();
+        assert_eq!(summary.visited, 7);
+        assert_eq!(summary.successful, 7);
+        let recorded = fetcher.0.lock().unwrap();
+        assert_eq!(recorded.len(), 7);
+        assert_eq!(recorded[0].url, "https://example.org/start");
+        assert_eq!(
+            recorded[1..].iter().map(|r| r.priority).collect::<Vec<_>>(),
+            [10, 7, 5, 5, 1, 0]
+        );
+        assert_eq!(recorded[1].method, "POST");
+        assert_eq!(recorded[1].body.as_deref(), Some(b"alpha".as_slice()));
+        assert_eq!(recorded[1].headers["x-test"], "first");
+        assert_eq!(recorded[1].url, "https://example.org/same");
+        assert_eq!(recorded[2].headers["x-test"], "second");
+        assert_eq!(recorded[3].body.as_deref(), Some(b"beta".as_slice()));
+        assert_eq!(recorded[4].body.as_deref(), Some(b"gamma".as_slice()));
+        assert_eq!(recorded[5].method, "PUT");
+        assert_eq!(recorded[6].method, "GET");
+    }
+
+    #[tokio::test]
+    async fn legacy_fetcher_does_not_silently_convert_rich_requests_to_get() {
+        let error = Mock
+            .fetch_request(&SpiderRequest::new("https://example.org/").method("POST"))
+            .await
+            .unwrap_err();
+        assert!(matches!(error, SpiderFetchError::Unsupported(_)));
+        assert!(Mock
+            .fetch_request(&SpiderRequest::new("https://example.org/"))
+            .await
+            .is_ok());
+    }
+
+    #[tokio::test]
+    async fn sensitive_requests_require_explicit_checkpoint_opt_in() {
+        let dir = tempfile::tempdir().unwrap();
+        let spec = CrawlSpec {
+            start_urls: vec!["https://example.org/start".into()],
+            crawldir: Some(dir.path().to_path_buf()),
+            max_pages: 6,
+            ..CrawlSpec::default()
+        };
+        let fetcher = Arc::new(RichRecorder(Mutex::new(Vec::new())));
+        let error = crawl_with_parser(&spec, fetcher, &RichParser, |_| Ok(()))
+            .await
+            .unwrap_err();
+        assert!(error.contains("persist_sensitive_requests"));
+        assert!(!error.contains("first"));
+        assert!(!state_path(&spec).unwrap().exists());
+        // Priority/method alone have no sensitive checkpoint payload.
+        let request = SpiderRequest::new("https://example.org/next")
+            .method("DELETE")
+            .priority(4);
+        assert!(request.ensure_checkpoint_privacy(&spec).is_ok());
+        assert!(matches!(
+            request
+                .header("Authorization", "secret")
+                .ensure_checkpoint_privacy(&spec),
+            Err(SpiderFetchError::SensitivePersistenceDenied)
+        ));
+    }
+
+    #[test]
+    fn header_case_identity_and_debug_redaction() {
+        let left = SpiderRequest::new("https://example.org/x?token=not-for-logs")
+            .method("post")
+            .header("X-Z", "private-value")
+            .header("x-a", "another-private-value")
+            .body(b"private-body".to_vec());
+        let right = SpiderRequest::new("https://example.org/x?token=not-for-logs")
+            .method("POST")
+            .header("x-z", "private-value")
+            .header("X-A", "another-private-value")
+            .body(b"private-body".to_vec());
+        assert_eq!(request_key(&left), request_key(&right));
+        let debug = format!("{left:?}");
+        for secret in ["not-for-logs", "private-value", "private-body"] {
+            assert!(!debug.contains(secret));
+        }
+        let mut duplicate = SpiderRequest::new("https://example.org/x")
+            .header("X-Key", "one")
+            .header("x-key", "two");
+        assert_eq!(
+            duplicate.validate_fields(),
+            Err(SpiderFetchError::InvalidRequest("invalid request headers"))
+        );
+    }
+
+    #[test]
+    fn frontier_payload_budget_is_bounded_and_preserves_state_on_failure() {
+        let spec = CrawlSpec {
+            start_urls: vec!["https://example.org/start".into()],
+            max_pages: 10,
+            max_depth: 1,
+            ..CrawlSpec::default()
+        };
+        let rules = LinkRules {
+            allow: Vec::new(),
+            deny: Vec::new(),
+        };
+        let visited = HashSet::new();
+        let mut queued = HashSet::new();
+        let mut queue = VecDeque::new();
+        let mut payload_bytes = 0;
+        let mut nonzero_priority_count = 0;
+        for i in 0..4 {
+            enqueue_spider_request(
+                SpiderRequest::new(format!("/upload-{i}"))
+                    .method("POST")
+                    .body(vec![42; 8 * 1024 * 1024]),
+                "https://example.org/start",
+                0,
+                &spec,
+                &rules,
+                Frontier {
+                    visited: &visited,
+                    queued: &mut queued,
+                    queue: &mut queue,
+                    reserved_payload_bytes: &mut payload_bytes,
+                    nonzero_priority_count: &mut nonzero_priority_count,
+                },
+            )
+            .unwrap();
+        }
+        assert_eq!(payload_bytes, MAX_RESERVED_REQUEST_PAYLOAD_BYTES);
+        let error = enqueue_spider_request(
+            SpiderRequest::new("/upload-extra")
+                .method("POST")
+                .body(vec![42; 1]),
+            "https://example.org/start",
+            0,
+            &spec,
+            &rules,
+            Frontier {
+                visited: &visited,
+                queued: &mut queued,
+                queue: &mut queue,
+                reserved_payload_bytes: &mut payload_bytes,
+                nonzero_priority_count: &mut nonzero_priority_count,
+            },
+        )
+        .unwrap_err();
+        assert!(error.contains("32 MiB"));
+        assert_eq!(queue.len(), 4);
+        assert_eq!(queued.len(), 4);
+        assert_eq!(payload_bytes, MAX_RESERVED_REQUEST_PAYLOAD_BYTES);
+    }
+
+    struct InflightBudgetParser;
+
+    impl SpiderParser for InflightBudgetParser {
+        fn parse<'a>(&'a self, page: &'a CrawlItem) -> ParseFuture<'a> {
+            Box::pin(async move {
+                let count = match page.depth {
+                    0 => 4,
+                    1 => 2,
+                    _ => 0,
+                };
+                Ok((0..count)
+                    .map(|index| {
+                        SpiderOutput::Request(
+                            SpiderRequest::new(format!(
+                                "/depth-{}/child-{index}-{}",
+                                page.depth,
+                                page.url.len()
+                            ))
+                            .method("POST")
+                            .body(vec![index as u8; 8 * 1024 * 1024]),
+                        )
+                    })
+                    .collect())
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn completed_request_releases_capacity_but_inflight_requests_stay_reserved() {
+        let spec = CrawlSpec {
+            start_urls: vec!["https://example.org/start".into()],
+            max_depth: 2,
+            max_pages: 10,
+            concurrency: 2,
+            ..CrawlSpec::default()
+        };
+        let error = crawl_with_parser(
+            &spec,
+            Arc::new(RichRecorder(Mutex::new(Vec::new()))),
+            &InflightBudgetParser,
+            |_| Ok(()),
+        )
+        .await
+        .unwrap_err();
+        assert!(error.contains("32 MiB"));
+    }
+
+    #[tokio::test]
+    async fn checkpoint_restores_rich_requests_without_changing_legacy_get_shape() {
+        let dir = tempfile::tempdir().unwrap();
+        let spec = CrawlSpec {
+            start_urls: vec!["https://example.org/seed".into()],
+            crawldir: Some(dir.path().to_path_buf()),
+            persist_sensitive_requests: true,
+            max_pages: 3,
+            concurrency: 1,
+            ..CrawlSpec::default()
+        };
+        let rich = SpiderRequest::new("https://example.org/seed")
+            .method("POST")
+            .header("x-test", "secret")
+            .body(b"persisted".to_vec())
+            .priority(9);
+        persist(
+            &spec,
+            &Progress {
+                queue: vec![
+                    StoredRequest::Legacy(("https://example.org/seed".into(), 0)),
+                    StoredRequest::Rich {
+                        request: rich.clone(),
+                        depth: 1,
+                    },
+                ],
+                ..Progress::default()
+            },
+        )
+        .unwrap();
+        let bytes = std::fs::read(state_path(&spec).unwrap()).unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(
+            json["queue"][0],
+            serde_json::json!(["https://example.org/seed", 0])
+        );
+        assert_eq!(
+            json["queue"][1]["request"]["body"],
+            serde_json::json!([112, 101, 114, 115, 105, 115, 116, 101, 100])
+        );
+        let fetcher = Arc::new(RichRecorder(Mutex::new(Vec::new())));
+        let result = crawl(&spec, fetcher.clone(), |_| Ok(())).await.unwrap();
+        assert_eq!(result.visited, 2);
+        let calls = fetcher.0.lock().unwrap();
+        assert_eq!(
+            &calls[..],
+            &[rich, SpiderRequest::new("https://example.org/seed")]
+        );
+        let resumed = restore(&spec).unwrap().unwrap();
+        assert!(resumed.queue.is_empty());
+        assert_eq!(resumed.visited_hashes.len(), 2);
+        drop(calls);
+        let repeated = crawl(&spec, Arc::new(Mock), |_| panic!("unexpected refetch"))
+            .await
+            .unwrap();
+        assert_eq!(repeated.visited, 2);
+    }
+
+    #[tokio::test]
+    async fn auto_fetcher_sends_method_headers_and_body_over_real_local_http() {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/submit", listener.local_addr().unwrap());
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(5)))
+                .unwrap();
+            let mut bytes = Vec::new();
+            let mut chunk = [0u8; 4096];
+            loop {
+                let size = stream.read(&mut chunk).unwrap();
+                if size == 0 {
+                    break;
+                }
+                bytes.extend_from_slice(&chunk[..size]);
+                if let Some(end) = bytes.windows(4).position(|part| part == b"\r\n\r\n") {
+                    let header = String::from_utf8_lossy(&bytes[..end]);
+                    let length = header
+                        .lines()
+                        .find_map(|line| {
+                            line.to_ascii_lowercase()
+                                .strip_prefix("content-length:")
+                                .and_then(|v| v.trim().parse::<usize>().ok())
+                        })
+                        .unwrap_or(0);
+                    if bytes.len() >= end + 4 + length {
+                        break;
+                    }
+                }
+            }
+            stream
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\nok")
+                .unwrap();
+            String::from_utf8(bytes).unwrap()
+        });
+        let http = rustscrapling_http::HttpClient::new(rustscrapling_http::HttpOptions {
+            retries: 0,
+            direct: true,
+            ..rustscrapling_http::HttpOptions::default()
+        })
+        .unwrap();
+        let fetcher = AutoFetcher(rustscrapling_fetch::Fetcher::new(
+            http,
+            rustscrapling_fetch::FetchOptions::default(),
+        ));
+        let request = SpiderRequest::new(url)
+            .method("POST")
+            .header("X-Spider-Test", "present")
+            .body(b"real-wire-body".to_vec());
+        let page = fetcher.fetch_request(&request).await.unwrap();
+        assert_eq!(page.status, 200);
+        assert_eq!(page.body, "ok");
+        let wire = server.join().unwrap();
+        assert!(wire.starts_with("POST /submit HTTP/1.1"), "{wire}");
+        assert!(wire.to_ascii_lowercase().contains("x-spider-test: present"));
+        assert!(wire.ends_with("real-wire-body"));
     }
 }

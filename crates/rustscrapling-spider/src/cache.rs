@@ -2,7 +2,7 @@
 //! it is not a shared HTTP cache, and does not cache failure/challenge pages.
 //! The URL is hashed in the filename to avoid exposing query credentials.
 
-use super::{FetchFuture, FetchPage, Fetcher};
+use super::{FetchFuture, FetchPage, Fetcher, RequestFetchFuture, SpiderFetchError, SpiderRequest};
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -173,6 +173,20 @@ impl Fetcher for CachingFetcher {
             Ok(page)
         })
     }
+
+    fn fetch_request<'a>(&'a self, request: &'a SpiderRequest) -> RequestFetchFuture<'a> {
+        Box::pin(async move {
+            if request.is_plain_get_transport() {
+                return self
+                    .fetch(&request.url)
+                    .await
+                    .map_err(SpiderFetchError::Backend);
+            }
+            // Development replay is URL-keyed. Never replay POST effects or
+            // a customized GET response under an unrelated request identity.
+            self.upstream.fetch_request(request).await
+        })
+    }
 }
 
 #[cfg(test)]
@@ -269,5 +283,84 @@ mod tests {
             assert_ne!(first.body, second.body, "{url} must not be replayed");
         }
         assert_eq!(source.0.load(Ordering::SeqCst), 4);
+    }
+
+    #[tokio::test]
+    async fn rich_requests_bypass_url_only_development_cache() {
+        struct TraceSource(AtomicUsize);
+        impl Fetcher for TraceSource {
+            fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
+                Box::pin(async move {
+                    self.0.fetch_add(1, Ordering::SeqCst);
+                    Ok(FetchPage {
+                        status: 200,
+                        url: url.into(),
+                        content_type: "text/plain".into(),
+                        body: "plain GET".into(),
+                        headers: Default::default(),
+                    })
+                })
+            }
+
+            fn fetch_request<'a>(&'a self, request: &'a SpiderRequest) -> RequestFetchFuture<'a> {
+                Box::pin(async move {
+                    self.0.fetch_add(1, Ordering::SeqCst);
+                    Ok(FetchPage {
+                        status: 200,
+                        url: request.url.clone(),
+                        content_type: "text/plain".into(),
+                        body: format!(
+                            "{}:{}:{}",
+                            request.method,
+                            String::from_utf8_lossy(request.body.as_deref().unwrap_or_default()),
+                            request
+                                .headers
+                                .get("x-test")
+                                .map(String::as_str)
+                                .unwrap_or("")
+                        ),
+                        headers: Default::default(),
+                    })
+                })
+            }
+        }
+
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().join("cache");
+        let source = Arc::new(TraceSource(AtomicUsize::new(0)));
+        let fetcher = CachingFetcher::new(source.clone(), root.clone()).unwrap();
+        let url = "https://example.org/submit";
+        let alpha = SpiderRequest::new(url)
+            .method("POST")
+            .body(b"alpha".to_vec());
+        let beta = SpiderRequest::new(url)
+            .method("POST")
+            .body(b"beta".to_vec());
+        let custom_get = SpiderRequest::new(url).header("x-test", "custom");
+        assert_eq!(
+            fetcher.fetch_request(&alpha).await.unwrap().body,
+            "POST:alpha:"
+        );
+        assert_eq!(
+            fetcher.fetch_request(&beta).await.unwrap().body,
+            "POST:beta:"
+        );
+        assert_eq!(
+            fetcher.fetch_request(&custom_get).await.unwrap().body,
+            "GET::custom"
+        );
+        assert_eq!(source.0.load(Ordering::SeqCst), 3);
+        assert_eq!(std::fs::read_dir(&root).unwrap().count(), 0);
+        let plain = SpiderRequest::new(url);
+        assert_eq!(
+            fetcher.fetch_request(&plain).await.unwrap().body,
+            "plain GET"
+        );
+        assert_eq!(
+            fetcher.fetch_request(&plain).await.unwrap().body,
+            "plain GET"
+        );
+        assert_eq!(source.0.load(Ordering::SeqCst), 4);
+        assert_eq!(std::fs::read_dir(&root).unwrap().count(), 1);
     }
 }
