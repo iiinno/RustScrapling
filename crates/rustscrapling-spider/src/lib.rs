@@ -57,12 +57,14 @@ pub trait Fetcher: Send + Sync {
     /// must fail explicitly instead of silently turning a POST into a GET.
     fn fetch_request<'a>(&'a self, request: &'a SpiderRequest) -> RequestFetchFuture<'a> {
         Box::pin(async move {
-            if !request.is_plain_get_transport() {
+            let mut normalized = request.clone();
+            normalized.validate_fields()?;
+            if !normalized.is_plain_get_transport() {
                 return Err(SpiderFetchError::Unsupported(
                     "method, body, or headers require fetch_request support",
                 ));
             }
-            self.fetch(&request.url)
+            self.fetch(&normalized.url)
                 .await
                 .map_err(SpiderFetchError::Backend)
         })
@@ -375,7 +377,10 @@ impl SpiderRequest {
     fn validate_fields(&mut self) -> Result<(), SpiderFetchError> {
         if self.method.is_empty()
             || self.method.len() > 32
-            || !self.method.bytes().all(|b| b.is_ascii_alphabetic())
+            || !self
+                .method
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&b))
         {
             return Err(SpiderFetchError::InvalidRequest("invalid HTTP method"));
         }
@@ -2600,6 +2605,10 @@ mod tests {
             .fetch_request(&SpiderRequest::new("https://example.org/"))
             .await
             .is_ok());
+        assert!(Mock
+            .fetch_request(&SpiderRequest::new("https://example.org/").method("get"))
+            .await
+            .is_ok());
     }
 
     #[tokio::test]
@@ -2633,6 +2642,10 @@ mod tests {
 
     #[test]
     fn header_case_identity_and_debug_redaction() {
+        let mut valid_extension_method =
+            SpiderRequest::new("https://example.org/").method("m-search");
+        valid_extension_method.validate_fields().unwrap();
+        assert_eq!(valid_extension_method.method, "M-SEARCH");
         let left = SpiderRequest::new("https://example.org/x?token=not-for-logs")
             .method("post")
             .header("X-Z", "private-value")
@@ -2807,15 +2820,16 @@ mod tests {
         let fetcher = Arc::new(RichRecorder(Mutex::new(Vec::new())));
         let result = crawl(&spec, fetcher.clone(), |_| Ok(())).await.unwrap();
         assert_eq!(result.visited, 2);
-        let calls = fetcher.0.lock().unwrap();
-        assert_eq!(
-            &calls[..],
-            &[rich, SpiderRequest::new("https://example.org/seed")]
-        );
+        {
+            let calls = fetcher.0.lock().unwrap();
+            assert_eq!(
+                &calls[..],
+                &[rich, SpiderRequest::new("https://example.org/seed")]
+            );
+        }
         let resumed = restore(&spec).unwrap().unwrap();
         assert!(resumed.queue.is_empty());
         assert_eq!(resumed.visited_hashes.len(), 2);
-        drop(calls);
         let repeated = crawl(&spec, Arc::new(Mock), |_| panic!("unexpected refetch"))
             .await
             .unwrap();
