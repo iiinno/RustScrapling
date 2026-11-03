@@ -3,6 +3,10 @@ use serde_json::{json, Value};
 use std::{
     io::{Read, Write},
     net::TcpListener,
+    sync::{
+        atomic::{AtomicBool, AtomicUsize, Ordering},
+        Arc,
+    },
 };
 
 async fn call(server: &RustScraplingMcp, tool: &str, args: Value) -> rmcp::model::CallToolResult {
@@ -167,17 +171,51 @@ async fn browser_get_and_session_if_chrome_is_available() {
         return;
     };
 
+    // Chrome opens extra connections (for example `/favicon.ico` and
+    // speculative preconnects). A fixed accept count lets those consume the
+    // server, after which navigation fails with ERR_CONNECTION_REFUSED
+    // (Issue #1). Serve every connection until the test finishes instead.
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    listener.set_nonblocking(true).unwrap();
     let url = format!("http://{}/page", listener.local_addr().unwrap());
-    let server = std::thread::spawn(move || {
-        for _ in 0..2 {
-            let (mut stream, _) = listener.accept().unwrap();
-            let mut buf = [0; 2048];
-            let _ = stream.read(&mut buf).unwrap();
-            let body="<html><body><main><h1>Browser MCP</h1><p>CDP session success.</p></main></body></html>";
-            write!(stream,"HTTP/1.1 200 OK\r\nContent-Length: {}\r\nContent-Type: text/html\r\nSet-Cookie: mcp_session=private; Path=/; SameSite=Lax\r\nConnection: close\r\n\r\n{body}",body.len()).unwrap();
-        }
-    });
+    let stop = Arc::new(AtomicBool::new(false));
+    let page_hits = Arc::new(AtomicUsize::new(0));
+    let server = {
+        let stop = Arc::clone(&stop);
+        let page_hits = Arc::clone(&page_hits);
+        std::thread::spawn(move || {
+            while !stop.load(Ordering::SeqCst) {
+                let mut stream = match listener.accept() {
+                    Ok((stream, _)) => stream,
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        std::thread::sleep(std::time::Duration::from_millis(5));
+                        continue;
+                    }
+                    Err(error) => panic!("accept failed: {error}"),
+                };
+                stream.set_nonblocking(false).unwrap();
+                stream
+                    .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+                    .unwrap();
+                let mut buf = [0; 2048];
+                // A preconnect may close without sending a request.
+                let Ok(size) = stream.read(&mut buf) else {
+                    continue;
+                };
+                let request = String::from_utf8_lossy(&buf[..size]);
+                if request.starts_with("GET /page ") {
+                    page_hits.fetch_add(1, Ordering::SeqCst);
+                    let body = "<html><body><main><h1>Browser MCP</h1><p>CDP session success.</p></main></body></html>";
+                    let _ = write!(stream,"HTTP/1.1 200 OK\r\nContent-Length: {}\r\nContent-Type: text/html\r\nSet-Cookie: mcp_session=private; Path=/; SameSite=Lax\r\nConnection: close\r\n\r\n{body}",body.len());
+                } else if size > 0 {
+                    let _ = write!(
+                        stream,
+                        "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                    );
+                }
+            }
+        })
+    };
     let handler = RustScraplingMcp::default();
     let path = chrome.to_string_lossy();
     let once = call(
@@ -364,7 +402,9 @@ async fn browser_get_and_session_if_chrome_is_available() {
         .is_error,
         Some(false)
     );
+    stop.store(true, Ordering::SeqCst);
     server.join().unwrap();
+    assert!(page_hits.load(Ordering::SeqCst) >= 2);
     std::env::remove_var("RUSTSCRAPLING_STATE_DIR");
     std::fs::remove_dir_all(dir).unwrap();
 }
