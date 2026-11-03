@@ -233,9 +233,9 @@ impl Fetcher {
                         }
                         return Ok(response);
                     }
-                    if response.success() && best.is_none() {
-                        best = Some(response);
-                    } else if best.is_none() && response.status < 400 {
+                    // Keep the most complete thin response as a fallback: a
+                    // successful but short page beats reporting an error.
+                    if best.is_none() && (response.success() || response.status < 400) {
                         best = Some(response);
                     }
                 }
