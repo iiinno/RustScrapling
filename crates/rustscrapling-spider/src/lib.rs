@@ -72,6 +72,9 @@ fn default_concurrency() -> usize {
 fn default_max_depth() -> usize {
     2
 }
+fn is_false(value: &bool) -> bool {
+    !*value
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -87,6 +90,10 @@ pub struct CrawlSpec {
     pub concurrency: usize,
     pub obey_robots: bool,
     pub delay_ms: u64,
+    /// Opt-in per-host pacing based on response latency and throttling status.
+    /// Omitted/false is not serialized, retaining legacy checkpoint hashes.
+    #[serde(skip_serializing_if = "is_false")]
+    pub auto_throttle: bool,
     pub crawldir: Option<PathBuf>,
 }
 
@@ -101,6 +108,7 @@ impl Default for CrawlSpec {
             concurrency: default_concurrency(),
             obey_robots: false,
             delay_ms: 0,
+            auto_throttle: false,
             crawldir: None,
         }
     }
@@ -161,6 +169,36 @@ pub struct CrawlSummary {
     pub successful: usize,
     pub failed: usize,
     pub remaining: usize,
+}
+
+/// A separate start gate for each host. Never hold it across HTTP I/O.
+/// Dynamic updates apply to the next start gate acquisition, so requests
+/// already in flight are not cancelled or rescheduled.
+struct HostThrottle {
+    last_start: Option<Instant>,
+    delay: Duration,
+}
+
+impl HostThrottle {
+    fn new(base_delay: Duration) -> Self {
+        Self {
+            last_start: None,
+            delay: base_delay,
+        }
+    }
+
+    fn observe(&mut self, status: Option<u16>, latency: Duration, minimum: Duration) {
+        let maximum = Duration::from_secs(30).max(minimum);
+        if matches!(status, None | Some(408 | 429 | 502 | 503 | 504)) {
+            self.delay = self.delay.saturating_mul(2).min(maximum);
+        } else if status.is_some_and(|code| (200..400).contains(&code)) {
+            // Smooth successful responses; a very fast single request should
+            // not instantly undo a server's previous backpressure signal.
+            let target = minimum.max(latency / 2).min(maximum);
+            let next_ms = (self.delay.as_millis() * 3 + target.as_millis()) / 4;
+            self.delay = Duration::from_millis(next_ms.min(u64::MAX as u128) as u64);
+        }
+    }
 }
 
 fn valid_url(raw: &str) -> Result<Url, String> {
@@ -562,7 +600,7 @@ where
     let mut summary = CrawlSummary::default();
     // Shared per-host gates must run in the futures themselves. A timestamp
     // computed while filling a batch can be stale before the first poll.
-    let mut site_clock = HashMap::<String, Arc<tokio::sync::Mutex<Option<Instant>>>>::new();
+    let mut site_clock = HashMap::<String, Arc<tokio::sync::Mutex<HostThrottle>>>::new();
     let mut robot_cache = HashMap::<String, Option<Vec<RobotsRule>>>::new();
     while !queue.is_empty() && visited.len() < spec.max_pages {
         let mut batch = FuturesUnordered::new();
@@ -593,32 +631,46 @@ where
                 })?;
                 continue;
             }
-            let host_clock = if spec.delay_ms > 0 {
+            let host_clock = if spec.delay_ms > 0 || spec.auto_throttle {
                 let host = url.host_str().unwrap_or_default().to_owned();
-                Some(Arc::clone(
-                    site_clock
-                        .entry(host)
-                        .or_insert_with(|| Arc::new(tokio::sync::Mutex::new(None))),
-                ))
+                let initial = Duration::from_millis(if spec.auto_throttle {
+                    spec.delay_ms.max(100)
+                } else {
+                    spec.delay_ms
+                });
+                Some(Arc::clone(site_clock.entry(host).or_insert_with(|| {
+                    Arc::new(tokio::sync::Mutex::new(HostThrottle::new(initial)))
+                })))
             } else {
                 None
             };
-            let delay = Duration::from_millis(spec.delay_ms);
+            let minimum = Duration::from_millis(spec.delay_ms.max(100));
+            let auto_throttle = spec.auto_throttle;
             let backend = Arc::clone(&fetcher);
             batch.push(async move {
-                if let Some(host_clock) = host_clock {
-                    let mut last_start = host_clock.lock().await;
-                    if let Some(last) = *last_start {
-                        if let Some(next) = last.checked_add(delay) {
+                if let Some(ref host_clock) = host_clock {
+                    let mut gate = host_clock.lock().await;
+                    if let Some(last) = gate.last_start {
+                        if let Some(next) = last.checked_add(gate.delay) {
                             tokio::time::sleep_until(tokio::time::Instant::from_std(next)).await;
                         }
                     }
                     // Release the gate before awaiting the network response:
                     // different requests can overlap once their start times
                     // have been spaced apart.
-                    *last_start = Some(Instant::now());
+                    gate.last_start = Some(Instant::now());
                 }
+                let started = Instant::now();
                 let result = backend.fetch(url.as_str()).await;
+                if auto_throttle {
+                    if let Some(ref host_clock) = host_clock {
+                        let status = result.as_ref().ok().map(|response| response.status);
+                        host_clock
+                            .lock()
+                            .await
+                            .observe(status, started.elapsed(), minimum);
+                    }
+                }
                 (url.to_string(), depth, result)
             });
         }
@@ -844,6 +896,85 @@ mod tests {
             .collect();
         assert_eq!(same_host.len(), 2);
         assert!(same_host[1].duration_since(same_host[0]) >= Duration::from_millis(65));
+    }
+
+    #[test]
+    fn auto_throttle_backoff_and_recovery_are_bounded() {
+        let base = Duration::from_millis(100);
+        let mut throttle = HostThrottle::new(base);
+        throttle.observe(Some(429), Duration::from_millis(20), base);
+        assert_eq!(throttle.delay, Duration::from_millis(200));
+        throttle.observe(Some(503), Duration::from_millis(10), base);
+        assert_eq!(throttle.delay, Duration::from_millis(400));
+        throttle.observe(Some(200), Duration::from_millis(20), base);
+        assert_eq!(throttle.delay, Duration::from_millis(325));
+        for _ in 0..20 {
+            throttle.observe(None, Duration::from_millis(1), base);
+        }
+        assert_eq!(throttle.delay, Duration::from_secs(30));
+        for _ in 0..100 {
+            throttle.observe(Some(200), Duration::from_millis(2), base);
+        }
+        assert_eq!(throttle.delay, base);
+    }
+
+    #[test]
+    fn default_auto_throttle_does_not_change_legacy_spec_hash() {
+        let default = CrawlSpec::default();
+        let json = serde_json::to_value(&default).unwrap();
+        assert!(json.get("auto_throttle").is_none());
+        let enabled = CrawlSpec {
+            auto_throttle: true,
+            ..default.clone()
+        };
+        assert_ne!(spec_hash(&default).unwrap(), spec_hash(&enabled).unwrap());
+        assert!(
+            CrawlSpec::from_toml("start_urls=['https://example.com/']\nauto_throttle=true")
+                .unwrap()
+                .auto_throttle
+        );
+    }
+
+    struct ThrottledFetcher(Mutex<Vec<Instant>>);
+
+    impl Fetcher for ThrottledFetcher {
+        fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
+            Box::pin(async move {
+                let mut starts = self.0.lock().unwrap();
+                starts.push(Instant::now());
+                let status = if url.ends_with("/one") { 429 } else { 200 };
+                Ok(FetchPage {
+                    status,
+                    url: url.into(),
+                    content_type: "text/plain".into(),
+                    body: String::new(),
+                })
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn auto_throttle_respects_server_backpressure_between_batches() {
+        let fetcher = Arc::new(ThrottledFetcher(Mutex::new(Vec::new())));
+        let spec = CrawlSpec {
+            start_urls: vec![
+                "https://example.com/one".into(),
+                "https://example.com/two".into(),
+            ],
+            max_depth: 0,
+            concurrency: 1,
+            auto_throttle: true,
+            ..CrawlSpec::default()
+        };
+        let result = crawl(&spec, fetcher.clone(), |_| Ok(())).await.unwrap();
+        assert_eq!(result.failed, 1);
+        assert_eq!(result.successful, 1);
+        let starts = fetcher.0.lock().unwrap();
+        assert_eq!(starts.len(), 2);
+        assert!(
+            starts[1].duration_since(starts[0]) >= Duration::from_millis(180),
+            "429 should increase the next same-host delay to around 200ms"
+        );
     }
 
     #[test]
