@@ -21,13 +21,39 @@ allowed domains are queued; credentials and external links are rejected.
 
 `auto_throttle` is opt-in and defaults to `false` (the previous fixed-delay
 behavior remains unchanged). When enabled, RustScrapling applies separate
-per-host request-start gates with a minimum of `delay_ms` or 100 milliseconds
+per-origin request-start gates with a minimum of `delay_ms` or 100 milliseconds
 when `delay_ms = 0`. Responses such as HTTP 429 and 503 and connection errors
-increase the host's delay, and successful responses gradually move it towards
-the configured minimum or half the observed request latency. Backoff is
-limited to 30 seconds unless a larger `delay_ms` was explicitly specified.
-Updates affect future starts, not requests already in flight; they do not
-constitute a server-side rate-limit guarantee or a `Retry-After` parser.
+increase the origin's delay; successful responses gradually move it towards
+the configured minimum or half the observed request latency. The normal
+adaptive delay is bounded at 30 seconds unless a larger floor is configured.
+`Retry-After` is accepted as delta-seconds or an RFC 2822 HTTP-date, capped at
+24 hours and measured from the response time. Even already-waiting requests
+recheck the gate before starting. Requests already in flight are not cancelled.
+
+With `obey_robots = true`, matching `Crawl-delay` and `Request-rate` directives
+are interpreted as additional lower bounds for the origin's spacing. Specific
+RustScrapling user-agent groups take priority over `*` groups; matched groups
+are combined. Unreachable robots.txt fails closed. Neither the robots policy
+nor AutoThrottle enables a distributed, cross-process rate-limit guarantee.
+
+## Development replay cache
+
+To experiment with CSS/XPath/Markdown extraction without fetching the same
+pages repeatedly, set these in a crawl TOML:
+
+    development_mode = true
+    development_cache_dir = "./.rustscrapling-dev-cache"
+
+The cache is optional and off by default. Successful (2xx), non-challenge
+responses of at most 8 MiB are stored under hashed request URLs, with private
+Unix directory/file permissions (0700/0600). Old/corrupt entries are rejected
+rather than silently refetched. If no `development_cache_dir` is provided,
+the cache lives under `crawldir/dev-cache` or `.rustscrapling-dev-cache`.
+Development runs deliberately start a new crawl on every invocation and do
+not consume/write the production checkpoint; replaying cached pages should
+still invoke extraction again. Robots.txt is **always fetched live** when
+`obey_robots = true`, so fully offline replay requires turning off that check
+in a trusted, previously recorded development environment.
 
 ## XMLFeedSpider / CSVFeedSpider
 

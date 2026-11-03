@@ -1,5 +1,14 @@
 # RESULTS.md: 測定と検証の結果
 
+## 2026-11-03 先行Rust移植を参照したStage6補完・VPS実証
+
+- 比較した公開Rust移植: `Liohtml/RUSTScrapling`の`2dd9a5eb0627fdb7b5c0aae7b5fc4dc9e8cc092c`（robots.rs/throttle.rs/cache.rs）、`chrisabruce/scrapling-rs`の`0d61c3e88d95473d77d90d3e374ffded79de07da`。Python本家の固定仕様はPlan.md記載`95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0`。採用対象とライセンスを`docs/UPSTREAM_PORTS.md`、`NOTICE`、`licenses/RUSTScrapling-MIT.txt`に記録。
+- `a45f41d`: robots.txtの複数User-agentグループ、Crawl-delay、Request-rateを実装。静的`delay_ms`とAutoThrottleの下限として扱う。異常値(NaN/負数/24h超)は拒否、同一originの並列要求を時間間隔で制御。robots取得失敗は既存のfail-closed方針を継続。
+- `a2fd050`: 開発モードのレスポンスキャッシュを実装。成功した非チャレンジの8MiB以下の本文をURLハッシュ名で保存（Unixの専用ディレクトリ0700、ファイル0600）。次回同一ページのネットワーク再取得を抑えつつ抽出を再実行。開発モードでは本番のチェックポイントを読み書きしない。robots.txtはキャッシュせず毎回取得する。
+- `51e3d6c`/`5d0c1a6`/`8541fca`: レスポンスヘッダをSpiderへ渡し、HTTP 429/503の`Retry-After`を秒数形式およびHTTP-date形式で処理。並列待機中の要求も最新のバックオフ期限を再評価する。HTTP-date解析には既存Cargo.lock内のchronoを採用。
+- VPS Ubuntu Rust1.99.1、`MemoryMax=3000M`、`MemorySwapMax=0`、Cargo2ジョブ、nice低優先度で、`cargo test --workspace --lib --tests --locked --offline -- --skip local_browser_navigation_reuse_external_connection_and_shadow_dom --skip browser_get_and_session_if_chrome_is_available` は**95件PASS/0件FAIL、Chrome HTTP実機2件を明示除外、data URL実機1件ignored、終了コード0**（`51e3d6c`時点）。`cargo clippy --workspace --all-targets --locked --offline -- -D warnings`も同コミットで終了コード0。その後のHTTP-date対応`8541fca`ではSpider25/25 PASS（全workspace/clippy追試は別途）。
+- この結果はローカルモック/localhostの機能テスト。実サイトでのrobots遵守・成功率や開発キャッシュの実運用耐久、Python本家と同条件の比較が完了したわけではない。
+
 ## 2026-11-03 AutoThrottle統合後のVPS全体回帰
 
 - コミット`e1bec53`でVPS Ubuntu 24.04・Rust1.99.1の`cargo test --workspace --lib --tests --locked --offline -- --skip local_browser_navigation_reuse_external_connection_and_shadow_dom --skip browser_get_and_session_if_chrome_is_available`を実行。**87件PASS、0件FAIL、2件filtered out、Chrome data URLの実機試験1件ignored、終了コード0**。`MemoryMax=3000M`、`MemorySwapMax=0`、`CARGO_BUILD_JOBS=2`、`nice -n 12`を使用。

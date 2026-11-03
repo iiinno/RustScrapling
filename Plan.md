@@ -96,9 +96,9 @@ ScraplingのRust移植は、2026-11-02の時点で少なくとも2件ある。�
 
 ## 3. 対象外とするもの
 
-1. IPythonを使った対話シェル(`scrapling shell`)。人間向けの機能のため作らない。
+1. IPythonそのものへの依存。Rust向けに対話的な解析ができるシェル/REPL相当は、完全機能互換の対象に残す。
 2. Scrapyとの連携(`integrations/scrapy.py`)とPython向けAPI。Pythonからは脱却する方針のため作らない。
-3. Pythonのクラスとして書くSpider。代わりに宣言的な設定ファイルとテンプレートで同じ用途を満たす(7.3節)。
+3. Pythonのクラス構文そのもの。ただし、任意の`parse`処理、追加Requestの生成、抽出アイテム・処理パイプラインを含む**Spiderの機能**は対象外にしない。Rust trait/APIまたは宣言的な設定で同等の用途を満たす(7.3節)。
 4. 本家にない新しい取得手段(有料のCAPTCHA解決サービスとの連携、ブラウザを使わずにV8などでJavaScriptだけを動かす取得手段など)。必要になったら別途計画する。
 5. adaptiveのスコアの重みを結果から学習する機能。互換モードと両立せず、効果も確かめられていないため作らない。
 
@@ -235,6 +235,8 @@ CLIだけでも動くが、CLIだけでは呼び出しのたびにブラウザ�
 ### 7.3 クロール
 
 本家のSpiderはPythonのクラスで書く。RustScraplingでは、TOMLの設定ファイルで開始URL、たどるリンクの規則、抽出する項目(CSS、XPath、adaptiveの識別子)を書く。テンプレートは本家の `CrawlSpider`、`SitemapSpider`、`XMLFeedSpider`、`CSVFeedSpider`、`ShopifySpider`、`ContentSpider`(サイトをMarkdownの集まりにする)を全て移植する。
+
+宣言的TOMLだけでは表現できない本家の`parse(response)`コールバック、追加Request/Response、LinkExtractorのallow/deny規則、アイテム変換・パイプライン、複数セッションや優先度もRust APIとして実装し、サンプルと同等のE2Eを用意する。Pythonの構文を再現するのでなく、利用者から見た機能の欠落を無くす。
 
 並列数、ドメインごとの速度制限、AutoThrottle、robots.txtの順守(既定は無効とし、`--obey-robots` で有効にする。本家と同じ既定値である)、ブロックの判定と再試行、中断と再開(`crawldir`)、開発用の応答キャッシュ、JSON、JSONL、CSV、XMLへの書き出しを移植する。ブロックの判定は本家の `spiders/spider.py` の `BLOCKED_CODES` と `is_blocked` を出発点にする。
 
