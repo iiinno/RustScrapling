@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import ast
 import json
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -31,11 +33,44 @@ from inventory_upstream import (  # noqa: E402
     extract_literal_values,
     parameters,
     typed_dict_classes,
+    verify_source_tree,
 )
 from rust_api_index import PUBLIC_FUNCTION, index_rust_functions, same_name_candidates  # noqa: E402
 
 
 class InventoryAstTests(unittest.TestCase):
+    def test_pinned_checkout_rejects_modified_or_untracked_python_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            pkg = root / "scrapling"
+            pkg.mkdir()
+            script = pkg / "__init__.py"
+            script.write_text("VALUE = 1\n", encoding="utf-8")
+
+            def git(*arguments: str) -> str:
+                return subprocess.check_output(["git", "-C", str(root), *arguments], text=True).strip()
+
+            git("init", "-q")
+            git("config", "user.email", "tests@example.invalid")
+            git("config", "user.name", "Inventory Test")
+            git("add", "--", "scrapling/__init__.py")
+            git("commit", "-qm", "fixture")
+            sha = git("rev-parse", "HEAD")
+            self.assertEqual(verify_source_tree(root, sha), {"scrapling/__init__.py"})
+            with self.assertRaisesRegex(ValueError, "Source SHA mismatch"):
+                verify_source_tree(root, "0" * 40)
+            script.write_text("VALUE = 2\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "working-tree changes"):
+                verify_source_tree(root, sha)
+            script.write_text("VALUE = 1\n", encoding="utf-8")
+            (pkg / "extra.py").write_text("NEW = True\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "working-tree changes"):
+                verify_source_tree(root, sha)
+            (pkg / "extra.py").unlink()
+            (pkg / "__pycache__").mkdir()
+            (pkg / "__pycache__" / "test.pyc").write_bytes(b"ignored")
+            self.assertEqual(verify_source_tree(root, sha), {"scrapling/__init__.py"})
+
     def test_pydantic_annotations_map_to_list_and_optional_bounds(self) -> None:
         actions = 'Annotated[List[BrowserAction], Field(min_length=1, description="actions")]'
         expected = annotated_field_constraints(actions)

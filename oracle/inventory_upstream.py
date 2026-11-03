@@ -269,6 +269,46 @@ def exported_names(tree: ast.Module) -> list[str]:
     return []
 
 
+def verify_source_tree(upstream: Path, expected_sha: str = UPSTREAM_SHA) -> set[str]:
+    """Reject modified or untracked upstream Python sources, even at the pin.
+
+    A Git HEAD check alone is insufficient: its object ID does not change when
+    the working tree's Python files are edited. Non-Python artifacts such as
+    __pycache__ are irrelevant to this source-level oracle.
+    """
+
+    upstream = upstream.resolve()
+
+    def git(*args: str) -> str:
+        return subprocess.check_output(
+            ["git", "-C", str(upstream), *args], encoding="utf-8"
+        ).strip()
+
+    root = Path(git("rev-parse", "--show-toplevel")).resolve()
+    if root != upstream:
+        raise ValueError(f"Upstream checkout must be its Git root: {upstream} != {root}")
+    actual = git("rev-parse", "HEAD")
+    if actual != expected_sha:
+        raise ValueError(f"Source SHA mismatch: expected {expected_sha}, got {actual}")
+
+    def paths(*args: str) -> set[str]:
+        output = subprocess.check_output(
+            ["git", "-C", str(upstream), *args], encoding="utf-8"
+        )
+        return {p.replace("\\", "/") for p in output.split("\0") if p}
+
+    tracked = paths("ls-files", "-z", "--", "scrapling")
+    changes = (
+        paths("diff", "--name-only", "-z", "--", "scrapling")
+        | paths("diff", "--cached", "--name-only", "-z", "--", "scrapling")
+        | paths("ls-files", "--others", "--exclude-standard", "-z", "--", "scrapling")
+    )
+    modified_python = sorted(p for p in changes if p.endswith(".py"))
+    if modified_python:
+        raise ValueError("Upstream Python source has working-tree changes: " + ", ".join(modified_python[:10]))
+    return {p for p in tracked if p.endswith(".py")}
+
+
 def parse_sources(upstream: Path) -> dict:
     sources = {}
     # Parse *all* Python modules for public module-level functions. Previously
@@ -285,10 +325,11 @@ def parse_sources(upstream: Path) -> dict:
 
 
 def build(upstream: Path) -> tuple[dict, dict]:
-    sha = subprocess.check_output(["git", "-C", str(upstream), "rev-parse", "HEAD"], text=True).strip()
-    if sha != UPSTREAM_SHA:
-        raise ValueError(f"Source SHA mismatch: expected {UPSTREAM_SHA}, got {sha}")
+    tracked_python = verify_source_tree(upstream)
     source = parse_sources(upstream)
+    non_git = sorted(set(source) - tracked_python)
+    if non_git:
+        raise ValueError("Parsed upstream Python files not tracked by Git: " + ", ".join(non_git[:10]))
     module_functions = []
     for rel, tree in sorted(source.items()):
         module_name = rel.removesuffix("/__init__.py").removesuffix(".py").replace("/", ".")

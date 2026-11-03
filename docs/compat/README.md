@@ -28,7 +28,9 @@ python3 oracle/audit_parity.py --check
 ```
 
 The SHA is checked **by the generator itself**, not trusted from the clone
-command. Run from the RustScrapling project root. The unit tests require no
+command. It additionally rejects tracked modifications and untracked `.py`
+files in the upstream `scrapling/` tree, so a modified checkout cannot
+masquerade as the pinned release. Run from the RustScrapling project root. The unit tests require no
 Rust build, Python-Scrapling dependencies, or external network after checkout.
 
 ## Artifacts
