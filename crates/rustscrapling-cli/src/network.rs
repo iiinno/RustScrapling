@@ -14,7 +14,7 @@ use rustscrapling_daemon::{
 };
 use rustscrapling_extract::{extract, ExtractOptions, ExtractedPage};
 use rustscrapling_fetch::{FetchOptions as FetchPolicy, FetchTier, Fetcher};
-use rustscrapling_http::{HttpClient, HttpOptions, HttpRequest, Protocol};
+use rustscrapling_http::{decode_body, HttpClient, HttpOptions, HttpRequest, Protocol};
 use serde_json::{json, Value};
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -209,7 +209,7 @@ pub fn run_request(method: &str, target: &str, options: &RequestOptions) -> Resu
         .find(|(name, _)| name.eq_ignore_ascii_case("content-type"))
         .map(|(_, value)| value.to_ascii_lowercase())
         .unwrap_or_default();
-    let decoded = String::from_utf8_lossy(&response.body);
+    let (decoded, _charset) = decode_body(&response.headers, &response.body, &response.final_url);
     let html = content_type.contains("html")
         || decoded.trim_start().starts_with("<!doctype html")
         || decoded.trim_start().starts_with("<html");
@@ -292,7 +292,7 @@ pub fn run_tier(target: &str, options: &RequestOptions, tier: FetchTier) -> Resu
             "Use another acquisition tier or inspect the URL",
         ));
     }
-    let decoded = String::from_utf8_lossy(&response.body).into_owned();
+    let (decoded, _charset) = response.text();
     let content_type = response
         .headers
         .iter()

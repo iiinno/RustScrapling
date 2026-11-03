@@ -463,6 +463,35 @@ fn cacheable(result: &FetchResult) -> bool {
             .any(|(name, value)| name.eq_ignore_ascii_case("vary") && value.trim() == "*")
 }
 
+/// Remove `rustscrapling-cdp-*` profiles abandoned by a process that died
+/// without running `BrowserClient`'s drop. A live Chrome keeps rewriting its
+/// profile, so only directories untouched for six hours are eligible.
+fn sweep_stale_profiles() {
+    let Ok(entries) = std::fs::read_dir(std::env::temp_dir()) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let Some(name) = name.to_str() else { continue };
+        if !name.starts_with("rustscrapling-cdp-") {
+            continue;
+        }
+        let Ok(metadata) = entry.metadata() else {
+            continue;
+        };
+        if !metadata.is_dir() {
+            continue;
+        }
+        let Ok(modified) = metadata.modified() else {
+            continue;
+        };
+        if modified.elapsed().unwrap_or_default() < Duration::from_secs(6 * 60 * 60) {
+            continue;
+        }
+        let _ = std::fs::remove_dir_all(entry.path());
+    }
+}
+
 fn challenge(body: &[u8]) -> bool {
     let text = String::from_utf8_lossy(&body[..body.len().min(16 * 1024)]).to_ascii_lowercase();
     text.contains("cf-chl-")
@@ -500,6 +529,7 @@ impl DaemonServer {
         backend: Arc<dyn FetchBackend>,
         tools: Option<Arc<dyn ToolHost>>,
     ) -> Result<Self, DaemonError> {
+        sweep_stale_profiles();
         let listener = TcpListener::bind("127.0.0.1:0").await.map_err(io_err)?;
         let address = listener.local_addr().map_err(io_err)?.to_string();
         let mut bytes = [0_u8; 32];

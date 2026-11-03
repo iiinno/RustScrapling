@@ -938,6 +938,23 @@ impl Drop for BrowserClient {
         if let Some(child) = &mut self.owned_child {
             let _ = child.start_kill();
         }
+        // An abandoned client still owns a throwaway profile. Chrome's helper
+        // processes release the files shortly after the parent dies, so retry
+        // briefly instead of leaking a rustscrapling-cdp-* directory.
+        if let Some(profile) = self.owned_profile.take() {
+            remove_profile_blocking(&profile);
+        }
+    }
+}
+
+fn remove_profile_blocking(profile: &Path) {
+    for attempt in 0..10 {
+        match std::fs::remove_dir_all(profile) {
+            Ok(()) => return,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return,
+            Err(_) if attempt < 9 => std::thread::sleep(Duration::from_millis(50)),
+            Err(_) => return,
+        }
     }
 }
 

@@ -115,11 +115,12 @@ impl Fetcher for AutoFetcher {
                 .find(|(key, _)| key.eq_ignore_ascii_case("content-type"))
                 .map(|(_, val)| val.to_ascii_lowercase())
                 .unwrap_or_default();
+            let (body, _charset) = response.text();
             Ok(FetchPage {
                 status: response.status,
                 url: response.final_url,
                 content_type,
-                body: String::from_utf8_lossy(&response.body).into_owned(),
+                body,
                 headers: response.headers.into_iter().collect(),
             })
         })

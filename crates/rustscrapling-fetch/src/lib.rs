@@ -49,6 +49,18 @@ impl FetchResponse {
     pub fn success(&self) -> bool {
         (200..300).contains(&self.status) && !self.blocked()
     }
+    /// Decoded text of this response. The browser tiers hand back text that
+    /// CDP already decoded, so only the HTTP tier applies the declared charset.
+    pub fn text(&self) -> (String, &'static str) {
+        match self.tier {
+            FetchTier::Http => {
+                rustscrapling_http::decode_body(&self.headers, &self.body, &self.final_url)
+            }
+            FetchTier::Browser | FetchTier::Headed | FetchTier::Auto => {
+                (String::from_utf8_lossy(&self.body).into_owned(), "utf-8")
+            }
+        }
+    }
 }
 impl From<HttpResponse> for FetchResponse {
     fn from(r: HttpResponse) -> Self {

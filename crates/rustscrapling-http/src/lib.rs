@@ -3,6 +3,7 @@
 //! `HttpClient` retains connection pools across requests. `HttpOptions` configures the
 //! client's network identity and policies; `HttpRequest` carries each request's data.
 
+use encoding_rs::Encoding;
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -834,4 +835,52 @@ fn proxy_from_url(raw: &str, scope: ProxyScope) -> Result<Proxy, HttpError> {
         proxy
     };
     Ok(proxy.no_proxy(wreq::NoProxy::from_env()))
+}
+
+/// Decode an HTTP body into text, resolving the charset from the response header,
+/// an inline `<meta>` declaration in the first 2 KiB, a byte-order mark, valid
+/// UTF-8, and finally a statistical guess biased by the URL's top-level domain.
+///
+/// Returns the decoded text and the name of the encoding that produced it, so
+/// callers can report which path fired instead of silently mojibake-ing.
+pub fn decode_body(headers: &[(String, String)], body: &[u8], url: &str) -> (String, &'static str) {
+    let from_header = headers
+        .iter()
+        .find(|(name, _)| name.eq_ignore_ascii_case("content-type"))
+        .and_then(|(_, value)| {
+            value.split(';').find_map(|part| {
+                let label = part.trim().strip_prefix("charset=")?;
+                Encoding::for_label(label.trim().trim_matches('"').as_bytes())
+            })
+        });
+    let from_meta = || {
+        let head = String::from_utf8_lossy(&body[..body.len().min(2048)]).to_ascii_lowercase();
+        let start = head.find("charset=")?;
+        let rest = head[start + "charset=".len()..].trim_start_matches(['"', '\'']);
+        let label: String = rest
+            .chars()
+            .take_while(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_')
+            .collect();
+        Encoding::for_label(label.as_bytes())
+    };
+    let encoding = from_header
+        .or_else(from_meta)
+        .or_else(|| Encoding::for_bom(body).map(|(encoding, _)| encoding))
+        .unwrap_or_else(|| {
+            if std::str::from_utf8(body).is_ok() {
+                return encoding_rs::UTF_8;
+            }
+            let mut detector = chardetng::EncodingDetector::new();
+            detector.feed(body, true);
+            detector.guess(tld_hint(url).as_deref(), true)
+        });
+    let (text, _, _) = encoding.decode(body);
+    (text.into_owned(), encoding.name())
+}
+
+/// The top-level-domain label of the URL's host, used as a chardetng hint.
+fn tld_hint(url: &str) -> Option<Vec<u8>> {
+    let host = Url::parse(url).ok()?.host_str()?.to_owned();
+    let label = host.rsplit('.').next()?;
+    (!label.is_empty() && label.len() >= 2).then(|| label.as_bytes().to_vec())
 }

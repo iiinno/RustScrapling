@@ -13,7 +13,7 @@ use rustscrapling_browser::{
     LoadState, MouseButton, NetworkRecord, PageSettings, PointerTarget,
 };
 use rustscrapling_extract::compat::{convert_content, ContentFormat};
-use rustscrapling_http::{CookieJar, HttpClient, HttpOptions, HttpRequest, HttpResponse};
+use rustscrapling_http::{decode_body, CookieJar, HttpClient, HttpOptions, HttpRequest, HttpResponse};
 use serde_json::{json, Map, Value};
 use tokio::{sync::Mutex, time::sleep};
 use uuid::Uuid;
@@ -1907,7 +1907,7 @@ fn text(value: String) -> CallToolResult {
     CallToolResult::success(vec![ContentBlock::text(value)])
 }
 fn render_http(response: HttpResponse, args: &Map<String, Value>) -> Outcome {
-    let body = String::from_utf8_lossy(&response.body);
+    let (body, _charset) = decode_body(&response.headers, &response.body, &response.final_url);
     let content = render_args(&body, args)?;
     Ok(structured(
         json!({"status":response.status,"url":response.final_url,"content":content}),

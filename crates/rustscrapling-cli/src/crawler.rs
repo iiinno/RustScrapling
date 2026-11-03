@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use clap::{Args, ValueEnum};
-use rustscrapling_http::{HttpClient, HttpOptions};
+use rustscrapling_http::{decode_body, HttpClient, HttpOptions};
 use rustscrapling_spider::{
     crawl, CrawlItem, CrawlSpec, CrawlTemplate, FetchFuture, FetchPage, Fetcher,
 };
@@ -54,12 +54,14 @@ impl Fetcher for HttpBackend {
                 .find(|(k, _)| k.eq_ignore_ascii_case("content-type"))
                 .map(|(_, v)| v.clone())
                 .unwrap_or_default();
+            let (body, _charset) =
+                decode_body(&response.headers, &response.body, &response.final_url);
             Ok(FetchPage {
                 headers: Default::default(),
                 status: response.status,
                 url: response.final_url,
                 content_type,
-                body: String::from_utf8_lossy(&response.body).into_owned(),
+                body,
             })
         })
     }

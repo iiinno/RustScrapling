@@ -21,7 +21,7 @@ use rustscrapling_dom::libxml_backend::{parse_html, CompatOptions};
 use rustscrapling_dom::{Dom, NodeId};
 use rustscrapling_extract::compat::{convert_content, render_elements, ContentFormat};
 use rustscrapling_fetch::BrowserBackend;
-use rustscrapling_http::{HttpClient, HttpOptions, HttpRequest};
+use rustscrapling_http::{decode_body, HttpClient, HttpOptions, HttpRequest};
 use rustscrapling_select::css::css;
 use rustscrapling_select::generate::{generate_css_selector, generate_xpath_selector};
 use rustscrapling_select::text_search::{
@@ -310,12 +310,13 @@ impl Shell {
                 client.request(request).await
             })
             .map_err(|e| fail(e.kind.as_str(), e.message.clone(), e.hint()))?;
+        let (body, _charset) = decode_body(&response.headers, &response.body, &response.final_url);
         let page = Page {
             url: response.final_url.clone(),
             method: method.to_owned(),
             status: Some(response.status),
             headers: response.headers.clone(),
-            body: String::from_utf8_lossy(&response.body).into_owned(),
+            body,
             source: "http",
         };
         Ok(self.push_page(page))
