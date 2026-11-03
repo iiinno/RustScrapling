@@ -1891,20 +1891,6 @@ fn scalar(v: &Value) -> Option<String> {
         _ => None,
     }
 }
-fn allow_defaults(
-    args: &Map<String, Value>,
-    defaults: &[(&str, Value)],
-) -> Result<(), BackendError> {
-    for (key, expected) in defaults {
-        if args
-            .get(*key)
-            .is_some_and(|v| !v.is_null() && v != expected)
-        {
-            return Err(BackendError::unsupported(key));
-        }
-    }
-    Ok(())
-}
 fn structured(value: Value) -> CallToolResult {
     CallToolResult::structured(value)
 }
