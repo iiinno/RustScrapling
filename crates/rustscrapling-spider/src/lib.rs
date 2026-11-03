@@ -88,6 +88,12 @@ pub struct CrawlSpec {
     pub start_urls: Vec<String>,
     pub template: CrawlTemplate,
     pub allowed_domains: Vec<String>,
+    /// URL regular expressions controlling followed HTML links, comparable
+    /// to CrawlSpider LinkExtractor allow/deny. Seeds are not filtered.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub link_allow: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub link_deny: Vec<String>,
     #[serde(default = "default_max_pages")]
     pub max_pages: usize,
     #[serde(default = "default_max_depth")]
@@ -117,6 +123,8 @@ impl Default for CrawlSpec {
             start_urls: Vec::new(),
             template: CrawlTemplate::default(),
             allowed_domains: Vec::new(),
+            link_allow: Vec::new(),
+            link_deny: Vec::new(),
             max_pages: default_max_pages(),
             max_depth: default_max_depth(),
             concurrency: default_concurrency(),
@@ -153,10 +161,61 @@ impl CrawlSpec {
         if self.max_pages == 0 || self.max_pages > 1_000_000 {
             return Err("max_pages must be 1..=1000000".into());
         }
+        // Rust's regex engine has no catastrophic backtracking; still bound
+        // untrusted specifications so compilation cannot exhaust memory.
+        for (name, patterns) in [
+            ("link_allow", &self.link_allow),
+            ("link_deny", &self.link_deny),
+        ] {
+            if patterns.len() > 64 {
+                return Err(format!("{name} supports at most 64 regex patterns"));
+            }
+            for pattern in patterns {
+                if pattern.len() > 1024 {
+                    return Err(format!("{name} regex exceeds 1024 bytes"));
+                }
+                regex::RegexBuilder::new(pattern)
+                    .size_limit(1 << 20)
+                    .build()
+                    .map_err(|err| format!("invalid {name} regex: {err}"))?;
+            }
+        }
         for seed in &self.start_urls {
             valid_url(seed)?;
         }
         Ok(())
+    }
+}
+
+/// Compiled once per crawl, never once per HTML link.
+struct LinkRules {
+    allow: Vec<regex::Regex>,
+    deny: Vec<regex::Regex>,
+}
+
+impl LinkRules {
+    fn compile(spec: &CrawlSpec) -> Result<Self, String> {
+        let compile = |patterns: &[String]| {
+            patterns
+                .iter()
+                .map(|s| {
+                    regex::RegexBuilder::new(s)
+                        .size_limit(1 << 20)
+                        .build()
+                        .map_err(|err| format!("invalid crawl link regex: {err}"))
+                })
+                .collect::<Result<Vec<_>, String>>()
+        };
+        Ok(Self {
+            allow: compile(&spec.link_allow)?,
+            deny: compile(&spec.link_deny)?,
+        })
+    }
+
+    fn permitted(&self, url: &Url) -> bool {
+        let raw = url.as_str();
+        (self.allow.is_empty() || self.allow.iter().any(|rule| rule.is_match(raw)))
+            && !self.deny.iter().any(|rule| rule.is_match(raw))
     }
 }
 
@@ -685,6 +744,7 @@ where
     F: FnMut(&CrawlItem) -> Result<(), String>,
 {
     spec.validate()?;
+    let link_rules = LinkRules::compile(spec)?;
     let fetcher: Arc<dyn Fetcher> = if spec.development_mode {
         let directory = spec
             .development_cache_dir
@@ -860,6 +920,7 @@ where
                                 .saturating_sub(queue.len()),
                             |candidate| {
                                 host_allowed(spec, candidate)
+                                    && link_rules.permitted(candidate)
                                     && !visited.contains(&key(candidate.as_str()))
                                     && !queued.contains(&key(candidate.as_str()))
                             },
@@ -1168,6 +1229,8 @@ mod tests {
         assert!(json.get("auto_throttle").is_none());
         assert!(json.get("development_mode").is_none());
         assert!(json.get("development_cache_dir").is_none());
+        assert!(json.get("link_allow").is_none());
+        assert!(json.get("link_deny").is_none());
         let enabled = CrawlSpec {
             auto_throttle: true,
             ..default.clone()
@@ -1416,6 +1479,79 @@ mod tests {
         assert_eq!(emitted.len(), 2);
         assert_eq!(emitted[0].links, vec!["https://example.com/target"]);
         assert_eq!(emitted[1].url, "https://example.com/target");
+    }
+
+    struct FilteredNavigation;
+
+    impl Fetcher for FilteredNavigation {
+        fn fetch<'a>(&'a self, url: &'a str) -> FetchFuture<'a> {
+            Box::pin(async move {
+                let body = if url.ends_with("/start") {
+                    let mut body = (0..300)
+                        .map(|i| format!("<a href='/blog/{i}'>Unwanted</a>"))
+                        .collect::<String>();
+                    body.push_str("<a href='/docs/private'>Denied</a>");
+                    body.push_str("<a href='/docs/guide'>Allowed</a>");
+                    body
+                } else {
+                    "<p>Selected document</p>".to_owned()
+                };
+                Ok(FetchPage {
+                    status: 200,
+                    url: url.to_owned(),
+                    content_type: "text/html".into(),
+                    body,
+                    headers: Default::default(),
+                })
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn link_allow_deny_filter_before_frontier_budget_without_filtering_seeds() {
+        let spec = CrawlSpec {
+            start_urls: vec!["https://example.com/start".into()],
+            max_pages: 2,
+            max_depth: 1,
+            concurrency: 1,
+            link_allow: vec![r"/docs/".into()],
+            link_deny: vec![r"/docs/private(?:/|$)".into()],
+            ..CrawlSpec::default()
+        };
+        let mut urls = Vec::new();
+        let summary = crawl(&spec, Arc::new(FilteredNavigation), |page| {
+            urls.push(page.url.clone());
+            Ok(())
+        })
+        .await
+        .unwrap();
+        assert_eq!(summary.visited, 2);
+        assert_eq!(summary.remaining, 0);
+        assert_eq!(
+            urls,
+            [
+                "https://example.com/start",
+                "https://example.com/docs/guide"
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn unsafe_link_regex_is_rejected_before_fetch() {
+        let spec = CrawlSpec {
+            start_urls: vec!["https://example.com/start".into()],
+            link_allow: vec!["(".into()],
+            ..CrawlSpec::default()
+        };
+        let error = crawl(&spec, Arc::new(Mock), |_| panic!("must not emit"))
+            .await
+            .unwrap_err();
+        assert!(error.contains("invalid link_allow regex"));
+        let spec = CrawlSpec {
+            link_allow: vec!["a".into(); 65],
+            ..spec
+        };
+        assert!(spec.validate().unwrap_err().contains("at most 64"));
     }
 
     #[tokio::test]
