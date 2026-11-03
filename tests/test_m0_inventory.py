@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT / "oracle"))
 
 from audit_parity import (  # noqa: E402
     action_schema,
+    annotated_field_constraints,
     audit,
     canonical_backend_hash,
     canonical_catalog_hash,
@@ -21,6 +22,7 @@ from audit_parity import (  # noqa: E402
     compare_actions,
     executor_action_branches,
     markdown,
+    observed_constraint,
 )
 from inventory_upstream import (  # noqa: E402
     UPSTREAM_SHA,
@@ -34,6 +36,20 @@ from rust_api_index import PUBLIC_FUNCTION, index_rust_functions, same_name_cand
 
 
 class InventoryAstTests(unittest.TestCase):
+    def test_pydantic_annotations_map_to_list_and_optional_bounds(self) -> None:
+        actions = 'Annotated[List[BrowserAction], Field(min_length=1, description="actions")]'
+        expected = annotated_field_constraints(actions)
+        self.assertEqual(expected["min_length"], 1)
+        self.assertEqual(observed_constraint({"type": "array", "minItems": 1}, "min_length", actions), 1)
+        quality = 'Annotated[Optional[Annotated[int, Field(ge=0, le=100)]], Field(description="JPEG quality")]'
+        self.assertEqual(annotated_field_constraints(quality)["minimum"], 0)
+        schema = {"anyOf": [{"type": "integer", "minimum": 0, "maximum": 100}, {"type": "null"}]}
+        self.assertEqual(observed_constraint(schema, "minimum", quality), 0)
+        self.assertEqual(observed_constraint(schema, "maximum", quality), 100)
+        schema["anyOf"][0]["maximum"] = 99
+        got = compare_args([{"name": "quality", "annotation": quality, "has_default": True, "default": "None"}], {"properties": {"quality": {**schema, "description": "JPEG quality", "default": None}}})
+        self.assertEqual([(d["parameter"], d["constraint"]) for d in got["constraint_diffs"]], [("quality", "maximum")])
+
     def test_rust_function_scan_is_only_an_unverified_candidate(self) -> None:
         example = 'pub fn css(input: &str) -> String { todo!() }\n pub(crate) async fn get() {}\nfn hidden() {}\npub async fn fetch<T>(x: T) {}'
         self.assertEqual(PUBLIC_FUNCTION.findall(example), ["css", "get", "fetch"])

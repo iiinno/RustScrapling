@@ -53,7 +53,11 @@ It is deliberately never counted as verified parity.
 
 - The Rust MCP catalog has all 16 tool names, argument names, visible defaults,
   descriptions and all 12 action schema variants without a **static** difference
-  detected by this pass. This is weaker than runtime JSON Schema parity.
+  detected by this pass. The audit also checks required fields and direct
+  literal `Field(description/ge/gt/le/lt/min_length/max_length)` constraints,
+  including `Optional` JSON Schema unions and array `minItems`. Referenced
+  type aliases and arbitrary validators still need runtime schema comparison.
+  This is weaker than runtime JSON Schema parity.
 - The `browser_actions` executor at the audited SHA has only four match-arm
   variants: `click`, `textbox`, `press_key`, `wait_time`; even these are limited
   to some argument values. The other eight variants return unsupported.

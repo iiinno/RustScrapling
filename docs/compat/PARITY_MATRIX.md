@@ -15,24 +15,24 @@
 
 ## 1. MCPツールの静的schema差分
 
-| Tool | 上流引数 | Rust属性 | Rustにない引数 | Rust固有引数 | 既定値差 | 説明一致 | 実動検証 |
-| --- | ---: | ---: | --- | --- | --- | --- | --- |
-| `browser_open` | 14 | 14 | — | — | — | Yes | 未検証 |
-| `browser_save_state` | 2 | 2 | — | — | — | Yes | 未検証 |
-| `browser_load_state` | 2 | 2 | — | — | — | Yes | 未検証 |
-| `open_request_session` | 3 | 3 | — | — | — | Yes | 未検証 |
-| `close_session` | 1 | 1 | — | — | — | Yes | 未検証 |
-| `list_sessions` | 0 | 0 | — | — | — | Yes | 未検証 |
-| `make_request` | 22 | 22 | — | — | — | Yes | 未検証 |
-| `browser_fetch_once` | 27 | 27 | — | — | — | Yes | 未検証 |
-| `browser_fetch` | 17 | 17 | — | — | — | Yes | 未検証 |
-| `session_make_request` | 20 | 20 | — | — | — | Yes | 未検証 |
-| `browser_extract` | 7 | 7 | — | — | — | Yes | 未検証 |
-| `browser_actions` | 3 | 3 | — | — | — | Yes | 未検証 |
-| `browser_evaluate` | 4 | 4 | — | — | — | Yes | 未検証 |
-| `browser_network_requests` | 5 | 5 | — | — | — | Yes | 未検証 |
-| `browser_network_request` | 3 | 3 | — | — | — | Yes | 未検証 |
-| `browser_screenshot` | 7 | 7 | — | — | — | Yes | 未検証 |
+| Tool | 上流引数 | Rust属性 | Rustにない引数 | Rust固有引数 | 既定値差 | required差 | Field制約差 | 説明一致 | 実動検証 |
+| --- | ---: | ---: | --- | --- | --- | --- | --- | --- | --- |
+| `browser_open` | 14 | 14 | — | — | — | — | — | Yes | 未検証 |
+| `browser_save_state` | 2 | 2 | — | — | — | — | — | Yes | 未検証 |
+| `browser_load_state` | 2 | 2 | — | — | — | — | — | Yes | 未検証 |
+| `open_request_session` | 3 | 3 | — | — | — | — | — | Yes | 未検証 |
+| `close_session` | 1 | 1 | — | — | — | — | — | Yes | 未検証 |
+| `list_sessions` | 0 | 0 | — | — | — | — | — | Yes | 未検証 |
+| `make_request` | 22 | 22 | — | — | — | — | — | Yes | 未検証 |
+| `browser_fetch_once` | 27 | 27 | — | — | — | — | — | Yes | 未検証 |
+| `browser_fetch` | 17 | 17 | — | — | — | — | — | Yes | 未検証 |
+| `session_make_request` | 20 | 20 | — | — | — | — | — | Yes | 未検証 |
+| `browser_extract` | 7 | 7 | — | — | — | — | — | Yes | 未検証 |
+| `browser_actions` | 3 | 3 | — | — | — | — | — | Yes | 未検証 |
+| `browser_evaluate` | 4 | 4 | — | — | — | — | — | Yes | 未検証 |
+| `browser_network_requests` | 5 | 5 | — | — | — | — | — | Yes | 未検証 |
+| `browser_network_request` | 3 | 3 | — | — | — | — | — | Yes | 未検証 |
+| `browser_screenshot` | 7 | 7 | — | — | — | — | — | Yes | 未検証 |
 
 ## 2. BrowserAction静的差分
 

@@ -46,25 +46,97 @@ def parse_default(text: str | None):
         return None
 
 
+def annotated_field_constraints(annotation: str | None) -> dict:
+    """Only literal Field(...) keyword constraints; no imports or evaluation.
+
+    Unsupported expressions and referenced type aliases are intentionally not
+    expanded. This is a *partial* static audit of upstream Pydantic settings.
+    """
+    if not annotation:
+        return {}
+    try:
+        node = ast.parse(annotation, mode="eval")
+    except SyntaxError:
+        return {}
+    mapping = {
+        "description": "description", "min_length": "min_length", "max_length": "max_length",
+        "ge": "minimum", "gt": "exclusiveMinimum", "le": "maximum", "lt": "exclusiveMaximum",
+    }
+    result = {}
+    for part in ast.walk(node):
+        if not isinstance(part, ast.Call) or not isinstance(part.func, (ast.Name, ast.Attribute)):
+            continue
+        if (part.func.id if isinstance(part.func, ast.Name) else part.func.attr) != "Field":
+            continue
+        for kw in part.keywords:
+            if not kw.arg or (kw.arg not in mapping and kw.arg not in {"default", "default_factory"}):
+                continue
+            try:
+                value = ast.literal_eval(kw.value)
+            except (ValueError, TypeError, SyntaxError):
+                continue
+            result[mapping.get(kw.arg, kw.arg)] = value
+    return result
+
+
+def observed_constraint(schema: dict, name: str, annotation: str | None):
+    """Extract a constraint from an optional JSON Schema union safely.
+
+    Pydantic represents min_length as minItems for lists, minLength for
+    strings. Optional int bounds appear inside anyOf's non-null branch.
+    """
+    if name in {"min_length", "max_length"}:
+        kind = "Items" if annotation and any(x in annotation for x in ("List[", "Sequence[", "list[", "tuple[")) else "Length"
+        name = ("min" if name == "min_length" else "max") + kind
+    if name in schema:
+        return schema[name]
+    for union in ("anyOf", "oneOf", "allOf"):
+        for member in schema.get(union, []):
+            if not isinstance(member, dict) or member.get("type") == "null":
+                continue
+            result = observed_constraint(member, name, annotation)
+            if result != "<absent>":
+                return result
+    return "<absent>"
+
+
 def compare_args(source_parameters: list[dict], schema: dict) -> dict:
     upstream_args = {p["name"]: p for p in source_parameters if p["name"] not in {"self", "cls"}}
     rust_args = schema.get("properties", {})
     missing = sorted(set(upstream_args) - set(rust_args))
     extra = sorted(set(rust_args) - set(upstream_args))
     default_diffs = []
+    constraint_diffs = []
+    expected_required = set()
+    for key, param in upstream_args.items():
+        constraints = annotated_field_constraints(param.get("annotation"))
+        if not param["has_default"] and "default" not in constraints and "default_factory" not in constraints:
+            expected_required.add(key)
+    rust_required = set(schema.get("required", []))
     for key in sorted(set(rust_args) & set(upstream_args)):
         upstream = upstream_args[key]
         actual = rust_args[key]
         if not isinstance(actual, dict):
             continue
-        if upstream["has_default"]:
-            wanted = parse_default(upstream["default"])
-            if upstream["default"] == "None" or wanted is not None:
+        constraints = annotated_field_constraints(upstream.get("annotation"))
+        if upstream["has_default"] or "default" in constraints:
+            source_default = upstream["default"]
+            wanted = parse_default(source_default) if upstream["has_default"] else constraints["default"]
+            if (source_default == "None" or wanted is not None or "default" in constraints):
                 if "default" not in actual or actual["default"] != wanted:
                     default_diffs.append({"parameter": key, "upstream": wanted, "rust": actual.get("default", "<absent>")})
+        for constraint, expected in sorted(constraints.items()):
+            if constraint not in {"description", "minimum", "exclusiveMinimum", "maximum", "exclusiveMaximum", "min_length", "max_length"}:
+                continue
+            found = observed_constraint(actual, constraint, upstream.get("annotation"))
+            if found != expected:
+                constraint_diffs.append({"parameter": key, "constraint": constraint, "upstream": expected, "rust": found})
     return {
         "upstream_args": len(upstream_args), "rust_args": len(rust_args),
         "missing_rust": missing, "extra_rust": extra, "default_diffs": default_diffs,
+        "missing_required": sorted(expected_required - rust_required),
+        "extra_required": sorted(rust_required - expected_required),
+        "constraint_diffs": constraint_diffs,
     }
 
 
@@ -233,14 +305,16 @@ def markdown(report: dict) -> str:
         f"- Rust公開宣言の同名候補がある直接メソッド: **{sum(bool(m['same_name_candidates']) for m in methods)}件**（同名候補であり実装・互換の証明ではない）",
         "- 本家のメソッド/引数/デコレーターは `UPSTREAM_API_V05.json` と `MCP_ACTIONS_V05.json` に固定。ここではRust側の名前・静的schemaのみ比較。",
         "", "## 1. MCPツールの静的schema差分", "",
-        "| Tool | 上流引数 | Rust属性 | Rustにない引数 | Rust固有引数 | 既定値差 | 説明一致 | 実動検証 |",
-        "| --- | ---: | ---: | --- | --- | --- | --- | --- |",
+        "| Tool | 上流引数 | Rust属性 | Rustにない引数 | Rust固有引数 | 既定値差 | required差 | Field制約差 | 説明一致 | 実動検証 |",
+        "| --- | ---: | ---: | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for row in mcp:
         missing = ", ".join(f"`{x}`" for x in row["missing_rust"]) or "—"
         extra = ", ".join(f"`{x}`" for x in row["extra_rust"]) or "—"
         defaults = ", ".join(f"`{x['parameter']}`" for x in row["default_diffs"]) or "—"
-        lines.append(f"| `{row['name']}` | {row['upstream_args']} | {row['rust_args']} | {missing} | {extra} | {defaults} | {'Yes' if row['description_matches'] else 'No'} | 未検証 |")
+        required = ", ".join(f"`{x}`" for x in (row["missing_required"] + row["extra_required"])) or "—"
+        constraints = ", ".join(f"`{x['parameter']}.{x['constraint']}`" for x in row["constraint_diffs"]) or "—"
+        lines.append(f"| `{row['name']}` | {row['upstream_args']} | {row['rust_args']} | {missing} | {extra} | {defaults} | {required} | {constraints} | {'Yes' if row['description_matches'] else 'No'} | 未検証 |")
     lines += ["", "## 2. BrowserAction静的差分", "", "| Action | Rust schema登録 | 欠落フィールド | 必須指定差 | default差 | Rust実装分岐 | 実機E2E |", "| --- | --- | --- | --- | --- | --- | --- |"]
     for row in actions:
         req = row["missing_required"] + row["extra_required"]
@@ -298,7 +372,7 @@ def main() -> None:
                 raise SystemExit(f"STALE: {path}")
         else:
             path.write_text(result, encoding="utf-8", newline="\n")
-    tool_gaps = sum(bool(row["missing_rust"] or row["extra_rust"] or row["default_diffs"]) for row in report["mcp"])
+    tool_gaps = sum(bool(row["missing_rust"] or row["extra_rust"] or row["default_diffs"] or row["missing_required"] or row["extra_required"] or row["constraint_diffs"]) for row in report["mcp"])
     action_gaps = sum(bool(row["missing_fields"] or row["extra_fields"] or row["missing_required"] or row["extra_required"] or row["default_diffs"]) for row in report["actions"])
     branches = sum(row["executor_branch_present"] for row in report["actions"])
     print(f"Audit: {len(report['mcp'])} MCP tools ({tool_gaps} with static parameter differences), {len(report['actions'])} actions ({action_gaps} with static field differences; {branches} executor branches); runtime parity NOT verified")

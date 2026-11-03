@@ -2083,9 +2083,12 @@
   ],
   "mcp": [
     {
+      "constraint_diffs": [],
       "default_diffs": [],
       "description_matches": true,
+      "extra_required": [],
       "extra_rust": [],
+      "missing_required": [],
       "missing_rust": [],
       "name": "browser_open",
       "runtime_status": "unverified",
@@ -2098,9 +2101,12 @@
       "upstream_source": "scrapling/core/ai/server.py"
     },
     {
+      "constraint_diffs": [],
       "default_diffs": [],
       "description_matches": true,
+      "extra_required": [],
       "extra_rust": [],
+      "missing_required": [],
       "missing_rust": [],
       "name": "browser_save_state",
       "runtime_status": "unverified",
@@ -2113,9 +2119,12 @@
       "upstream_source": "scrapling/core/ai/server.py"
     },
     {
+      "constraint_diffs": [],
       "default_diffs": [],
       "description_matches": true,
+      "extra_required": [],
       "extra_rust": [],
+      "missing_required": [],
       "missing_rust": [],
       "name": "browser_load_state",
       "runtime_status": "unverified",
@@ -2128,9 +2137,12 @@
       "upstream_source": "scrapling/core/ai/server.py"
     },
     {
+      "constraint_diffs": [],
       "default_diffs": [],
       "description_matches": true,
+      "extra_required": [],
       "extra_rust": [],
+      "missing_required": [],
       "missing_rust": [],
       "name": "open_request_session",
       "runtime_status": "unverified",
@@ -2143,9 +2155,12 @@
       "upstream_source": "scrapling/core/ai/server.py"
     },
     {
+      "constraint_diffs": [],
       "default_diffs": [],
       "description_matches": true,
+      "extra_required": [],
       "extra_rust": [],
+      "missing_required": [],
       "missing_rust": [],
       "name": "close_session",
       "runtime_status": "unverified",
@@ -2158,9 +2173,12 @@
       "upstream_source": "scrapling/core/ai/server.py"
     },
     {
+      "constraint_diffs": [],
       "default_diffs": [],
       "description_matches": true,
+      "extra_required": [],
       "extra_rust": [],
+      "missing_required": [],
       "missing_rust": [],
       "name": "list_sessions",
       "runtime_status": "unverified",
@@ -2173,9 +2191,12 @@
       "upstream_source": "scrapling/core/ai/server.py"
     },
     {
+      "constraint_diffs": [],
       "default_diffs": [],
       "description_matches": true,
+      "extra_required": [],
       "extra_rust": [],
+      "missing_required": [],
       "missing_rust": [],
       "name": "make_request",
       "runtime_status": "unverified",
@@ -2188,9 +2209,12 @@
       "upstream_source": "scrapling/core/ai/server.py"
     },
     {
+      "constraint_diffs": [],
       "default_diffs": [],
       "description_matches": true,
+      "extra_required": [],
       "extra_rust": [],
+      "missing_required": [],
       "missing_rust": [],
       "name": "browser_fetch_once",
       "runtime_status": "unverified",
@@ -2203,9 +2227,12 @@
       "upstream_source": "scrapling/core/ai/server.py"
     },
     {
+      "constraint_diffs": [],
       "default_diffs": [],
       "description_matches": true,
+      "extra_required": [],
       "extra_rust": [],
+      "missing_required": [],
       "missing_rust": [],
       "name": "browser_fetch",
       "runtime_status": "unverified",
@@ -2218,9 +2245,12 @@
       "upstream_source": "scrapling/core/ai/server.py"
     },
     {
+      "constraint_diffs": [],
       "default_diffs": [],
       "description_matches": true,
+      "extra_required": [],
       "extra_rust": [],
+      "missing_required": [],
       "missing_rust": [],
       "name": "session_make_request",
       "runtime_status": "unverified",
@@ -2233,9 +2263,12 @@
       "upstream_source": "scrapling/core/ai/server.py"
     },
     {
+      "constraint_diffs": [],
       "default_diffs": [],
       "description_matches": true,
+      "extra_required": [],
       "extra_rust": [],
+      "missing_required": [],
       "missing_rust": [],
       "name": "browser_extract",
       "runtime_status": "unverified",
@@ -2248,9 +2281,12 @@
       "upstream_source": "scrapling/core/ai/server.py"
     },
     {
+      "constraint_diffs": [],
       "default_diffs": [],
       "description_matches": true,
+      "extra_required": [],
       "extra_rust": [],
+      "missing_required": [],
       "missing_rust": [],
       "name": "browser_actions",
       "runtime_status": "unverified",
@@ -2263,9 +2299,12 @@
       "upstream_source": "scrapling/core/ai/server.py"
     },
     {
+      "constraint_diffs": [],
       "default_diffs": [],
       "description_matches": true,
+      "extra_required": [],
       "extra_rust": [],
+      "missing_required": [],
       "missing_rust": [],
       "name": "browser_evaluate",
       "runtime_status": "unverified",
@@ -2278,9 +2317,12 @@
       "upstream_source": "scrapling/core/ai/server.py"
     },
     {
+      "constraint_diffs": [],
       "default_diffs": [],
       "description_matches": true,
+      "extra_required": [],
       "extra_rust": [],
+      "missing_required": [],
       "missing_rust": [],
       "name": "browser_network_requests",
       "runtime_status": "unverified",
@@ -2293,9 +2335,12 @@
       "upstream_source": "scrapling/core/ai/server.py"
     },
     {
+      "constraint_diffs": [],
       "default_diffs": [],
       "description_matches": true,
+      "extra_required": [],
       "extra_rust": [],
+      "missing_required": [],
       "missing_rust": [],
       "name": "browser_network_request",
       "runtime_status": "unverified",
@@ -2308,9 +2353,12 @@
       "upstream_source": "scrapling/core/ai/server.py"
     },
     {
+      "constraint_diffs": [],
       "default_diffs": [],
       "description_matches": true,
+      "extra_required": [],
       "extra_rust": [],
+      "missing_required": [],
       "missing_rust": [],
       "name": "browser_screenshot",
       "runtime_status": "unverified",
