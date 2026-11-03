@@ -952,7 +952,7 @@ impl BrowserPage {
             .filter(|points| points.len() == 8)
             .ok_or_else(|| BrowserError::Protocol("element has no usable box model".into()))?;
         let mut position = [0.0_f64; 2];
-        for pair in quad.chunks_exact(2) {
+        for pair in quad.as_chunks::<2>().0 {
             for (index, value) in pair.iter().enumerate() {
                 position[index] += value
                     .as_f64()
