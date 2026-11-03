@@ -5,7 +5,7 @@ edition = "2021"
 license = "BSD-3-Clause"
 
 [dependencies]
-wreq = { version = "=0.16.3", default-features = false, features = ["tokio-rt", "gzip", "brotli", "zstd", "deflate", "socks", "system-proxy", "stream"] }
+wreq = { version = "=0.16.3", default-features = false, features = ["tokio-rt", "gzip", "brotli", "zstd", "deflate", "socks", "system-proxy", "stream", "cookies"] }
 wreq-util = "=0.2.0"
 tokio = { version = "1", features = ["time", "net", "rt", "rt-multi-thread", "macros", "io-util", "sync"] }
 serde = { workspace = true }

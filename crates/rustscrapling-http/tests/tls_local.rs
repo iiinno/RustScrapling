@@ -24,7 +24,7 @@ async fn tls_rejects_untrusted_cert_and_accepts_explicit_ca_bundle() {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
     let handle = tokio::spawn(async move {
-        for _ in 0..3 {
+        for _ in 0..4 {
             let (stream, _) = listener.accept().await.unwrap();
             let acceptor = acceptor.clone();
             tokio::spawn(async move {
@@ -56,6 +56,17 @@ async fn tls_rejects_untrusted_cert_and_accepts_explicit_ca_bundle() {
             .is_err(),
         "self-signed TLS certificate must be rejected"
     );
+    // Upstream `verify=False`: an explicit opt-in that skips verification.
+    let unverified = HttpOptions {
+        verify_tls: false,
+        ..options.clone()
+    };
+    let result = HttpClient::new(unverified)
+        .unwrap()
+        .get(&url)
+        .await
+        .unwrap();
+    assert_eq!(result.body, b"yes");
     let with_ca = HttpOptions {
         ca_bundle: Some(file.path().to_path_buf()),
         ..options

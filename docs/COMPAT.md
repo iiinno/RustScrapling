@@ -51,6 +51,12 @@ Plan 7.1節の表が正本。実装が進んだコマンドからここへ実装
 - 実装済み：`locale`（Emulation＋Accept-Language）、`timezone_id`、`useragent`（未指定のheadlessは`HeadlessChrome`→`Chrome`）、`cookies`（Playwright形式）、`extra_headers`（Refererはnavigation referrerへ移す）、`google_search`（既定で`https://www.google.com/`、`referrerPolicy=unsafeUrl`）、`blocked_domains`（サブドメイン含む）、`disable_resources`（Font/Image/Media/Ping/TextTrack/WebSocket/CSPViolationReport/Stylesheet）、`block_webrtc`/`allow_webgl`/`hide_canvas`（本家と同じChromeフラグ）、`pierce_shadow`（本家`SHADOW_SNAPSHOT_JS`）、`proxy`辞書の`server`、`network_idle`/`wait_selector`（one-shotも）、viewport 1920×1080。
 - 未対応（typed error）：認証付きブラウザproxy（username/password）、空でない`additional_args`、`solve_cloudflare=true`。`real_chrome`は値に関わらずシステムChrome（`executable_path`/`SCRAPLING_EXECUTABLE_PATH`/既定パス）を使う。`load_dom=false`でもloadイベントまで待つ（より厳しい待機）。本家の常時広告ブロック（`block_ads=True`）とHTTPSエラー無視は未実装。
 
+### MCP HTTP取得（`make_request` / `session_make_request`）
+
+- 本家（curl_cffi `FetcherSession`）準拠：`retries`は初回を含む試行回数（None/1未満は1回）、通信エラー時のみ全メソッドで再試行し`retry_delay`秒待つ（HTTP 4xx/5xxでは再試行しない）。`follow_redirects`は`"safe"`（既定：リダイレクト先を名前解決し、loopback/private/link-local/CGNAT/ULA等なら`blocked`エラー）・`true`・`false`、`max_redirects`（-1は無制限だが安全上100で打ち切り）。`auth`/`proxy_auth`（Basic、不完全な辞書は本家と同じ文言で拒否）、`params`のリスト値は複数キー、`cookies`は既存`Cookie`ヘッダーへ連結、`json`優先・`data`辞書はform、GETではbody無視、`stealthy_headers`は未指定時にGoogle Referer、`verify=false`は明示時のみTLS検証無効化、`http3=true`はHTTP/3のみ（本家V3ONLY相当）、`impersonate`はプロファイル名/リスト（ランダム選択）/null。
+- HTTP sessionはセッション共通のcookie jarを保持（Set-Cookieが次のリクエストに送られる）。リクエストごとの設定差に対応するため、session内でも要求ごとにクライアントを構築する（接続再利用は限定的、性能はG-05で計測予定）。
+- 差分：impersonateの指紋はwreqのプロファイル（curl_cffiのものとは別実装）。`impersonate=null`かつ`stealthy_headers=true`で本家が生成するbrowserforgeヘッダーは未実装（Refererのみ付与）。クロスオリジンへのリダイレクトでは`Authorization`/`Cookie`を転送しない（安全側の差）。
+
 ### Spider rich Request（S-03部分、`7752546`統合）
 
 - `SpiderRequest`はmethod/body/headers/priorityを持ち、URLだけでなくmethod・正規化header・bodyを含むdedupe keyで重複排除する（priorityはkeyに含めない）。旧`[url, depth]`形式checkpointは読み書き互換。

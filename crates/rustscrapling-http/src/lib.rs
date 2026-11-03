@@ -173,6 +173,9 @@ impl ProxyRotator {
     }
 }
 
+/// Cookie jar shared by HTTP clients of one session.
+pub use wreq::cookie::Jar as CookieJar;
+
 #[derive(Clone)]
 pub struct HttpOptions {
     pub impersonate: Option<String>,
@@ -195,6 +198,26 @@ pub struct HttpOptions {
     pub ca_bundle: Option<PathBuf>,
     /// Disable all proxies, including those from the environment.
     pub direct: bool,
+    /// Verify TLS certificates (upstream `verify`). Disabling it is an
+    /// explicit, dangerous opt-in; it is never the default.
+    pub verify_tls: bool,
+    /// Keep cookies between requests of this client (HTTP sessions).
+    pub cookie_store: bool,
+    /// Shared cookie jar; lets several clients (e.g. one per request
+    /// configuration) keep one HTTP session's cookies.
+    pub cookie_jar: Option<Arc<CookieJar>>,
+    /// Follow redirects only to public addresses (upstream / curl
+    /// `follow_redirects="safe"`): every redirect target host is resolved
+    /// and loopback, private, link-local, CGNAT, unspecified, multicast and
+    /// unique-local addresses are rejected.
+    pub safe_redirects: bool,
+    /// Redirect limit when following; `None` means the safety cap of 100.
+    pub max_redirects: Option<usize>,
+    /// Fixed delay between attempts (upstream `retry_delay`); `None` keeps
+    /// the exponential backoff.
+    pub retry_delay: Option<Duration>,
+    /// Retry 408/429/5xx responses. Upstream only retries transport errors.
+    pub retry_on_status: bool,
 }
 
 impl Default for HttpOptions {
@@ -216,6 +239,44 @@ impl Default for HttpOptions {
             retry_non_idempotent: false,
             ca_bundle: None,
             direct: false,
+            verify_tls: true,
+            cookie_store: false,
+            cookie_jar: None,
+            safe_redirects: false,
+            max_redirects: Some(10),
+            retry_delay: None,
+            retry_on_status: true,
+        }
+    }
+}
+
+/// Redirect target addresses that `safe_redirects` refuses.
+pub fn is_internal_address(address: std::net::IpAddr) -> bool {
+    match address {
+        std::net::IpAddr::V4(v4) => {
+            let [a, b, ..] = v4.octets();
+            v4.is_loopback()
+                || v4.is_private()
+                || v4.is_link_local()
+                || v4.is_unspecified()
+                || v4.is_broadcast()
+                || v4.is_multicast()
+                || v4.is_documentation()
+                || a == 0
+                || (a == 100 && (64..=127).contains(&b))
+                || (a == 192 && b == 0 && v4.octets()[2] == 0)
+                || a >= 240
+        }
+        std::net::IpAddr::V6(v6) => {
+            if let Some(v4) = v6.to_ipv4_mapped() {
+                return is_internal_address(std::net::IpAddr::V4(v4));
+            }
+            let first = v6.segments()[0];
+            v6.is_loopback()
+                || v6.is_unspecified()
+                || v6.is_multicast()
+                || (first & 0xfe00) == 0xfc00
+                || (first & 0xffc0) == 0xfe80
         }
     }
 }
@@ -355,24 +416,25 @@ impl HttpClient {
         };
         let mut clients = Vec::with_capacity(urls.len());
         let env_ca_bundle = std::env::var_os("SSL_CERT_FILE").map(PathBuf::from);
+        let limit = options.max_redirects.unwrap_or(100).min(100);
         for url in urls {
             let mut builder = Client::builder()
                 .timeout(options.timeout)
                 .connect_timeout(options.connect_timeout)
                 .read_timeout(options.read_timeout)
-                .redirect(if options.follow_redirects {
+                .redirect(if options.follow_redirects && !options.safe_redirects {
                     // Redirect targets are not trusted merely because the
                     // original request URL was validated. In particular, do
                     // not follow a Location containing embedded credentials.
                     // Retain wreq's existing ten-hop loop protection.
-                    Policy::custom(|attempt| {
+                    Policy::custom(move |attempt| {
                         let allowed = Url::parse(&attempt.uri.to_string()).is_ok_and(|url| {
                             matches!(url.scheme(), "http" | "https")
                                 && url.username().is_empty()
                                 && url.password().is_none()
                         });
                         if allowed {
-                            Policy::limited(10).redirect(attempt)
+                            Policy::limited(limit).redirect(attempt)
                         } else {
                             attempt.stop()
                         }
@@ -393,6 +455,14 @@ impl HttpClient {
                     .build()
                     .map_err(|_| HttpError::new(ErrorKind::Tls, "invalid CA bundle"))?;
                 builder = builder.tls_cert_store(store);
+            }
+            if !options.verify_tls {
+                builder = builder.tls_cert_verification(false);
+            }
+            if let Some(jar) = &options.cookie_jar {
+                builder = builder.cookie_provider(Arc::clone(jar));
+            } else if options.cookie_store {
+                builder = builder.cookie_store(true);
             }
             if options.direct {
                 builder = builder.no_proxy();
@@ -427,6 +497,83 @@ impl HttpClient {
     }
 
     pub async fn request(&self, request: HttpRequest) -> Result<HttpResponse, HttpError> {
+        if !(self.options.follow_redirects && self.options.safe_redirects) {
+            return self.request_hop(request).await;
+        }
+        let limit = self.options.max_redirects.unwrap_or(100).min(100);
+        let mut request = request;
+        let origin = Url::parse(&request.url).ok();
+        for hop in 0.. {
+            let response = self.request_hop(request.clone()).await?;
+            let location = response
+                .headers
+                .iter()
+                .find(|(name, _)| name.eq_ignore_ascii_case("location"))
+                .map(|(_, value)| value.clone());
+            let (true, Some(location)) = ((300..400).contains(&response.status), location) else {
+                return Ok(response);
+            };
+            if hop >= limit {
+                return Err(HttpError::new(
+                    ErrorKind::InvalidRequest,
+                    format!("maximum of {limit} redirects exceeded"),
+                ));
+            }
+            let current = Url::parse(&request.url)
+                .map_err(|_| HttpError::new(ErrorKind::InvalidRequest, "invalid URL"))?;
+            let next = current.join(location.trim()).map_err(|_| {
+                HttpError::new(ErrorKind::InvalidRequest, "invalid redirect Location")
+            })?;
+            if !matches!(next.scheme(), "http" | "https")
+                || !next.username().is_empty()
+                || next.password().is_some()
+            {
+                return Err(HttpError::new(
+                    ErrorKind::Blocked,
+                    "redirect to a non-HTTP or credential-bearing URL was refused",
+                ));
+            }
+            let host = next.host_str().unwrap_or_default().trim_matches(['[', ']']);
+            let port = next.port_or_known_default().unwrap_or(80);
+            let addresses: Vec<std::net::IpAddr> = match host.parse::<std::net::IpAddr>() {
+                Ok(address) => vec![address],
+                Err(_) => tokio::net::lookup_host((host, port))
+                    .await
+                    .map_err(|_| HttpError::new(ErrorKind::Dns, "could not resolve redirect host"))?
+                    .map(|socket| socket.ip())
+                    .collect(),
+            };
+            if addresses.is_empty() || addresses.iter().any(|ip| is_internal_address(*ip)) {
+                return Err(HttpError::new(
+                    ErrorKind::Blocked,
+                    "redirect to an internal or private address was refused (follow_redirects=\"safe\")",
+                ));
+            }
+            // 303 (and 301/302 for POST) switch to GET without a body.
+            let method = request.method.to_ascii_uppercase();
+            if response.status == 303 && method != "HEAD"
+                || matches!(response.status, 301 | 302) && method == "POST"
+            {
+                request.method = "GET".into();
+                request.body = None;
+                request.headers.retain(|name, _| {
+                    !name.eq_ignore_ascii_case("content-type")
+                        && !name.eq_ignore_ascii_case("content-length")
+                });
+            }
+            // Never forward credentials to a different origin.
+            if origin.as_ref().map(Url::origin) != Some(next.origin()) {
+                request.headers.retain(|name, _| {
+                    !name.eq_ignore_ascii_case("authorization")
+                        && !name.eq_ignore_ascii_case("cookie")
+                });
+            }
+            request.url = next.to_string();
+        }
+        unreachable!("redirect loop always returns")
+    }
+
+    async fn request_hop(&self, request: HttpRequest) -> Result<HttpResponse, HttpError> {
         let url = Url::parse(&request.url)
             .map_err(|_| HttpError::new(ErrorKind::InvalidRequest, "invalid URL"))?;
         if url.scheme() != "http" && url.scheme() != "https" || url.host().is_none() {
@@ -533,9 +680,11 @@ impl HttpClient {
             match builder.send().await {
                 Ok(response) => {
                     let status = response.status().as_u16();
-                    if attempt < max_attempts && matches!(status, 408 | 429 | 500 | 502 | 503 | 504)
+                    if self.options.retry_on_status
+                        && attempt < max_attempts
+                        && matches!(status, 408 | 429 | 500 | 502 | 503 | 504)
                     {
-                        tokio::time::sleep(retry_delay(attempt)).await;
+                        tokio::time::sleep(self.retry_delay(attempt)).await;
                         continue;
                     }
                     let final_url = response.uri().to_string();
@@ -590,12 +739,20 @@ impl HttpClient {
                         return Err(error);
                     }
                     last_error = Some(error);
-                    tokio::time::sleep(retry_delay(attempt)).await;
+                    tokio::time::sleep(self.retry_delay(attempt)).await;
                 }
             }
         }
         Err(last_error
             .unwrap_or_else(|| HttpError::new(ErrorKind::Transport, "no HTTP attempts ran")))
+    }
+}
+
+impl HttpClient {
+    fn retry_delay(&self, attempt: u32) -> Duration {
+        self.options
+            .retry_delay
+            .unwrap_or_else(|| retry_delay(attempt))
     }
 }
 

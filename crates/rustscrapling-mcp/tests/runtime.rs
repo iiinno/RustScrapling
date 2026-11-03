@@ -88,19 +88,19 @@ async fn real_http_and_http_session_round_trip() {
         .as_str()
         .unwrap()
         .contains("session_not_found"));
-    let unsupported = call(
+    // Upstream `_normalize_credentials` rejects partial credentials before
+    // any request is sent.
+    let invalid = call(
         &handler,
         "make_request",
-        json!({"url":url,"auth":{"username":"u","password":"p"}}),
+        json!({"url":url,"auth":{"username":"u"}}),
     )
     .await;
-    assert_eq!(unsupported.is_error, Some(true));
-    assert!(
-        serde_json::to_value(&unsupported.content[0]).unwrap()["text"]
-            .as_str()
-            .unwrap()
-            .contains("unsupported_option")
-    );
+    assert_eq!(invalid.is_error, Some(true));
+    assert!(serde_json::to_value(&invalid.content[0]).unwrap()["text"]
+        .as_str()
+        .unwrap()
+        .contains("must contain both 'username' and 'password'"));
 }
 
 #[tokio::test]

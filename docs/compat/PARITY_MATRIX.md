@@ -93,7 +93,7 @@
 | `TextHandler.lower` | `scrapling/core/custom_types.py:95` | `rustscrapling-dom` | — | 未検証 |
 | `TextHandler.sort` | `scrapling/core/custom_types.py:100` | `rustscrapling-dom` | — | 未検証 |
 | `TextHandler.clean` | `scrapling/core/custom_types.py:104` | `rustscrapling-dom` | — | 未検証 |
-| `TextHandler.get` | `scrapling/core/custom_types.py:112` | `rustscrapling-dom` | `crates/rustscrapling-browser/src/lib.rs:483`, `crates/rustscrapling-daemon/src/protocol.rs:34`, `crates/rustscrapling-http/src/lib.rs:232` (ほか) | 未検証 |
+| `TextHandler.get` | `scrapling/core/custom_types.py:112` | `rustscrapling-dom` | `crates/rustscrapling-browser/src/lib.rs:483`, `crates/rustscrapling-daemon/src/protocol.rs:34`, `crates/rustscrapling-http/src/lib.rs:293` (ほか) | 未検証 |
 | `TextHandler.getall` | `scrapling/core/custom_types.py:115` | `rustscrapling-dom` | — | 未検証 |
 | `TextHandler.json` | `scrapling/core/custom_types.py:121` | `rustscrapling-dom` | — | 未検証 |
 | `TextHandler.re@overload:128` | `scrapling/core/custom_types.py:128` | `rustscrapling-dom` | — | 未検証 |
@@ -105,10 +105,10 @@
 | `TextHandlers.__getitem__` | `scrapling/core/custom_types.py:225` | `rustscrapling-dom` | — | 未検証 |
 | `TextHandlers.re` | `scrapling/core/custom_types.py:231` | `rustscrapling-dom` | — | 未検証 |
 | `TextHandlers.re_first` | `scrapling/core/custom_types.py:249` | `rustscrapling-dom` | — | 未検証 |
-| `TextHandlers.get` | `scrapling/core/custom_types.py:272` | `rustscrapling-dom` | `crates/rustscrapling-browser/src/lib.rs:483`, `crates/rustscrapling-daemon/src/protocol.rs:34`, `crates/rustscrapling-http/src/lib.rs:232` (ほか) | 未検証 |
+| `TextHandlers.get` | `scrapling/core/custom_types.py:272` | `rustscrapling-dom` | `crates/rustscrapling-browser/src/lib.rs:483`, `crates/rustscrapling-daemon/src/protocol.rs:34`, `crates/rustscrapling-http/src/lib.rs:293` (ほか) | 未検証 |
 | `TextHandlers.extract` | `scrapling/core/custom_types.py:278` | `rustscrapling-dom` | `crates/rustscrapling-extract/src/lib.rs:42` | 未検証 |
 | `AttributesHandler.__init__` | `scrapling/core/custom_types.py:292` | `rustscrapling-dom` | — | 未検証 |
-| `AttributesHandler.get` | `scrapling/core/custom_types.py:307` | `rustscrapling-dom` | `crates/rustscrapling-browser/src/lib.rs:483`, `crates/rustscrapling-daemon/src/protocol.rs:34`, `crates/rustscrapling-http/src/lib.rs:232` (ほか) | 未検証 |
+| `AttributesHandler.get` | `scrapling/core/custom_types.py:307` | `rustscrapling-dom` | `crates/rustscrapling-browser/src/lib.rs:483`, `crates/rustscrapling-daemon/src/protocol.rs:34`, `crates/rustscrapling-http/src/lib.rs:293` (ほか) | 未検証 |
 | `AttributesHandler.search_values` | `scrapling/core/custom_types.py:311` | `rustscrapling-dom` | — | 未検証 |
 | `AttributesHandler.json_string` | `scrapling/core/custom_types.py:325` | `rustscrapling-dom` | — | 未検証 |
 | `AttributesHandler.__getitem__` | `scrapling/core/custom_types.py:329` | `rustscrapling-dom` | — | 未検証 |
@@ -127,17 +127,17 @@
 | `AsyncStealthySession.fetch` | `scrapling/engines/_browsers/_stealth.py:553` | `rustscrapling-browser` | `crates/rustscrapling-daemon/src/service.rs:826`, `crates/rustscrapling-fetch/src/lib.rs:187`, `crates/rustscrapling-http/src/quic.rs:70` | 未検証 |
 | `FetcherSession.__init__` | `scrapling/engines/static.py:678` | `rustscrapling-http` | — | 未検証 |
 | `Response.__init__` | `scrapling/engines/toolbelt/custom.py:44` | `rustscrapling-fetch` | — | 未検証 |
-| `Response.body` | `scrapling/engines/toolbelt/custom.py:88` | `rustscrapling-fetch` | `crates/rustscrapling-http/src/lib.rs:249`, `crates/rustscrapling-spider/src/lib.rs:362` | 未検証 |
+| `Response.body` | `scrapling/engines/toolbelt/custom.py:88` | `rustscrapling-fetch` | `crates/rustscrapling-http/src/lib.rs:310`, `crates/rustscrapling-spider/src/lib.rs:362` | 未検証 |
 | `Response.markdown` | `scrapling/engines/toolbelt/custom.py:92` | `rustscrapling-fetch` | `crates/rustscrapling-extract/src/lib.rs:82` | 未検証 |
 | `Response.follow` | `scrapling/engines/toolbelt/custom.py:108` | `rustscrapling-fetch` | — | 未検証 |
 | `BaseFetcher.__init__` | `scrapling/engines/toolbelt/custom.py:193` | `rustscrapling-fetch` | — | 未検証 |
 | `BaseFetcher.display_config` | `scrapling/engines/toolbelt/custom.py:206` | `rustscrapling-fetch` | — | 未検証 |
 | `BaseFetcher.configure` | `scrapling/engines/toolbelt/custom.py:217` | `rustscrapling-fetch` | — | 未検証 |
-| `Fetcher.get` | `scrapling/fetchers/requests.py:32` | `rustscrapling-http` | `crates/rustscrapling-http/src/lib.rs:232`, `crates/rustscrapling-http/src/lib.rs:425`, `crates/rustscrapling-browser/src/lib.rs:483` (ほか) | 未検証 |
+| `Fetcher.get` | `scrapling/fetchers/requests.py:32` | `rustscrapling-http` | `crates/rustscrapling-http/src/lib.rs:293`, `crates/rustscrapling-http/src/lib.rs:495`, `crates/rustscrapling-browser/src/lib.rs:483` (ほか) | 未検証 |
 | `Fetcher.post` | `scrapling/fetchers/requests.py:36` | `rustscrapling-http` | — | 未検証 |
 | `Fetcher.put` | `scrapling/fetchers/requests.py:40` | `rustscrapling-http` | — | 未検証 |
 | `Fetcher.delete` | `scrapling/fetchers/requests.py:44` | `rustscrapling-http` | — | 未検証 |
-| `AsyncFetcher.get` | `scrapling/fetchers/requests.py:52` | `rustscrapling-http` | `crates/rustscrapling-http/src/lib.rs:232`, `crates/rustscrapling-http/src/lib.rs:425`, `crates/rustscrapling-browser/src/lib.rs:483` (ほか) | 未検証 |
+| `AsyncFetcher.get` | `scrapling/fetchers/requests.py:52` | `rustscrapling-http` | `crates/rustscrapling-http/src/lib.rs:293`, `crates/rustscrapling-http/src/lib.rs:495`, `crates/rustscrapling-browser/src/lib.rs:483` (ほか) | 未検証 |
 | `AsyncFetcher.post` | `scrapling/fetchers/requests.py:56` | `rustscrapling-http` | — | 未検証 |
 | `AsyncFetcher.put` | `scrapling/fetchers/requests.py:60` | `rustscrapling-http` | — | 未検証 |
 | `AsyncFetcher.delete` | `scrapling/fetchers/requests.py:64` | `rustscrapling-http` | — | 未検証 |
@@ -152,7 +152,7 @@
 | `Selector.urljoin` | `scrapling/parser.py:334` | `rustscrapling-select` | — | 未検証 |
 | `Selector.attrib` | `scrapling/parser.py:339` | `rustscrapling-select` | — | 未検証 |
 | `Selector.html_content` | `scrapling/parser.py:348` | `rustscrapling-select` | — | 未検証 |
-| `Selector.body` | `scrapling/parser.py:358` | `rustscrapling-select` | `crates/rustscrapling-http/src/lib.rs:249`, `crates/rustscrapling-spider/src/lib.rs:362` | 未検証 |
+| `Selector.body` | `scrapling/parser.py:358` | `rustscrapling-select` | `crates/rustscrapling-http/src/lib.rs:310`, `crates/rustscrapling-spider/src/lib.rs:362` | 未検証 |
 | `Selector.prettify` | `scrapling/parser.py:364` | `rustscrapling-select` | — | 未検証 |
 | `Selector.has_class` | `scrapling/parser.py:379` | `rustscrapling-select` | — | 未検証 |
 | `Selector.parent` | `scrapling/parser.py:389` | `rustscrapling-select` | `crates/rustscrapling-dom/src/lib.rs:199` | 未検証 |
@@ -229,7 +229,7 @@
 | `SessionManager.pop` | `scrapling/spiders/session.py:50` | `rustscrapling-spider` | — | 未検証 |
 | `SessionManager.default_session_id` | `scrapling/spiders/session.py:68` | `rustscrapling-spider` | — | 未検証 |
 | `SessionManager.session_ids` | `scrapling/spiders/session.py:74` | `rustscrapling-spider` | — | 未検証 |
-| `SessionManager.get` | `scrapling/spiders/session.py:77` | `rustscrapling-spider` | `crates/rustscrapling-browser/src/lib.rs:483`, `crates/rustscrapling-daemon/src/protocol.rs:34`, `crates/rustscrapling-http/src/lib.rs:232` (ほか) | 未検証 |
+| `SessionManager.get` | `scrapling/spiders/session.py:77` | `rustscrapling-spider` | `crates/rustscrapling-browser/src/lib.rs:483`, `crates/rustscrapling-daemon/src/protocol.rs:34`, `crates/rustscrapling-http/src/lib.rs:293` (ほか) | 未検証 |
 | `SessionManager.start` | `scrapling/spiders/session.py:83` | `rustscrapling-spider` | `crates/rustscrapling-daemon/src/service.rs:474` | 未検証 |
 | `SessionManager.close` | `scrapling/spiders/session.py:94` | `rustscrapling-spider` | `crates/rustscrapling-browser/src/lib.rs:1492` | 未検証 |
 | `SessionManager.fetch` | `scrapling/spiders/session.py:103` | `rustscrapling-spider` | `crates/rustscrapling-daemon/src/service.rs:826`, `crates/rustscrapling-fetch/src/lib.rs:187`, `crates/rustscrapling-http/src/quic.rs:70` | 未検証 |

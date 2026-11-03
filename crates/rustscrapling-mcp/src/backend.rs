@@ -13,7 +13,7 @@ use rustscrapling_browser::{
     LoadState, MouseButton, NetworkRecord, PageSettings, PointerTarget, UPSTREAM_LAUNCH_ARGS,
 };
 use rustscrapling_extract::compat::{convert_content, ContentFormat};
-use rustscrapling_http::{HttpClient, HttpOptions, HttpRequest, HttpResponse};
+use rustscrapling_http::{CookieJar, HttpClient, HttpOptions, HttpRequest, HttpResponse};
 use serde_json::{json, Map, Value};
 use tokio::{sync::Mutex, time::sleep};
 use uuid::Uuid;
@@ -148,8 +148,16 @@ impl NetworkHistory {
     }
 }
 
+/// Upstream `FetcherSession`: session-wide impersonation/proxy defaults and
+/// a cookie jar shared by every request of the session.
+struct HttpSession {
+    jar: Arc<CookieJar>,
+    impersonate: Value,
+    proxy: Option<String>,
+}
+
 enum Engine {
-    Http(HttpClient),
+    Http(HttpSession),
     Browser {
         client: Box<BrowserClient>,
         page: Box<BrowserPage>,
@@ -175,7 +183,7 @@ impl RuntimeBackend {
                 let session = self.session(required(&args, "session_id")?).await?;
                 let guard = session.lock().await;
                 match &guard.engine {
-                    Engine::Http(client) => self.http_request(&args, Some(client)).await,
+                    Engine::Http(http) => self.http_request(&args, Some(http)).await,
                     _ => Err(BackendError::new(
                         "session_type",
                         "Expected an HTTP session",
@@ -294,48 +302,42 @@ impl RuntimeBackend {
     }
 
     async fn open_http(&self, args: &Map<String, Value>) -> Outcome {
-        allow_defaults(args, &[("impersonate", json!("chrome"))])?;
+        let impersonate = args
+            .get("impersonate")
+            .cloned()
+            .unwrap_or_else(|| json!("chrome"));
         let proxy = opt_str(args, "proxy")?.map(str::to_owned);
-        let options = HttpOptions {
-            follow_redirects: false,
+        // Validate the configuration once, like upstream's session start.
+        HttpClient::new(HttpOptions {
+            impersonate: impersonate_profile(&impersonate)?,
             proxy: proxy.clone(),
             ..HttpOptions::default()
-        };
-        let client = HttpClient::new(options)?;
+        })?;
+        let settings = json!({"stealthy_headers": true, "impersonate": impersonate,
+            "timeout": 30, "retries": 3, "retry_delay": 1, "follow_redirects": "safe",
+            "max_redirects": 30, "verify": true, "http3": false});
         self.add_session(
             args,
-            Engine::Http(client),
-            json!({"impersonate":"chrome","proxy":proxy}),
+            Engine::Http(HttpSession {
+                jar: Arc::new(CookieJar::default()),
+                impersonate,
+                proxy,
+            }),
+            settings,
             "static",
         )
         .await
     }
 
+    /// Upstream `make_request` / `session_make_request` (curl_cffi
+    /// `FetcherSession` semantics): retries only after transport errors,
+    /// for every method, with a fixed `retry_delay`; `follow_redirects`
+    /// `"safe"` refuses redirects to internal addresses.
     async fn http_request(
         &self,
         args: &Map<String, Value>,
-        session_client: Option<&HttpClient>,
+        session: Option<&HttpSession>,
     ) -> Outcome {
-        allow_defaults(
-            args,
-            &[
-                ("impersonate", json!("chrome")),
-                ("stealthy_headers", json!(true)),
-                ("timeout", json!(30)),
-                ("max_redirects", json!(30)),
-                ("retries", json!(3)),
-                ("retry_delay", json!(1)),
-                ("verify", json!(true)),
-                ("http3", json!(false)),
-                ("follow_redirects", json!("safe")),
-            ],
-        )?;
-        for key in ["auth", "proxy_auth"] {
-            reject_some(args, key)?;
-        }
-        if session_client.is_some() {
-            reject_some(args, "proxy")?;
-        }
         let url = url::Url::parse(required(args, "url")?)
             .map_err(|_| BackendError::new("invalid_arguments", "Invalid URL"))?;
         if !matches!(url.scheme(), "http" | "https") {
@@ -344,15 +346,37 @@ impl RuntimeBackend {
                 "Only HTTP/HTTPS URLs are supported",
             ));
         }
+        let normalized_auth = credentials(args, "auth")?;
+        let normalized_proxy_auth = credentials(args, "proxy_auth")?;
         let mut url = url;
         if let Some(params) = args.get("params").filter(|v| !v.is_null()) {
             let map = params.as_object().ok_or_else(|| {
                 BackendError::new("invalid_arguments", "params must be an object")
             })?;
             for (key, value) in map {
-                let v = scalar(value)
-                    .ok_or_else(|| BackendError::unsupported("params with nested values"))?;
-                url.query_pairs_mut().append_pair(key, &v);
+                match value {
+                    Value::Null => {}
+                    Value::Array(items) => {
+                        for item in items {
+                            let item = scalar(item).ok_or_else(|| {
+                                BackendError::new(
+                                    "invalid_arguments",
+                                    "params values must be scalars or lists",
+                                )
+                            })?;
+                            url.query_pairs_mut().append_pair(key, &item);
+                        }
+                    }
+                    other => {
+                        let item = scalar(other).ok_or_else(|| {
+                            BackendError::new(
+                                "invalid_arguments",
+                                "params values must be scalars or lists",
+                            )
+                        })?;
+                        url.query_pairs_mut().append_pair(key, &item);
+                    }
+                }
             }
         }
         let method = args.get("method").and_then(Value::as_str).unwrap_or("GET");
@@ -372,9 +396,6 @@ impl RuntimeBackend {
             }
         }
         if let Some(cookies) = args.get("cookies").filter(|v| !v.is_null()) {
-            if req.headers.keys().any(|k| k.eq_ignore_ascii_case("cookie")) {
-                return Err(BackendError::unsupported("cookies with Cookie header"));
-            }
             let mut pairs = Vec::new();
             for (key, val) in cookies
                 .as_object()
@@ -383,7 +404,7 @@ impl RuntimeBackend {
                 let v = val.as_str().ok_or_else(|| {
                     BackendError::new("invalid_arguments", "cookies must be strings")
                 })?;
-                if key.chars().any(|ch| matches!(ch, ';' | '\r' | '\n'))
+                if key.chars().any(|ch| matches!(ch, ';' | '=' | '\r' | '\n'))
                     || v.chars().any(|ch| matches!(ch, ';' | '\r' | '\n'))
                 {
                     return Err(BackendError::new(
@@ -394,17 +415,33 @@ impl RuntimeBackend {
                 pairs.push(format!("{key}={v}"));
             }
             if !pairs.is_empty() {
+                let existing = req
+                    .headers
+                    .iter()
+                    .find(|(name, _)| name.eq_ignore_ascii_case("cookie"))
+                    .map(|(name, value)| (name.clone(), value.clone()));
+                if let Some((name, value)) = existing {
+                    req.headers.remove(&name);
+                    pairs.insert(0, value);
+                }
                 req = req.header("Cookie", pairs.join("; "));
             }
         }
+        if let Some((user, password)) = &normalized_auth {
+            req = req.header(
+                "Authorization",
+                format!("Basic {}", base64(format!("{user}:{password}").as_bytes())),
+            );
+        }
+        let has_header = |req: &HttpRequest, name: &str| {
+            req.headers.keys().any(|key| key.eq_ignore_ascii_case(name))
+        };
         if method != "GET" {
             if let Some(json_body) = args.get("json").filter(|v| !v.is_null()) {
-                if args.get("data").is_some_and(|v| !v.is_null()) {
-                    return Err(BackendError::unsupported("json and data together"));
+                if !has_header(&req, "content-type") {
+                    req = req.header("Content-Type", "application/json");
                 }
-                req = req
-                    .header("Content-Type", "application/json")
-                    .body(json_body.to_string().into_bytes());
+                req = req.body(json_body.to_string().into_bytes());
             } else if let Some(data) = args.get("data").filter(|v| !v.is_null()) {
                 if let Some(s) = data.as_str() {
                     req = req.body(s.as_bytes().to_vec());
@@ -413,40 +450,125 @@ impl RuntimeBackend {
                     for (k, v) in obj {
                         form.append_pair(
                             k,
-                            v.as_str()
-                                .ok_or_else(|| BackendError::unsupported("form data values"))?,
+                            v.as_str().ok_or_else(|| {
+                                BackendError::new(
+                                    "invalid_arguments",
+                                    "data values must be strings",
+                                )
+                            })?,
                         );
                     }
-                    req = req
-                        .header("Content-Type", "application/x-www-form-urlencoded")
-                        .body(form.finish().into_bytes());
+                    if !has_header(&req, "content-type") {
+                        req = req.header("Content-Type", "application/x-www-form-urlencoded");
+                    }
+                    req = req.body(form.finish().into_bytes());
                 }
             }
         }
-        let one_off;
-        let client = if let Some(client) = session_client {
-            client
-        } else {
-            let settings = HttpOptions {
-                follow_redirects: false,
-                proxy: opt_str(args, "proxy")?.map(str::to_owned),
-                ..HttpOptions::default()
-            };
-            one_off = HttpClient::new(settings)?;
-            &one_off
-        };
-        let response = client.request(req).await?;
-        if (300..400).contains(&response.status)
-            && args.get("follow_redirects") != Some(&json!(false))
-        {
-            return Err(BackendError::new(
-                "redirect_policy_unavailable",
-                format!(
-                    "HTTP {} redirect: safe redirect verification is not integrated",
-                    response.status
-                ),
-            ));
+        // Upstream stealthy_headers: a Google referer unless one was given.
+        let stealthy = args
+            .get("stealthy_headers")
+            .and_then(Value::as_bool)
+            .unwrap_or(true);
+        if stealthy && !has_header(&req, "referer") {
+            req = req.header("Referer", "https://www.google.com/");
         }
+        let impersonate = match session {
+            Some(session) => session.impersonate.clone(),
+            None => args
+                .get("impersonate")
+                .cloned()
+                .unwrap_or_else(|| json!("chrome")),
+        };
+        let mut proxy = match session {
+            Some(session) => session.proxy.clone(),
+            None => opt_str(args, "proxy")?.map(str::to_owned),
+        };
+        if let (Some(raw), Some((user, password))) = (&proxy, &normalized_proxy_auth) {
+            let mut parsed = url::Url::parse(raw)
+                .map_err(|_| BackendError::new("invalid_arguments", "Invalid proxy URL"))?;
+            let _ = parsed.set_username(user);
+            let _ = parsed.set_password(Some(password));
+            proxy = Some(parsed.to_string());
+        }
+        let timeout = match args.get("timeout") {
+            None => 30.0,
+            Some(Value::Null) => 86_400.0,
+            Some(value) => value
+                .as_f64()
+                .filter(|t| t.is_finite() && *t > 0.0)
+                .ok_or_else(|| {
+                    BackendError::new(
+                        "invalid_arguments",
+                        "timeout must be a positive number of seconds",
+                    )
+                })?,
+        };
+        let (follow, safe) = match args.get("follow_redirects").unwrap_or(&json!("safe")) {
+            Value::Bool(follow) => (*follow, false),
+            Value::String(mode) if mode == "safe" => (true, true),
+            _ => {
+                return Err(BackendError::new(
+                    "invalid_arguments",
+                    "follow_redirects must be true, false or \"safe\"",
+                ))
+            }
+        };
+        let max_redirects = match args
+            .get("max_redirects")
+            .and_then(Value::as_i64)
+            .unwrap_or(30)
+        {
+            -1 => None,
+            n if n >= 0 => Some(n as usize),
+            _ => {
+                return Err(BackendError::new(
+                    "invalid_arguments",
+                    "max_redirects must be -1 or nonnegative",
+                ))
+            }
+        };
+        // `retries` counts attempts including the first; None/<1 sends once.
+        let attempts = args.get("retries").and_then(Value::as_i64).map_or(
+            if args.get("retries") == Some(&Value::Null) {
+                1
+            } else {
+                3
+            },
+            |n| n.max(1),
+        );
+        let retry_delay = match args.get("retry_delay") {
+            None => 1.0,
+            Some(Value::Null) => 0.0,
+            Some(value) => value.as_f64().filter(|d| *d >= 0.0).ok_or_else(|| {
+                BackendError::new("invalid_arguments", "retry_delay must be nonnegative")
+            })?,
+        };
+        let options = HttpOptions {
+            impersonate: impersonate_profile(&impersonate)?,
+            stealthy_headers: stealthy,
+            proxy,
+            retries: (attempts - 1).clamp(0, 10) as u32,
+            retry_delay: Some(Duration::from_secs_f64(retry_delay)),
+            retry_on_status: false,
+            retry_non_idempotent: true,
+            timeout: Duration::from_secs_f64(timeout),
+            read_timeout: Duration::from_secs_f64(timeout),
+            connect_timeout: Duration::from_secs_f64(timeout.min(30.0)),
+            follow_redirects: follow,
+            safe_redirects: safe,
+            max_redirects,
+            verify_tls: args.get("verify").and_then(Value::as_bool).unwrap_or(true),
+            protocol: if args.get("http3").and_then(Value::as_bool).unwrap_or(false) {
+                rustscrapling_http::Protocol::Http3Only
+            } else {
+                rustscrapling_http::Protocol::Auto
+            },
+            cookie_jar: session.map(|session| Arc::clone(&session.jar)),
+            ..HttpOptions::default()
+        };
+        let client = HttpClient::new(options)?;
+        let response = client.request(req).await?;
         render_http(response, args)
     }
 
@@ -993,6 +1115,77 @@ impl RuntimeBackend {
             _ => unreachable!("part validated above"),
         }
     }
+}
+
+/// Upstream `_normalize_credentials`: a `{"username", "password"}` object.
+fn credentials(
+    args: &Map<String, Value>,
+    key: &str,
+) -> Result<Option<(String, String)>, BackendError> {
+    let Some(value) = args.get(key).filter(|value| !value.is_null()) else {
+        return Ok(None);
+    };
+    let object = value.as_object().filter(|object| !object.is_empty());
+    let Some(object) = object else {
+        return Ok(None);
+    };
+    match (
+        object.get("username").and_then(Value::as_str),
+        object.get("password").and_then(Value::as_str),
+    ) {
+        (Some(user), Some(password)) => Ok(Some((user.to_owned(), password.to_owned()))),
+        _ => Err(BackendError::new(
+            "invalid_arguments",
+            "Credentials dictionary must contain both 'username' and 'password' keys",
+        )),
+    }
+}
+
+/// Map upstream `impersonate` (a profile, a list picked at random, or null)
+/// to the HTTP client's emulation profile.
+fn impersonate_profile(value: &Value) -> Result<Option<String>, BackendError> {
+    match value {
+        Value::Null => Ok(None),
+        Value::String(profile) => Ok(Some(profile.clone())),
+        Value::Array(profiles) if !profiles.is_empty() => {
+            let index = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.subsec_nanos() as usize)
+                .unwrap_or(0)
+                % profiles.len();
+            profiles[index]
+                .as_str()
+                .map(|profile| Some(profile.to_owned()))
+                .ok_or_else(|| {
+                    BackendError::new("invalid_arguments", "impersonate list must contain strings")
+                })
+        }
+        _ => Err(BackendError::new(
+            "invalid_arguments",
+            "impersonate must be a browser name, a list of names or null",
+        )),
+    }
+}
+
+fn base64(input: &[u8]) -> String {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity(input.len().div_ceil(3) * 4);
+    for chunk in input.chunks(3) {
+        let bytes = [
+            chunk[0],
+            *chunk.get(1).unwrap_or(&0),
+            *chunk.get(2).unwrap_or(&0),
+        ];
+        let triple = (u32::from(bytes[0]) << 16) | (u32::from(bytes[1]) << 8) | u32::from(bytes[2]);
+        for index in 0..4 {
+            if index <= chunk.len() {
+                out.push(TABLE[((triple >> (18 - 6 * index)) & 63) as usize] as char);
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
 }
 
 /// Upstream `NetworkRequestInfo`: Playwright-style lowercase resource type
@@ -1596,13 +1789,6 @@ fn scalar(v: &Value) -> Option<String> {
         Value::Number(n) => Some(n.to_string()),
         Value::Bool(b) => Some(b.to_string()),
         _ => None,
-    }
-}
-fn reject_some(args: &Map<String, Value>, key: &str) -> Result<(), BackendError> {
-    if args.get(key).is_some_and(|v| !v.is_null()) {
-        Err(BackendError::unsupported(key))
-    } else {
-        Ok(())
     }
 }
 fn allow_defaults(
