@@ -14,7 +14,8 @@
 - AutoThrottle: 429/503・通信失敗時のバックオフと、秒数/HTTP-date形式のRetry-After。待機中の他リクエストも新しい期限を再評価
 - 開発キャッシュ: オプトイン、URLのハッシュ名、保存ファイルの私有権限、2xxのみ保存、チャレンジHTMLの簡易除外、破損検出、同一ページの再処理をサポート
 - Spiderの宣言的`link_allow`/`link_deny` URL正規表現で、対象外リンクをfrontier割当て前に除外する（Python LinkExtractorの部分実装）
-- CDP `Network.responseReceived/loadingFinished/getResponseBody` による有界テキストAPI本文収集を実装。XHR/Fetchのみ、データ上限と機密情報の除外あり（MCP経由の本文参照は別途未実装）
+- CDP `Network.responseReceived/loadingFinished/getResponseBody` による有界テキストAPI本文収集。XHR/Fetchのみ、データ上限と機密情報の除外あり。MCPからも`browser_network_request(part="response_body")`で伏せ字済本文を参照可能（mock E2E、実Chromeの基盤E2EがPASS）
+- Spider `crawl_with_parser`からasync JSON ItemとGET-only追加Requestを同じfrontierへ渡す。MCP `browser_actions`にはCSS単発click/追加入力・native input/textarea上書き/限定キー/待機の実CDP動作を追加
 
 ライセンス: Python本家はBSD-3-Clause、RUSTScraplingはMIT OR Apache-2.0、scrapling-rsはMIT。RUSTScraplingのMIT著作権表示を `licenses/RUSTScrapling-MIT.txt` に残し、`NOTICE`で出典を明記する。取り込んだコード・アルゴリズムは検証とライセンスレビューを伴う。
 
@@ -22,9 +23,9 @@
 
 最も重要なのは、**Pythonの利用者が実際に利用できる機能に相当するRust API/CLI/MCP経路**があり、モックではなく適切な実機E2Eと本家比較が通ること。
 
-- Browser: VPSのlocalhost HTTP実機Chromeで遷移が安定しない。CDP本文記録の実機検証・MCP公開、ブラウザ操作、実ログイン状態の復元、Bot対策の実サイト比較が未達
-- Spider: Pythonのカスタムparse/Requestコールバック、LinkExtractorの全規則（allow/deny URL regexのみ実装）、複数セッション、正確なblocked retry、全テンプレートの差分試験、exactly-once相当のクラッシュ復旧が未達
-- MCP/CLI: 16ツール名を登録済みでも全引数の動作が本家と同じとは限らない。browser actions、ARIA/selector指定スクリーンショット、CLIセッション運用などが未達
+- Browser: VPSのChrome155/156はテスト専用プロファイル＋`--password-store=basic`でlocalhost HTTP/CDPが動作（各1/1 PASS）。本番launcherへ適用すると資格情報の保存方式を弱めるため無条件適用不可。CDP本文/XHR/基本入力は実Chromeのlocalhost/データURLで検証したが、Cloudflare/実ログイン・Bot対策サイト比較、iframe/ARIA、全入力操作は未達
+- Spider: async parse/GET-only Request/Itemの仕組みは追加。PythonのPOST/headers/body/cookies等のリッチなRequest/per-request callback、LinkExtractorの全規則（allow/deny URL regexのみ）、複数セッション、正確なblocked retry、exactly-once相当のクラッシュ復旧は未達
+- MCP/CLI: 16ツール名を登録済みでも全引数の動作が本家と同じとは限らない。MCP network本文や一部のCDP操作、ネイティブtextboxの既定clearは実装したが、ARIA/selector指定スクリーンショット、rich contenteditable、dialog/checkbox/radio/combobox等、本家全アクション、daemonの恒久ブラウザ保持とCLIセッション運用は未達
 - 品質証拠: 約200URLの同日同一環境比較、ブラウザ取得成功率、1時間fuzz、24時間耐久、性能/メモリ目標の再測定を継続して行う
 
 **設計上の補足:** Pythonのクラス構文そのものをRustへ移す必要はないが、Spiderの`parse`/追加Request/出力項目の柔軟性はRust traitまたは宣言的設定で同等に表現できる必要がある。Plan.mdの旧「Pythonクラスとして書くSpiderは対象外」は、機能そのものを対象外にする意味ではない。

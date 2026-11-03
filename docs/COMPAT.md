@@ -36,6 +36,17 @@ Plan 7.1節の表が正本。実装が進んだコマンドからここへ実装
 - `rustscrapling network search [--url-contains TEXT] [--limit 1..100]` は、起動中のdaemonが完了した取得のメタデータ（URL、method、status、tier）を、認証付きIPCを通じて検索する。最新128件の揮発性履歴で、URLのquery/fragment/認証情報とヘッダー・本文は返さない。**Python Scraplingの `session.network.search` が対象とするブラウザ内部通信までは取得しない**ため、現状は部分実装。
 - `rustscrapling session open/close/list/save-state/load-state` はコマンドとして受理するが、現行daemonがブラウザセッションを保持しないため `error.kind=unsupported` で失敗する。CLIのプロセス終了後に有効なセッションIDを捏造しない。永続MCPサーバ内のブラウザセッションは別実装。
 
+### MCPブラウザ通信と操作（Python v0.5の部分対応）
+
+- **CLI daemonの `network search` とMCPの `browser_network_requests` は別のデータ源**。前者は上位Fetch完了のメタデータのみで、後者は同じMCP browser sessionのCDPサブリクエスト（最新128件・session-local単調ID・body合計1MiB）の一覧と、`browser_network_request(part="response_body")`によるXHR/FetchテキストAPI本文を扱う。binary/巨大bodyは取得せず、URLとJSON機密キーは保守的に伏せるが、アプリ固有情報の完全な秘匿は保証しない。
+- `browser_actions` はCSS selectorによる単発左click、native input/textareaでの `textbox(clear=true)`値の上書き・`clear=false`追記、Enter/Tab/Escape/Backspace/Delete/矢印キー、`wait_time`のみ動作。座標指定・ARIA参照・iframe要素・dialog/checkbox/radio/combobox・rich contenteditable等は本家のアクションschemaに登録されていても現在は**typed unsupported**。API成功の意味を拡張して扱わない。
+- Chrome155/156のlocalhost HTTP実機は、VPSの**使い捨てテスト用プロファイル**に`--password-store=basic`を明示した場合に通過した。本番Launcherは資格情報の保存方法を弱めないため同フラグを一律に追加せず、一般環境での安定動作と本家比は未検証。
+
+### Spiderカスタムparseと追加Request（Python v0.5の部分対応）
+
+- `rustscrapling-spider::crawl_with_parser`に`SpiderParser`を渡すと、async `parse(page)`のJSON Itemをイベントに流し、`SpiderOutput::Request`の追加URLを既存のfrontier/robots/上限/重複排除へ渡せる。相対URLは最終応答URLを基準に解決する。`crawl`既定のHTML自動リンク発見は維持。
+- 現在は追加Requestも既存Fetcherに合わせて **GET URL-only**。本家の各Requestに対応したHTTP method/body/header/cookie、per-request callback、request-level metadata/errbackは別途実装が必要。parser変更では旧checkpointは無効化されないため、再解析には新規crawldirまたはdevelopment_modeを使う。
+
 ## 4. find_by_regex の正規表現の差
 
 `find_by_regex` は Rust の `regex` クレートで実装している。Python の `re` との主な差:
