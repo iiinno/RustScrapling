@@ -258,7 +258,10 @@ impl Shared {
         .map_err(|_| DaemonError::new("timeout", "upstream fetch exceeded deadline"))?;
         // A learned browser route might have gone stale; let the policy retry
         // from HTTP on an explicit backend error.
-        if result.is_err() && request.tier != original_tier && original_tier == FetchTier::Auto {
+        if result.as_ref().err().is_some_and(retryable_backend_error)
+            && request.tier != original_tier
+            && original_tier == FetchTier::Auto
+        {
             request.tier = FetchTier::Auto;
             tokio::time::sleep(self.config.site_interval).await;
             self.upstream.fetch_add(1, Ordering::Relaxed);
@@ -445,6 +448,29 @@ fn cacheable(result: &FetchResult) -> bool {
             .headers
             .iter()
             .any(|(name, value)| name.eq_ignore_ascii_case("vary") && value.trim() == "*")
+}
+
+fn retryable_backend_error(error: &DaemonError) -> bool {
+    if matches!(error.status, Some(401 | 403 | 429)) {
+        return false;
+    }
+    match error.kind.as_str() {
+        "transport"
+        | "stage_timeout"
+        | "timeout"
+        | "dns"
+        | "proxy"
+        | "browser"
+        | "unavailable"
+        | "browser_unavailable"
+        | "empty"
+        | "needs_rendering"
+        | "decode_failed" => true,
+        "source_http" | "http_status" => error
+            .status
+            .is_some_and(|status| (500..600).contains(&status)),
+        _ => false,
+    }
 }
 
 fn challenge(body: &[u8]) -> bool {

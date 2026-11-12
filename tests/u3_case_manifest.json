@@ -1,0 +1,437 @@
+{
+  "schema_version": 1,
+  "baseline_sha256": "3b713f7e68d99b6f851e7070ad7fb3f67d262987114cc3fa903c242c399436ba",
+  "classification_source": "tests/u3_fetch_contract.py requires_chrome gates real_chrome and Runner.observe endpoint use; content_acceptance.rs uses only HttpFixture and no BrowserBackend",
+  "cases": [
+    {
+      "name": "short_plain_content_is_success_and_learned",
+      "surface": "public_fetcher_real_http",
+      "requires_chrome": false
+    },
+    {
+      "name": "javascript_shell_is_not_success_or_learned",
+      "surface": "public_fetcher_real_http",
+      "requires_chrome": false
+    },
+    {
+      "name": "no_content_status_is_not_success_or_learned",
+      "surface": "public_fetcher_real_http",
+      "requires_chrome": false
+    },
+    {
+      "name": "metadata_only_is_not_success_or_learned",
+      "surface": "public_fetcher_real_http",
+      "requires_chrome": false
+    },
+    {
+      "name": "empty_body_is_not_success_or_learned",
+      "surface": "public_fetcher_real_http",
+      "requires_chrome": false
+    },
+    {
+      "name": "short_html_content_is_success_and_learned",
+      "surface": "public_fetcher_real_http",
+      "requires_chrome": false
+    },
+    {
+      "name": "unicode_whitespace_is_not_success_or_learned",
+      "surface": "public_fetcher_real_http",
+      "requires_chrome": false
+    },
+    {
+      "name": "unicode_plain_content_is_success_and_learned",
+      "surface": "public_fetcher_real_http",
+      "requires_chrome": false
+    },
+    {
+      "name": "invalid_declared_utf8_is_not_success_or_learned",
+      "surface": "public_fetcher_real_http",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_utf8",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_default-utf8",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_short",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_short-html",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_utf8-over-meta",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_206",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_shiftjis",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_meta-shiftjis",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_equiv-shiftjis",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_header-over-meta",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_bad-utf8",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_bad-shiftjis",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_unknown-charset",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_empty",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_whitespace",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_204",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_metadata-only",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_shell",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_status_403",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_status_404",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_status_429",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_status_500",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_status_502",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_truncated_transport",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_oversize_body",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_diagnostic_bound",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_utf8",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_default-utf8",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_short",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_short-html",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_utf8-over-meta",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_206",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_shiftjis",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_meta-shiftjis",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_equiv-shiftjis",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_header-over-meta",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_bad-utf8",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_bad-shiftjis",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_unknown-charset",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_empty",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_whitespace",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_204",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_metadata-only",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_shell",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_status_403",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_status_404",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_status_429",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_status_500",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_status_502",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_truncated_transport",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_oversize_body",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_diagnostic_bound",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "json_unicode_char_budget",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "json_chars_large-paragraph",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "json_bytes_large-paragraph",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "json_chars_many-paragraphs",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "json_bytes_many-paragraphs",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "json_chars_large-headings",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "json_bytes_large-headings",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "json_chars_large-metadata",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "json_bytes_large-metadata",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "get_json_multibyte_budget",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "auto_json_multibyte_budget",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "ndjson_multibyte_budget",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "combined_output_budgets",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "insufficient_byte_budget_0",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "insufficient_byte_budget_32",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "insufficient_char_budget",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "text_unicode_char_budget",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "spawn_failure_profile_cleanup",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "missing_chrome_creates_no_profile",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "cdp_small_diagnostic",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "cdp_large_diagnostic",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "cdp_large_diagnostic_capped_reader",
+      "surface": "real_cli",
+      "requires_chrome": false
+    },
+    {
+      "name": "chrome_dom_shiftjis_is_already_unicode",
+      "surface": "real_chrome_cli",
+      "requires_chrome": true
+    },
+    {
+      "name": "chrome_javascript_content",
+      "surface": "real_chrome_cli",
+      "requires_chrome": true
+    },
+    {
+      "name": "auto_renders_empty_javascript_shell",
+      "surface": "real_chrome_cli",
+      "requires_chrome": true
+    }
+  ]
+}

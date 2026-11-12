@@ -97,6 +97,8 @@ pub struct DaemonError {
     pub kind: String,
     pub message: String,
     pub hint: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<u16>,
 }
 
 impl DaemonError {
@@ -105,6 +107,7 @@ impl DaemonError {
             kind: kind.into(),
             message: message.into(),
             hint: String::new(),
+            status: None,
         }
     }
 }
@@ -115,3 +118,24 @@ impl std::fmt::Display for DaemonError {
     }
 }
 impl std::error::Error for DaemonError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn source_status_preserves_legacy_error_wire() {
+        let legacy = r#"{"kind":"empty","message":"empty body","hint":"inspect"}"#;
+        let mut error: DaemonError = serde_json::from_str(legacy).unwrap();
+        assert_eq!(error.status, None);
+        assert!(serde_json::to_value(&error)
+            .unwrap()
+            .get("status")
+            .is_none());
+        error.status = Some(204);
+        let encoded = serde_json::to_vec(&error).unwrap();
+        let decoded: DaemonError = serde_json::from_slice(&encoded).unwrap();
+        assert_eq!(decoded.status, Some(204));
+        assert_eq!(decoded.kind, "empty");
+    }
+}

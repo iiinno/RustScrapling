@@ -1157,13 +1157,14 @@ fn text(value: String) -> CallToolResult {
     CallToolResult::success(vec![ContentBlock::text(value)])
 }
 fn render_http(response: HttpResponse, args: &Map<String, Value>) -> Outcome {
-    let body = std::str::from_utf8(&response.body)
-        .map_err(|_| BackendError::new("decode", "Body is not UTF-8"))?;
+    let decoded = rustscrapling_fetch::ContentInput::from(&response)
+        .extract(None)
+        .map_err(|error| BackendError::new(error.kind.as_str(), error.message))?;
     let format = args
         .get("extraction_type")
         .and_then(Value::as_str)
         .unwrap_or("markdown");
-    let content = render_content(body, &response.final_url, format)?;
+    let content = render_content(&decoded.source, &response.final_url, format)?;
     Ok(structured(
         json!({"status":response.status,"url":response.final_url,"content":[content]}),
     ))

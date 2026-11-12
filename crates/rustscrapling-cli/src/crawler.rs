@@ -54,12 +54,15 @@ impl Fetcher for HttpBackend {
                 .find(|(k, _)| k.eq_ignore_ascii_case("content-type"))
                 .map(|(_, v)| v.clone())
                 .unwrap_or_default();
+            let body = rustscrapling_fetch::ContentInput::from(&response)
+                .decode_source()
+                .map_err(|error| format!("{}: {}", error.kind.as_str(), error.message))?;
             Ok(FetchPage {
                 headers: Default::default(),
                 status: response.status,
                 url: response.final_url,
                 content_type,
-                body: String::from_utf8_lossy(&response.body).into_owned(),
+                body,
             })
         })
     }

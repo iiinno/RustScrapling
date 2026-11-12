@@ -25,7 +25,7 @@
 | 観点 | 実際の状態 |
 | --- | --- |
 | 計画 | `Plan.md` v3、G-01〜G-13とM0〜M9。計画は作成済みだが**製品GAは未達** |
-| 統合コードの引継ぎ基点 | Windows `C:\Users\inoue\Project\rustscrapling-delivery`、branch `integration/plan-v2-recovered`、commit `7a695fd`。GitHub `main`にはこの基点＋引継ぎファイルを公開 |
+| 統合コードの引継ぎ基点 | Windows `<workspace>/RustScrapling`、branch `integration/plan-v2-recovered`、commit `7a695fd`。GitHub `main`にはこの基点＋引継ぎファイルを公開 |
 | 本家pin | `D4Vinci/Scrapling` commit `95cf9019ab5a5d6f3e9654b7ef1c6a26e29dc5c0`。Pythonはoracle/比較試験のためにのみ利用。本体のPython依存は禁止 |
 | MCP | 16ツールの名前・静的引数/既定値は一致確認。ただしバックエンドBrowserAction12種のうちmatch分岐は4種（click/textbox/press_key/wait_time）、それも部分対応。スキーマ一致はruntime parityではない |
 | API inventory | 既存クラス直接196宣言・継承130参照・CLI10関数を棚卸し。あとからmodule-level APIとRust entrypoint候補の監査が追加された。範囲とCI結果は現在の`docs/compat/`で確認する |
@@ -78,14 +78,14 @@ GitHubの`main`はコミット済みの本体のみを掲載。5ファイルの�
 
 ### Windowsのローカル環境
 
-- 統合root：`C:\Users\inoue\Project\rustscrapling-delivery`。
+- 統合root：`<workspace>/RustScrapling`。
 - **Windows本体とWSLでCargo/Rustのビルド・テストは実行しない**。PythonによるAST監査、文書・diff検査は可。
 - 全agentは独立worktreeを作り、main/integration rootと別担当のworktreeを勝手に変更しない。
 - ローカルの元`origin`はGitHubではないため、**新しいGitHubは`https://github.com/iiinno/RustScrapling.git`**。取得後`git remote -v`を確認する。
 
 ### 安全なLinux検証
 
-- 現行VPS：`ssh inouemasaki@100.66.131.65`。ホストへの接続権はエージェントの環境に依存し、**接続できると決めつけない**。
+- 現行VPS：`ssh <user>@<host>`。ホストへの接続権はエージェントの環境に依存し、**接続できると決めつけない**。
 - VPS本体：`~/Project/RustScrapling`、既存サービスは停止禁止、グローバルkill禁止。専用一時worktree、`systemd-run --user --scope -p MemoryMax=3000M -p MemorySwapMax=0 -- nice -n 12 timeout 420s ...`等で負荷制御。メモリと実行中ジョブを事前にチェック。
 - 1.5GiB上限での全workspace Cargoは以前OOM。3GiBで全体116件成功した事実はあるが、他サービスに影響がある場合は保留してGitHub Actionsなどの独立Linux runnerへ切替。
 - Chrome実機テストは既存Chrome・使い捨てprofileで、外部ネットワーク・認証情報・安全設定を区別。試験用`--password-store=basic`を本番利用プロファイルへ無条件に適用しない。

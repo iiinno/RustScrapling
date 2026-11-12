@@ -2,6 +2,9 @@
 //! and a 24-hour per-host success memory. This is a library for the daemon
 //! and CLI, not an HTTP server.
 
+mod content;
+pub use content::{ContentInput, DecodedContent};
+
 use rustscrapling_http::{
     ErrorKind as HttpErrorKind, HttpClient, HttpError, HttpRequest, HttpResponse,
 };
@@ -44,10 +47,10 @@ pub struct FetchResponse {
 }
 impl FetchResponse {
     pub fn blocked(&self) -> bool {
-        self.status == 403 || self.status == 429 || is_challenge(&self.body)
+        matches!(self.status, 401 | 403 | 429) || is_challenge(&self.body)
     }
     pub fn success(&self) -> bool {
-        (200..300).contains(&self.status) && !self.blocked()
+        ContentInput::from(self).extract(None).is_ok()
     }
 }
 impl From<HttpResponse> for FetchResponse {
@@ -77,6 +80,26 @@ pub enum FetchErrorKind {
     BrowserUnavailable,
     Browser,
     Transport,
+    Empty,
+    NeedsRendering,
+    DecodeFailed,
+}
+impl FetchErrorKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::InvalidRequest => "invalid_request",
+            Self::Timeout => "stage_timeout",
+            Self::Dns | Self::Proxy | Self::Browser | Self::Transport => "transport",
+            Self::Tls => "tls_rejected",
+            Self::Blocked => "source_refused",
+            Self::HttpStatus => "source_http",
+            Self::BodyTooLarge => "output_too_large",
+            Self::BrowserUnavailable => "unavailable",
+            Self::Empty => "empty",
+            Self::NeedsRendering => "needs_rendering",
+            Self::DecodeFailed => "decode_failed",
+        }
+    }
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FetchError {
@@ -110,7 +133,7 @@ impl From<HttpError> for FetchError {
             kind,
             message: err.to_string(),
             hint: match kind {
-                FetchErrorKind::Blocked => "try --tier browser",
+                FetchErrorKind::Blocked => "respect the source access restrictions",
                 FetchErrorKind::Timeout => "increase --timeout",
                 FetchErrorKind::Tls => "check trusted CA bundle",
                 FetchErrorKind::Proxy => "check proxy URL and credentials",
@@ -125,6 +148,7 @@ impl From<HttpError> for FetchError {
 #[derive(Debug, Clone)]
 pub struct FetchOptions {
     pub learning_ttl: Duration,
+    /// Retained for API compatibility. Source refusals are always terminal.
     pub detect_blocks: bool,
 }
 impl Default for FetchOptions {
@@ -210,29 +234,37 @@ impl Fetcher {
             }
             match self.attempt(&request, choice).await {
                 Ok(response) => {
-                    if response.success() {
+                    if response.blocked() {
+                        return Err(FetchError {
+                            kind: FetchErrorKind::Blocked,
+                            message: "Source refused the request".into(),
+                            hint: "Respect the source access restrictions".into(),
+                            status: Some(response.status),
+                        });
+                    }
+                    if (200..300).contains(&response.status) {
                         self.remember(&request.url, choice).await;
-                        return Ok(response);
                     }
-                    if !self.options.detect_blocks || !response.blocked() {
-                        return Ok(response);
-                    }
-                    first_error.get_or_insert(FetchError {
-                        kind: FetchErrorKind::Blocked,
-                        message: format!("HTTP {} or verification challenge", response.status),
-                        hint: "try --tier browser".into(),
-                        status: Some(response.status),
-                    });
+                    return Ok(response);
                 }
                 Err(err) => {
+                    if matches!(err.status, Some(401 | 403 | 429)) {
+                        return Err(FetchError {
+                            kind: FetchErrorKind::Blocked,
+                            ..err
+                        });
+                    }
                     if !matches!(
                         err.kind,
-                        FetchErrorKind::Blocked
-                            | FetchErrorKind::Timeout
+                        FetchErrorKind::Timeout
                             | FetchErrorKind::Dns
                             | FetchErrorKind::Proxy
                             | FetchErrorKind::Transport
                             | FetchErrorKind::Browser
+                            | FetchErrorKind::BrowserUnavailable
+                            | FetchErrorKind::Empty
+                            | FetchErrorKind::NeedsRendering
+                            | FetchErrorKind::DecodeFailed
                     ) {
                         return Err(err);
                     }
@@ -252,13 +284,13 @@ impl Fetcher {
         req: &HttpRequest,
         tier: FetchTier,
     ) -> Result<FetchResponse, FetchError> {
-        match tier {
+        let response: FetchResponse = match tier {
             FetchTier::Http => self
                 .http
                 .request(req.clone())
                 .await
-                .map(Into::into)
-                .map_err(Into::into),
+                .map(FetchResponse::from)
+                .map_err(FetchError::from),
             FetchTier::Browser | FetchTier::Headed => {
                 if req.method != "GET" || req.body.is_some() {
                     return Err(FetchError {
@@ -279,7 +311,11 @@ impl Fetcher {
                 Ok(result)
             }
             FetchTier::Auto => unreachable!(),
+        }?;
+        if (200..300).contains(&response.status) {
+            ContentInput::from(&response).extract(None)?;
         }
+        Ok(response)
     }
 }
 

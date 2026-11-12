@@ -170,10 +170,23 @@ async fn browser_get_and_session_if_chrome_is_available() {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let url = format!("http://{}/page", listener.local_addr().unwrap());
     let server = std::thread::spawn(move || {
-        for _ in 0..2 {
+        let mut pages_served = 0;
+        while pages_served < 2 {
             let (mut stream, _) = listener.accept().unwrap();
             let mut buf = [0; 2048];
-            let _ = stream.read(&mut buf).unwrap();
+            let size = stream.read(&mut buf).unwrap();
+            if size == 0 {
+                continue;
+            }
+            if !buf[..size].starts_with(b"GET /page ") {
+                // Closing the first browser may cancel an auxiliary request.
+                let _ = write!(
+                    stream,
+                    "HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                );
+                continue;
+            }
+            pages_served += 1;
             let body="<html><body><main><h1>Browser MCP</h1><p>CDP session success.</p></main></body></html>";
             write!(stream,"HTTP/1.1 200 OK\r\nContent-Length: {}\r\nContent-Type: text/html\r\nSet-Cookie: mcp_session=private; Path=/; SameSite=Lax\r\nConnection: close\r\n\r\n{body}",body.len()).unwrap();
         }
@@ -204,6 +217,18 @@ async fn browser_get_and_session_if_chrome_is_available() {
         json!({"session_id":"browser-test","url":url}),
     )
     .await;
+    if fetched.is_error == Some(true) {
+        let text = serde_json::to_value(&fetched.content[0]).unwrap();
+        let error: Value = serde_json::from_str(text["text"].as_str().unwrap()).unwrap();
+        eprintln!(
+            "owned loopback browser_fetch kind={} reason={}",
+            error["error"]["kind"].as_str().unwrap(),
+            error["error"]["message"]
+                .as_str()
+                .unwrap()
+                .replace(['\r', '\n'], " ")
+        );
+    }
     assert_eq!(fetched.is_error, Some(false), "{fetched:?}");
     let extracted = call(
         &handler,

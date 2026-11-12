@@ -13,7 +13,9 @@ use rustscrapling_daemon::{
     FetchTier as DaemonTier,
 };
 use rustscrapling_extract::{extract, ExtractOptions, ExtractedPage};
-use rustscrapling_fetch::{FetchOptions as FetchPolicy, FetchTier, Fetcher};
+use rustscrapling_fetch::{
+    ContentInput, FetchError, FetchOptions as FetchPolicy, FetchTier, Fetcher,
+};
 use rustscrapling_http::{HttpClient, HttpOptions, HttpRequest, Protocol};
 use serde_json::{json, Value};
 
@@ -37,6 +39,9 @@ pub struct RequestOptions {
     /// Maximum number of Unicode characters printed to stdout.
     #[arg(long)]
     pub max_chars: Option<usize>,
+    /// Maximum UTF-8 bytes in JSON stdout, including its trailing newline.
+    #[arg(long)]
+    pub max_json_bytes: Option<usize>,
     /// Rank extracted paragraphs for this research query.
     #[arg(long)]
     pub query: Option<String>,
@@ -97,10 +102,108 @@ fn transport_options(args: &RequestOptions) -> HttpOptions {
 }
 
 fn error(kind: &str, description: &str, hint: &str) -> String {
-    json!({ "schema_version": 1, "error": {
-        "kind": kind, "message": description, "hint": hint
-    }})
-    .to_string()
+    failure(kind, description, hint, None)
+}
+
+fn failure(kind: &str, description: &str, hint: &str, status: Option<u16>) -> String {
+    let kind = if matches!(status, Some(401 | 403 | 429)) {
+        "source_refused"
+    } else {
+        kind
+    };
+    let kind = match kind {
+        "blocked" => "source_refused",
+        "http_status" | "httpstatus" => "source_http",
+        "timeout" => "stage_timeout",
+        "dns" | "proxy" | "browser" | "io" => "transport",
+        "tls" => "tls_rejected",
+        "body_too_large" | "bodytoolarge" => "output_too_large",
+        "browser_unavailable" | "browserunavailable" => "unavailable",
+        "invalidrequest" => "invalid_request",
+        "parse" | "conversion_failed" => "decode_failed",
+        "unsupported_protocol" => "unsupported_contract",
+        "invalid_request"
+        | "unauthorized"
+        | "unavailable"
+        | "transport"
+        | "stage_timeout"
+        | "saturated"
+        | "invalid_payload"
+        | "unsupported_contract"
+        | "network_policy_unsupported"
+        | "destination_denied"
+        | "source_refused"
+        | "source_http"
+        | "rate_limited"
+        | "tls_rejected"
+        | "empty"
+        | "needs_rendering"
+        | "decode_failed"
+        | "output_too_large"
+        | "cancelled"
+        | "deadline_exceeded"
+        | "cleanup_unconfirmed"
+        | "busy"
+        | "exhausted"
+        | "unknown_provider_failure" => kind,
+        _ => "unknown_provider_failure",
+    };
+    let hint = if kind == "source_refused" {
+        "Respect the source access restrictions"
+    } else {
+        hint
+    };
+    // JSON escaping expands a byte to at most six bytes. These caps keep the
+    // complete error, including framing, below the consumer's 8192-byte limit.
+    let mut document = json!({ "schema_version": 1, "error": {
+        "kind": kind, "message": bounded_text(description, 512),
+        "hint": bounded_text(hint, 256)
+    }});
+    if let Some(status) = status {
+        document["error"]["status"] = json!(status);
+    }
+    document.to_string()
+}
+
+fn bounded_text(text: &str, limit: usize) -> &str {
+    let mut end = text.len().min(limit);
+    while !text.is_char_boundary(end) {
+        end -= 1;
+    }
+    &text[..end]
+}
+
+fn fetch_error(err: FetchError) -> String {
+    failure(err.kind.as_str(), &err.message, &err.hint, err.status)
+}
+
+fn daemon_fetch_error(err: &rustscrapling_daemon::DaemonError) -> String {
+    failure(
+        &err.kind,
+        "Daemon acquisition failed",
+        "Inspect the local daemon or use --direct",
+        err.status,
+    )
+}
+
+fn validate_options(options: &RequestOptions) -> Result<(), String> {
+    if options.timeout == 0 || options.max_json_bytes == Some(0) {
+        return Err(error(
+            "invalid_request",
+            "Timeout and JSON byte budget must be positive",
+            "Increase the specified limit",
+        ));
+    }
+    if options.max_json_bytes.is_some()
+        && !matches!(options.format, OutputFormat::Json | OutputFormat::Ndjson)
+    {
+        return Err(error(
+            "invalid_request",
+            "--max-json-bytes requires JSON output",
+            "Use --format json or ndjson",
+        ));
+    }
+    Ok(())
 }
 
 /// Do not silently ignore transport/profile options that the daemon cannot
@@ -131,7 +234,7 @@ async fn request_via_daemon(
     let state = daemon::state_file();
     let Some(client) = DaemonClient::discover(&state)
         .await
-        .map_err(|e| daemon::typed_error(&e))?
+        .map_err(|e| daemon_fetch_error(&e))?
     else {
         return Ok(None);
     };
@@ -141,17 +244,11 @@ async fn request_via_daemon(
         .fetch(request)
         .await
         .map(Some)
-        .map_err(|e| daemon::typed_error(&e))
+        .map_err(|e| daemon_fetch_error(&e))
 }
 
 pub fn run_request(method: &str, target: &str, options: &RequestOptions) -> Result<(), String> {
-    if options.timeout == 0 {
-        return Err(error(
-            "invalid_request",
-            "timeout must be positive",
-            "Set --timeout to a positive number",
-        ));
-    }
+    validate_options(options)?;
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -159,6 +256,13 @@ pub fn run_request(method: &str, target: &str, options: &RequestOptions) -> Resu
     let response = runtime.block_on(async {
         if method == "GET" {
             if let Some(result) = request_via_daemon(target, options, DaemonTier::Http).await? {
+                if !matches!(result.tier, DaemonTier::Http) {
+                    return Err(error(
+                        "unsupported_contract",
+                        "Daemon returned a different acquisition tier",
+                        "Use --direct with this daemon version",
+                    ));
+                }
                 return Ok(rustscrapling_http::HttpResponse {
                     status: result.status,
                     final_url: result.final_url,
@@ -193,47 +297,20 @@ pub fn run_request(method: &str, target: &str, options: &RequestOptions) -> Resu
                 }
                 _ => "Inspect the URL and retry using another acquisition tier",
             };
-            error(err.kind.as_str(), &err.message, hint)
+            failure(err.kind.as_str(), &err.message, hint, err.status)
         })
     })?;
-    if let Some(kind) = response.status_error_kind() {
-        return Err(error(
-            kind.as_str(),
-            &format!("HTTP {}", response.status),
-            "Try the browser acquisition tier when this is a bot challenge",
-        ));
-    }
-    let content_type = response
-        .headers
-        .iter()
-        .find(|(name, _)| name.eq_ignore_ascii_case("content-type"))
-        .map(|(_, value)| value.to_ascii_lowercase())
-        .unwrap_or_default();
-    let decoded = String::from_utf8_lossy(&response.body);
-    let html = content_type.contains("html")
-        || decoded.trim_start().starts_with("<!doctype html")
-        || decoded.trim_start().starts_with("<html");
-    let extracted = if html {
-        Some(
-            extract(
-                &decoded,
-                ExtractOptions {
-                    page_url: Some(&response.final_url),
-                    query: options.query.as_deref(),
-                },
-            )
-            .map_err(|msg| error("parse", &msg, "Use --format text to inspect the source"))?,
-        )
-    } else {
-        None
-    };
-    let document = response_document(&response, &decoded, extracted.as_ref());
-    emit_output(document, options, extracted.as_ref())
+    let decoded = ContentInput::from(&response)
+        .extract(options.query.as_deref())
+        .map_err(fetch_error)?;
+    let document = response_document(&response, &decoded.source, decoded.extracted.as_ref());
+    emit_output(document, options, decoded.extracted.as_ref())
 }
 
 /// Runs the shared acquisition policy. Without a configured BrowserBackend,
 /// blocked HTTP responses are returned as errors, *not* as fake successes.
 pub fn run_tier(target: &str, options: &RequestOptions, tier: FetchTier) -> Result<(), String> {
+    validate_options(options)?;
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -273,49 +350,11 @@ pub fn run_tier(target: &str, options: &RequestOptions, tier: FetchTier) -> Resu
         fetcher
             .fetch(HttpRequest::get(target), tier)
             .await
-            .map_err(|e| {
-                error(
-                    &format!("{:?}", e.kind).to_ascii_lowercase(),
-                    &e.message,
-                    &e.hint,
-                )
-            })
+            .map_err(fetch_error)
     })?;
-    if !response.success() {
-        return Err(error(
-            if response.blocked() {
-                "blocked"
-            } else {
-                "http_status"
-            },
-            &format!("HTTP {}", response.status),
-            "Use another acquisition tier or inspect the URL",
-        ));
-    }
-    let decoded = String::from_utf8_lossy(&response.body).into_owned();
-    let content_type = response
-        .headers
-        .iter()
-        .find(|(k, _)| k.eq_ignore_ascii_case("content-type"))
-        .map(|(_, v)| v.as_str())
-        .unwrap_or_default();
-    let html = content_type.contains("html")
-        || decoded.trim_start().starts_with("<!doctype html")
-        || decoded.trim_start().starts_with("<html");
-    let extracted = if html {
-        Some(
-            extract(
-                &decoded,
-                ExtractOptions {
-                    page_url: Some(&response.final_url),
-                    query: options.query.as_deref(),
-                },
-            )
-            .map_err(|e| error("parse", &e, "Inspect the page's HTML"))?,
-        )
-    } else {
-        None
-    };
+    let decoded = ContentInput::from(&response)
+        .extract(options.query.as_deref())
+        .map_err(fetch_error)?;
     let proxy = rustscrapling_http::HttpResponse {
         status: response.status,
         final_url: response.final_url,
@@ -325,14 +364,15 @@ pub fn run_tier(target: &str, options: &RequestOptions, tier: FetchTier) -> Resu
         attempts: 1,
         http3_attempted: false,
     };
-    let mut document = response_document(&proxy, &decoded, extracted.as_ref());
+    let mut document = response_document(&proxy, &decoded.source, decoded.extracted.as_ref());
     document["tier"] = serde_json::to_value(response.tier).unwrap_or_else(|_| json!("unknown"));
-    emit_output(document, options, extracted.as_ref())
+    emit_output(document, options, decoded.extracted.as_ref())
 }
 
 /// Accept a local file (or stdin) without a network round-trip, while
 /// keeping `md URL` on the exact same extraction and output contract.
 pub fn run_markdown(target: &str, options: &RequestOptions) -> Result<(), String> {
+    validate_options(options)?;
     if target.starts_with("http://") || target.starts_with("https://") {
         return run_request("GET", target, options);
     }
@@ -432,73 +472,113 @@ fn format_document(document: &Value, format: OutputFormat) -> Result<String, Str
 }
 
 fn emit_output(
-    mut document: Value,
+    document: Value,
     options: &RequestOptions,
     extracted: Option<&ExtractedPage>,
 ) -> Result<(), String> {
     let full = format_document(&document, options.format)?;
     if let Some(path) = &options.out {
+        let receipt = json!({
+            "schema_version": 1, "saved_to": path.to_string_lossy(),
+            "chars": full.chars().count(),
+            "headings": extracted.map(|page| page.headings.clone()).unwrap_or_default()
+        });
+        let receipt = bounded_json(receipt, options)?;
         std::fs::write(path, &full)
             .map_err(|err| error("io", &err.to_string(), "Check --out permissions and path"))?;
-        println!(
-            "{}",
-            json!({
-                "schema_version": 1, "saved_to": path.to_string_lossy(),
-                "chars": full.chars().count(),
-                "headings": extracted.map(|page| page.headings.clone()).unwrap_or_default()
-            })
-        );
-        return Ok(());
+        print!("{receipt}");
+    } else if matches!(options.format, OutputFormat::Json | OutputFormat::Ndjson) {
+        print!("{}", bounded_json(document, options)?);
+    } else if let Some(limit) = options.max_chars {
+        print!("{}", full.chars().take(limit).collect::<String>());
+    } else {
+        print!("{full}");
     }
-    if let Some(limit) = options.max_chars {
-        if full.chars().count() > limit {
-            if matches!(options.format, OutputFormat::Json | OutputFormat::Ndjson) {
-                // Preserve the JSON envelope and deterministic metadata. Trim the
-                // three content representations equally to a Unicode-safe prefix.
-                let originals: Vec<String> = ["text", "markdown", "html"]
-                    .iter()
-                    .map(|field| {
-                        document
-                            .pointer(&format!("/content/{field}"))
-                            .and_then(Value::as_str)
-                            .unwrap_or_default()
-                            .to_owned()
-                    })
-                    .collect();
-                let mut low = 0usize;
-                let mut high = originals
-                    .iter()
-                    .map(|s| s.chars().count())
-                    .max()
-                    .unwrap_or(0);
-                while low < high {
-                    let mid = low + (high - low).div_ceil(2);
-                    let mut probe = document.clone();
-                    shrink_contents(&mut probe, &originals, mid);
-                    if format_document(&probe, options.format)?.chars().count() <= limit {
-                        low = mid;
-                    } else {
-                        high = mid - 1;
-                    }
-                }
-                shrink_contents(&mut document, &originals, low);
-                let bounded = format_document(&document, options.format)?;
-                if bounded.chars().count() > limit {
-                    return Err(error(
-                        "invalid_request",
-                        "--max-chars too small for JSON envelope",
-                        "Increase --max-chars or use --out",
-                    ));
-                }
-                print!("{bounded}");
-                return Ok(());
-            }
-            print!("{}", full.chars().take(limit).collect::<String>());
-            return Ok(());
+    Ok(())
+}
+
+fn within_limits(output: &str, options: &RequestOptions) -> bool {
+    options
+        .max_json_bytes
+        .is_none_or(|limit| output.len() <= limit)
+        && options
+            .max_chars
+            .is_none_or(|limit| output.chars().count() <= limit)
+}
+
+fn bounded_json(mut document: Value, options: &RequestOptions) -> Result<String, String> {
+    let full = format_document(&document, OutputFormat::Json)?;
+    if within_limits(&full, options) {
+        return Ok(full);
+    }
+    document["truncated"] = json!(true);
+    // These fields duplicate or describe the source. Preserve their schema while
+    // reserving the remaining budget for the fetched content and its identity.
+    if let Some(metadata) = document.get_mut("metadata") {
+        if metadata
+            .as_object()
+            .is_some_and(|fields| !fields.is_empty())
+        {
+            *metadata = json!(rustscrapling_extract::Metadata::default());
         }
     }
-    print!("{full}");
-    Ok(())
+    for field in ["headings", "paragraphs", "headers"] {
+        if let Some(value) = document.get_mut(field) {
+            *value = json!([]);
+        }
+    }
+    if document.get("content").is_some() {
+        let originals: Vec<String> = ["text", "markdown", "html"]
+            .iter()
+            .map(|field| {
+                document
+                    .pointer(&format!("/content/{field}"))
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_owned()
+            })
+            .collect();
+        let require_markdown = !originals[1].trim().is_empty();
+        let mut low = 0usize;
+        let mut high = originals
+            .iter()
+            .map(|text| text.chars().count())
+            .max()
+            .unwrap_or(0);
+        while low < high {
+            let mid = low + (high - low).div_ceil(2);
+            let mut probe = document.clone();
+            shrink_contents(&mut probe, &originals, mid);
+            if within_limits(&format_document(&probe, OutputFormat::Json)?, options) {
+                low = mid;
+            } else {
+                high = mid - 1;
+            }
+        }
+        shrink_contents(&mut document, &originals, low);
+        if require_markdown
+            && document["content"]["markdown"]
+                .as_str()
+                .unwrap_or_default()
+                .trim()
+                .is_empty()
+        {
+            return Err(output_budget_error());
+        }
+    }
+    let bounded = format_document(&document, OutputFormat::Json)?;
+    if !within_limits(&bounded, options) {
+        return Err(output_budget_error());
+    }
+    Ok(bounded)
+}
+
+fn output_budget_error() -> String {
+    error(
+        "invalid_request",
+        "Output budget cannot hold the required JSON fields and content",
+        "Increase --max-chars or --max-json-bytes, or use --out",
+    )
 }
 
 fn shrink_contents(document: &mut Value, contents: &[String], limit: usize) {
@@ -511,6 +591,20 @@ fn shrink_contents(document: &mut Value, contents: &[String], limit: usize) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn diagnostic_json_is_bounded_after_escaping() {
+        let output = failure(
+            "browser",
+            &"\0\n🦀".repeat(10000),
+            &"\0".repeat(10000),
+            Some(502),
+        );
+        assert!(output.len() < 8192);
+        let value: Value = serde_json::from_str(&output).unwrap();
+        assert_eq!(value["error"]["kind"], "transport");
+        assert_eq!(value["error"]["status"], 502);
+    }
 
     #[test]
     fn json_is_never_sliced_mid_record() {
