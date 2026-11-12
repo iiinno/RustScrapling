@@ -44,12 +44,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_header("ETag", '"local-1"')
             self.end_headers()
             return
+        content_type = "text/html; charset=utf-8"
         if self.path == "/robots.txt":
             data = b"User-agent: *\nDisallow: /blocked\n"
+            content_type = "text/plain"
+        elif self.path in ("/shiftjis", "/misdeclared"):
+            data = "<html><body><p>日本語の研究記事。</p></body></html>".encode("shift_jis")
+            if self.path == "/shiftjis":
+                content_type = "text/html; charset=Shift_JIS"
         else:
             data = ARTICLE
         self.send_response(200)
-        self.send_header("Content-Type", "text/plain" if self.path == "/robots.txt" else "text/html; charset=utf-8")
+        self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
         self.send_header("ETag", '"local-1"')
         self.end_headers()
@@ -111,7 +117,8 @@ class CliSmoke(unittest.TestCase):
         self.assertEqual(result["schema_version"], 1)
         self.assertEqual(result["tier"], "http")
         failure = self.cli("get", self.url + "/blocked", "--direct", ok=False)
-        self.assertEqual(json.loads(failure.stderr)["error"]["kind"], "blocked")
+        self.assertEqual(json.loads(failure.stderr)["error"]["kind"], "source_refused")
+        self.assertEqual(json.loads(failure.stderr)["error"]["status"], 403)
 
     def test_post_body(self):
         result = self.cli("post", self.url + "/echo", "--data", "agent-echo-test", "--direct")
@@ -141,6 +148,31 @@ class CliSmoke(unittest.TestCase):
                                       capture_output=True, text=True, timeout=30)
             self.assertEqual(repeated.returncode, 0, repeated.stderr)
             self.assertEqual(output.read_text(), "")
+
+    def test_crawl_decodes_declared_charset_and_rejects_malformed_bytes(self):
+        for endpoint in ("shiftjis", "misdeclared"):
+            with self.subTest(endpoint=endpoint), tempfile.TemporaryDirectory() as directory:
+                spec = pathlib.Path(directory) / "spec.toml"
+                output = pathlib.Path(directory) / "pages.jsonl"
+                spec.write_text(
+                    f'start_urls = ["{self.url}/{endpoint}"]\n'
+                    'allowed_domains = ["127.0.0.1"]\n'
+                    'max_pages = 1\nmax_depth = 0\nconcurrency = 1\nobey_robots = false\n'
+                )
+                result = subprocess.run(
+                    [str(self.binary), "crawl", str(spec), "--out", str(output)],
+                    capture_output=True, text=True, timeout=30,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                entries = [json.loads(line) for line in output.read_text().splitlines()]
+                self.assertEqual(len(entries), 1)
+                if endpoint == "shiftjis":
+                    self.assertEqual(entries[0]["status"], 200)
+                    self.assertIn("日本語の研究記事。", entries[0]["content"])
+                    self.assertNotIn("\ufffd", entries[0]["content"])
+                else:
+                    self.assertIn("decode_failed", entries[0]["error"])
+                    self.assertIsNone(entries[0]["content"])
 
     def test_local_selector_and_receipt(self):
         with tempfile.TemporaryDirectory() as tmp:

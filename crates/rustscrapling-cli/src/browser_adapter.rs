@@ -47,25 +47,32 @@ impl CdpBackend {
             let client = if let Some(url) = &self.endpoint {
                 BrowserClient::connect(url).await
             } else {
-                let path = self
-                    .chrome_path
-                    .as_ref()
-                    .ok_or_else(|| failed("Chrome executable not configured"))?;
+                let path = self.chrome_path.as_ref().ok_or_else(|| {
+                    failed(
+                        FetchErrorKind::BrowserUnavailable,
+                        "Chrome executable not configured",
+                    )
+                })?;
                 let mut launch = LaunchOptions::new(path);
                 launch.headless = !headed;
                 launch.proxy = self.proxy.clone();
                 BrowserClient::launch(launch).await
             }
-            .map_err(|e| failed(&format!("Could not initialize CDP browser: {e}")))?;
+            .map_err(|_| {
+                failed(
+                    FetchErrorKind::BrowserUnavailable,
+                    "Could not initialize the configured CDP browser",
+                )
+            })?;
             *guard = Some(client);
         }
         Ok(guard)
     }
 }
 
-fn failed(message: &str) -> FetchError {
+fn failed(kind: FetchErrorKind, message: &str) -> FetchError {
     FetchError {
-        kind: FetchErrorKind::Browser,
+        kind,
         message: message.into(),
         hint: "Check --chrome-path, --cdp-url, proxy, and browser permissions".into(),
         status: None,
@@ -81,7 +88,7 @@ impl BrowserBackend for CdpBackend {
                 .expect("initialized browser")
                 .get(url, BrowserGetOptions::default())
                 .await
-                .map_err(|e| failed(&format!("CDP navigation failed: {e}")))?;
+                .map_err(|_| failed(FetchErrorKind::Browser, "CDP navigation failed"))?;
             if response.blocked.is_some() {
                 return Err(FetchError {
                     kind: FetchErrorKind::Blocked,

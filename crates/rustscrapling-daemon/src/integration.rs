@@ -22,20 +22,8 @@ impl FetchBackend for FetcherBackend {
                 .fetch(http, policy_tier)
                 .await
                 .map_err(|e| DaemonError {
-                    kind: match e.kind {
-                        FetchErrorKind::InvalidRequest => "invalid_request",
-                        FetchErrorKind::Timeout => "timeout",
-                        FetchErrorKind::Dns => "dns",
-                        FetchErrorKind::Tls => "tls",
-                        FetchErrorKind::Proxy => "proxy",
-                        FetchErrorKind::Blocked => "blocked",
-                        FetchErrorKind::HttpStatus => "http_status",
-                        FetchErrorKind::BodyTooLarge => "body_too_large",
-                        FetchErrorKind::BrowserUnavailable => "browser_unavailable",
-                        FetchErrorKind::Browser => "browser",
-                        FetchErrorKind::Transport => "transport",
-                    }
-                    .into(),
+                    kind: e.kind.as_str().into(),
+                    status: e.status,
                     // Never relay backend/URL/proxy diagnostic text over IPC:
                     // it may contain userinfo or proxy credentials.
                     message: "acquisition backend request failed".into(),
@@ -43,9 +31,8 @@ impl FetchBackend for FetcherBackend {
                         FetchErrorKind::Timeout => "Increase timeout or retry later",
                         FetchErrorKind::Tls => "Check CA trust",
                         FetchErrorKind::Dns => "Check DNS and hostname",
-                        FetchErrorKind::Blocked | FetchErrorKind::BrowserUnavailable => {
-                            "Try a browser tier"
-                        }
+                        FetchErrorKind::Blocked => "Respect source access restrictions",
+                        FetchErrorKind::BrowserUnavailable => "Configure a compatible browser",
                         FetchErrorKind::Proxy => "Check proxy configuration",
                         _ => "Inspect request parameters and retry",
                     }

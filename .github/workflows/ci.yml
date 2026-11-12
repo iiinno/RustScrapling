@@ -1,11 +1,19 @@
 name: RustScrapling verification
+run-name: Verification ${{ github.event.pull_request.head.sha || github.sha }}
 
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   upstream-parity:
@@ -16,6 +24,7 @@ jobs:
       - name: Checkout RustScrapling
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - name: Checkout exact upstream Scrapling v0.5 source
         uses: actions/checkout@v4
@@ -35,11 +44,13 @@ jobs:
     name: Rust / Ubuntu 24.04
     runs-on: ubuntu-24.04
     timeout-minutes: 90
-    env:
-      CARGO_BUILD_JOBS: "2"
-      CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Record hosted runner and source identity
+        run: python3 -I -B tests/run_u3_ci.py --prepare --output "${RUNNER_TEMP}/rustscrapling-ci"
       - name: Install native dependencies
         run: |
           sudo apt-get update
@@ -47,13 +58,16 @@ jobs:
             pkg-config libxml2-dev nasm
       - name: Install Rust stable components
         run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy
-      - name: Check formatting
-        run: cargo +stable fmt --all -- --check
-      - name: Run workspace unit and integration tests
-        run: cargo +stable test --workspace --lib --tests --locked
-      - name: Clippy, including binaries and integration tests
-        run: cargo +stable clippy --workspace --all-targets --locked -- -D warnings
-      - name: Build CLI for real process tests
-        run: cargo +stable build -p rustscrapling-cli --locked
-      - name: Localhost-only end-to-end smoke test
-        run: python3 tests/e2e_local.py target/debug/rustscrapling
+      - name: Run fmt, workspace tests, strict Clippy, CLI build, U3 and callers
+        run: python3 -I -B tests/run_u3_ci.py --output "${RUNNER_TEMP}/rustscrapling-ci"
+      - name: Upload command and case evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustscrapling-ci-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/rustscrapling-ci/public/ci-receipt.json
+            ${{ runner.temp }}/rustscrapling-ci/public/u3-cli.json
+            ${{ runner.temp }}/rustscrapling-ci/public/*.log

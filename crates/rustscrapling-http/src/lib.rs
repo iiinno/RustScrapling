@@ -84,6 +84,11 @@ impl HttpError {
         }
     }
 
+    fn with_status(mut self, status: u16) -> Self {
+        self.status = Some(status);
+        self
+    }
+
     fn from_wreq(error: wreq::Error) -> Self {
         let description = error.to_string();
         let lower = description.to_ascii_lowercase();
@@ -114,7 +119,7 @@ impl HttpError {
             ErrorKind::Tls => "Check the server certificate and trusted CA bundle",
             ErrorKind::Proxy => "Verify proxy URL, credentials, and connectivity",
             ErrorKind::HttpStatus => "Inspect the HTTP status and response body",
-            ErrorKind::Blocked => "Retry with a different browser profile or --tier browser",
+            ErrorKind::Blocked => "Respect the source access restrictions",
             ErrorKind::BodyTooLarge => "Increase max_body_bytes or select a smaller resource",
             ErrorKind::UnsupportedProtocol => "Try HTTP/2 or HTTP/1.1",
             ErrorKind::Transport => "Check connectivity or retry with another proxy",
@@ -553,17 +558,20 @@ impl HttpClient {
                         return Err(HttpError::new(
                             ErrorKind::BodyTooLarge,
                             "response Content-Length exceeds configured limit",
-                        ));
+                        )
+                        .with_status(status));
                     }
                     let mut body = Vec::new();
                     let mut stream = response.bytes_stream();
                     while let Some(chunk) = stream.next().await {
-                        let chunk = chunk.map_err(HttpError::from_wreq)?;
+                        let chunk = chunk
+                            .map_err(|error| HttpError::from_wreq(error).with_status(status))?;
                         if chunk.len() > self.options.max_body_bytes.saturating_sub(body.len()) {
                             return Err(HttpError::new(
                                 ErrorKind::BodyTooLarge,
                                 "response exceeded configured body limit",
-                            ));
+                            )
+                            .with_status(status));
                         }
                         body.extend_from_slice(&chunk);
                     }

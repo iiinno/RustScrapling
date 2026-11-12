@@ -292,6 +292,28 @@ pub struct LocalStorageItem {
 const MAX_STATE_BYTES: usize = 4 * 1024 * 1024;
 const MAX_SCREENSHOT_BASE64_BYTES: usize = 8 * 1024 * 1024;
 
+struct OwnedProfile(PathBuf);
+
+impl OwnedProfile {
+    fn create(path: PathBuf) -> Result<Self, BrowserError> {
+        // Do not suspend between creating the directory and taking ownership.
+        std::fs::create_dir(&path).map_err(|error| BrowserError::Io(error.to_string()))?;
+        Ok(Self(path))
+    }
+}
+
+impl AsRef<Path> for OwnedProfile {
+    fn as_ref(&self) -> &Path {
+        &self.0
+    }
+}
+
+impl Drop for OwnedProfile {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
+}
+
 /// An independent browser connection with a single reusable default tab.
 /// Use `open_page` to create additional tabs in the same browser context.
 pub struct BrowserClient {
@@ -299,7 +321,7 @@ pub struct BrowserClient {
     endpoint: String,
     default_page: Mutex<Option<BrowserPage>>,
     owned_child: Option<Child>,
-    owned_profile: Option<PathBuf>,
+    owned_profile: Option<OwnedProfile>,
 }
 
 impl BrowserClient {
@@ -326,13 +348,11 @@ impl BrowserClient {
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_nanos();
-        let profile =
-            std::env::temp_dir().join(format!("rustscrapling-cdp-{}-{nanos}", std::process::id()));
-        tokio::fs::create_dir(&profile)
-            .await
-            .map_err(|e| BrowserError::Io(e.to_string()))?;
+        let profile = OwnedProfile::create(
+            std::env::temp_dir().join(format!("rustscrapling-cdp-{}-{nanos}", std::process::id())),
+        )?;
         let mut cmd = Command::new(&options.chrome_path);
-        cmd.arg(format!("--user-data-dir={}", profile.display()))
+        cmd.arg(format!("--user-data-dir={}", profile.as_ref().display()))
             .arg("--remote-debugging-port=0")
             .arg("--no-first-run")
             .arg("--no-default-browser-check")
@@ -353,7 +373,7 @@ impl BrowserClient {
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null());
         let mut child = cmd.spawn().map_err(|e| BrowserError::Io(e.to_string()))?;
-        let endpoint = match read_debugging_endpoint(&profile, &mut child).await {
+        let endpoint = match read_debugging_endpoint(profile.as_ref(), &mut child).await {
             Ok(endpoint) => endpoint,
             Err(error) => {
                 let _ = child.kill().await;

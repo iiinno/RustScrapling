@@ -9,6 +9,7 @@ rmcp = { version = "3.8", default-features = false, features = ["server", "trans
 serde_json.workspace = true
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "io-std"] }
 rustscrapling-http = { path = "../rustscrapling-http" }
+rustscrapling-fetch = { path = "../rustscrapling-fetch" }
 rustscrapling-browser = { path = "../rustscrapling-browser" }
 rustscrapling-extract = { path = "../rustscrapling-extract" }
 url.workspace = true
