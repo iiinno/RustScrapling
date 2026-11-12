@@ -8,7 +8,7 @@
 //! predicates on reverse axes see nodes nearest-first, as the spec
 //! requires.
 
-use crate::{syntax, Result, SelectError, Selection};
+use crate::{syntax, Result, SelectError, Selection, SelectionNode};
 use rustscrapling_dom::{Dom, NodeId, NodeKind};
 use std::collections::HashMap;
 
@@ -842,6 +842,18 @@ pub fn xpath(
     expr: &str,
     vars: &[(String, String)],
 ) -> Result<Vec<Selection>> {
+    Ok(select_nodes(dom, scope, expr, vars)?
+        .iter()
+        .map(|node| node.selection(dom))
+        .collect())
+}
+
+pub(crate) fn select_nodes(
+    dom: &Dom,
+    scope: NodeId,
+    expr: &str,
+    vars: &[(String, String)],
+) -> Result<Vec<SelectionNode>> {
     let toks = lex(expr)?;
     let mut parser = XParser { toks, pos: 0 };
     let ast = parser.parse_expr()?;
@@ -863,20 +875,10 @@ pub fn xpath(
         Value::Nodes(nodes) => Ok(nodes
             .iter()
             .map(|n| match n {
-                XNode::Node(id) => {
-                    let node = dom.node(*id);
-                    match node.kind {
-                        NodeKind::Text | NodeKind::Comment => Selection::Text(node.data.clone()),
-                        _ => Selection::Element(*id),
-                    }
-                }
-                XNode::Attr(owner, idx) => Selection::Text(
-                    dom.node(*owner)
-                        .attrs
-                        .get(*idx)
-                        .map(|(_, v)| v.clone())
-                        .unwrap_or_default(),
-                ),
+                XNode::Node(id) => SelectionNode::Node(*id),
+                XNode::Attr(owner, idx) => {
+                    SelectionNode::Attribute(*owner, dom.node(*owner).attrs[*idx].0.clone())
+                },
             })
             .collect()),
         other => Err(SelectError::Type(format!(

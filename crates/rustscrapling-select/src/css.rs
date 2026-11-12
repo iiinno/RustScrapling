@@ -13,7 +13,7 @@
 //! Unknown pseudo-classes are a syntax error, matching cssselect
 //! (for example `:hidden` raises SelectorSyntaxError in Scrapling).
 
-use crate::{syntax, Result, Selection};
+use crate::{syntax, Result, Selection, SelectionNode};
 use rustscrapling_dom::{Dom, NodeId, NodeKind};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -90,8 +90,19 @@ struct ComplexSelector {
 }
 
 pub fn css(dom: &Dom, scope: NodeId, selector: &str) -> Result<Vec<Selection>> {
+    Ok(select_nodes(dom, scope, selector)?
+        .iter()
+        .map(|node| node.selection(dom))
+        .collect())
+}
+
+pub(crate) fn select_nodes(
+    dom: &Dom,
+    scope: NodeId,
+    selector: &str,
+) -> Result<Vec<SelectionNode>> {
     let (groups, pseudo) = parse(selector)?;
-    let mut out: Vec<Selection> = Vec::new();
+    let mut out: Vec<SelectionNode> = Vec::new();
     let mut seen: Vec<NodeId> = Vec::new();
     for cand in candidates(dom, scope) {
         for g in &groups {
@@ -99,18 +110,17 @@ pub fn css(dom: &Dom, scope: NodeId, selector: &str) -> Result<Vec<Selection>> {
                 if !seen.contains(&cand) {
                     seen.push(cand);
                     match &pseudo {
-                        None => out.push(Selection::Element(cand)),
+                        None => out.push(SelectionNode::Node(cand)),
                         Some(Pseudo::Text) => {
                             for &child in dom.children(cand) {
-                                let n = dom.node(child);
-                                if n.kind == NodeKind::Text {
-                                    out.push(Selection::Text(n.data.clone()));
+                                if dom.node(child).kind == NodeKind::Text {
+                                    out.push(SelectionNode::Node(child));
                                 }
                             }
                         }
                         Some(Pseudo::Attr(name)) => {
-                            if let Some(v) = dom.attr(cand, name) {
-                                out.push(Selection::Text(v.to_string()));
+                            if dom.attr(cand, name).is_some() {
+                                out.push(SelectionNode::Attribute(cand, name.clone()));
                             }
                         }
                     }
@@ -423,7 +433,30 @@ impl<'a> Parser<'a> {
                     }
                     if c == b'\\' {
                         self.pos += 1;
-                        if let Some(n) = self.peek() {
+                        let start = self.pos;
+                        while self.pos - start < 6
+                            && self.peek().is_some_and(|byte| byte.is_ascii_hexdigit())
+                        {
+                            self.pos += 1;
+                        }
+                        if self.pos > start {
+                            let codepoint = self.src[start..self.pos].iter().fold(0, |value, byte| {
+                                value * 16 + (*byte as char).to_digit(16).unwrap()
+                            });
+                            out.push(if codepoint == 0 {
+                                '\u{fffd}'
+                            } else {
+                                char::from_u32(codepoint).unwrap_or('\u{fffd}')
+                            });
+                            // One whitespace terminates the escape; any following space is data.
+                            if matches!(self.peek(), Some(b' ' | b'\t' | b'\n' | b'\r' | b'\x0c')) {
+                                let terminator = self.peek().unwrap();
+                                self.pos += 1;
+                                if terminator == b'\r' && self.peek() == Some(b'\n') {
+                                    self.pos += 1;
+                                }
+                            }
+                        } else if let Some(n) = self.peek() {
                             out.push(n as char);
                             self.pos += 1;
                         }
