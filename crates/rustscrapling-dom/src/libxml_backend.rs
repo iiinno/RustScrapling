@@ -23,6 +23,24 @@ use libxml::bindings::{
 use libxml::parser::{Parser, ParserOptions};
 use std::ffi::CStr;
 
+/// HTML4 named entity lookup, also used by Python's `html.entities.name2codepoint`.
+pub fn html_entity_codepoint(name: &str) -> Option<u32> {
+    // Python's HTML4 name2codepoint table omits the XML-only apostrophe entity.
+    if name == "apos" {
+        return None;
+    }
+    let name = std::ffi::CString::new(name).ok()?;
+    // libxml2 owns the immutable entity table; the returned pointer is never freed here.
+    unsafe {
+        let entity = libxml::bindings::htmlEntityLookup(name.as_ptr().cast());
+        if entity.is_null() {
+            None
+        } else {
+            Some((*entity).value as u32)
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct CompatOptions {
     pub keep_comments: bool,

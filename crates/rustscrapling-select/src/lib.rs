@@ -5,8 +5,35 @@ use rustscrapling_dom::{Dom, NodeId};
 
 pub mod css;
 pub mod generate;
+pub mod public_selector;
 pub mod text_search;
 pub mod xpath;
+
+pub use public_selector::{
+    FindFilter, PublicSelectorError, RegexOptions, RegexPattern, Selector, TextOptions,
+};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum SelectionNode {
+    Node(NodeId),
+    Attribute(NodeId, String),
+}
+
+impl SelectionNode {
+    fn selection(&self, dom: &Dom) -> Selection {
+        match self {
+            Self::Node(id) => match dom.node(*id).kind {
+                rustscrapling_dom::NodeKind::Text | rustscrapling_dom::NodeKind::Comment => {
+                    Selection::Text(dom.node(*id).data.clone())
+                }
+                _ => Selection::Element(*id),
+            },
+            Self::Attribute(owner, name) => {
+                Selection::Text(dom.attr(*owner, name).unwrap_or_default().to_owned())
+            }
+        }
+    }
+}
 
 /// One selected item. CSS `::text` and `::attr(name)` and XPath
 /// `text()` / `@attr` results come back as plain strings, the way
