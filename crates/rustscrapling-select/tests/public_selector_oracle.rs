@@ -203,9 +203,20 @@ fn execute(dom: &Dom, case: &Value) -> Result<Value> {
 
 #[test]
 fn public_selector_matches_fixed_oracle() {
-    let fixture: Value = serde_json::from_str(include_str!("fixtures/public-selector.json")).unwrap();
-    let oracle_path = std::env::var("SELECTOR_PUBLIC_ORACLE")
-        .expect("run the pinned oracle driver first and set SELECTOR_PUBLIC_ORACLE");
+    compare_fixture(include_str!("fixtures/public-selector.json"),
+        "SELECTOR_PUBLIC_ORACLE", "SELECTOR_PUBLIC_RESULTS", "selector-public-use-coverage");
+}
+
+#[test]
+fn regex_end_anchor_matches_fixed_oracle() {
+    compare_fixture(include_str!("fixtures/regex-end-anchor.json"),
+        "SELECTOR_REGEX_ORACLE", "SELECTOR_REGEX_RESULTS", "selector-regex-end-anchor");
+}
+
+fn compare_fixture(fixture_text: &str, oracle_variable: &str, results_variable: &str, scope: &str) {
+    let fixture: Value = serde_json::from_str(fixture_text).unwrap();
+    let oracle_path = std::env::var(oracle_variable)
+        .expect("run the pinned oracle driver and set its result path");
     let oracle: Value = serde_json::from_str(&std::fs::read_to_string(oracle_path).unwrap()).unwrap();
     assert_eq!(oracle["upstream_revision"], fixture["upstream_revision"]);
     assert_eq!(oracle["cases"].as_array().unwrap().len(), fixture["cases"].as_array().unwrap().len());
@@ -223,17 +234,21 @@ fn public_selector_matches_fixed_oracle() {
             Err(error) => json!({"error": error}),
         };
         let passed = outcome == expected["outcome"];
-        if !passed { failures.push(case["id"].as_str().unwrap().to_owned()); }
+        let acceptance = case["acceptance"].as_bool().unwrap_or(true);
+        if acceptance && !passed { failures.push(case["id"].as_str().unwrap().to_owned()); }
         results.push(json!({
             "id": case["id"], "inventory_ids": case["inventory_ids"],
-            "outcome": outcome, "expected": expected["outcome"],
-            "status": if passed { "PASS" } else { "FAIL" },
+            "outcome": outcome, "expected": expected["outcome"], "acceptance": acceptance,
+            "status": match (acceptance, passed) {
+                (true, true) => "PASS", (true, false) => "FAIL",
+                (false, true) => "OBSERVED_EQUAL", (false, false) => "OBSERVED_DIFFERENCE",
+            },
         }));
     }
     let output = json!({"schema_version": 1, "upstream_revision": fixture["upstream_revision"],
-        "scope": "selector-public-use-coverage", "cases": results,
+        "scope": scope, "cases": results,
         "known_unsupported": fixture["known_unsupported"]});
-    let path = std::env::var("SELECTOR_PUBLIC_RESULTS").expect("SELECTOR_PUBLIC_RESULTS is required");
+    let path = std::env::var(results_variable).expect("case result path is required");
     use std::io::Write;
     let mut file = std::fs::OpenOptions::new().write(true).create_new(true).open(path).unwrap();
     file.write_all(serde_json::to_string_pretty(&output).unwrap().as_bytes()).unwrap();

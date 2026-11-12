@@ -316,11 +316,12 @@ impl<'dom> Selector<'dom> {
         Ok(self.find_all(filters, keywords)?.into_iter().next())
     }
 
-    /// Uses the crate's regex syntax. Unsupported Python constructs return a regex error.
+    /// Text patterns also accept Python's `\Z` end-of-text anchor.
+    /// Other syntax uses the regex crate; unsupported constructs return a regex error.
     /// Compiled expressions retain their flags even when `case_sensitive` is supplied.
     pub fn re(&self, pattern: RegexPattern<'_>, options: RegexOptions) -> Result<Vec<String>> {
         let regex = match pattern {
-            RegexPattern::Text(pattern) => Cow::Owned(RegexBuilder::new(pattern)
+            RegexPattern::Text(pattern) => Cow::Owned(RegexBuilder::new(&python_end_anchor(pattern))
                 .case_insensitive(!options.case_sensitive).build()?),
             RegexPattern::Compiled(pattern) => Cow::Borrowed(pattern),
         };
@@ -404,6 +405,27 @@ fn escape_css_string(value: &str) -> String {
 
 fn py_space(c: char) -> bool {
     c.is_whitespace() || ('\u{1c}'..='\u{1f}').contains(&c)
+}
+
+fn python_end_anchor(pattern: &str) -> Cow<'_, str> {
+    let mut chars = pattern.char_indices();
+    let mut output = String::new();
+    let mut copied = 0;
+    while let Some((_, character)) = chars.next() {
+        if character == '\\' {
+            if let Some((index, 'Z')) = chars.next() {
+                output.push_str(&pattern[copied..index]);
+                output.push('z');
+                copied = index + 1;
+            }
+        }
+    }
+    if copied == 0 {
+        Cow::Borrowed(pattern)
+    } else {
+        output.push_str(&pattern[copied..]);
+        Cow::Owned(output)
+    }
 }
 
 fn clean_regex_text(value: &str) -> String {
