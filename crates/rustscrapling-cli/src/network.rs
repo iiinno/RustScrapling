@@ -123,6 +123,7 @@ fn failure(kind: &str, description: &str, hint: &str, status: Option<u16>) -> St
         "parse" | "conversion_failed" => "decode_failed",
         "unsupported_protocol" => "unsupported_contract",
         "invalid_request"
+        | "unauthorized"
         | "unavailable"
         | "transport"
         | "stage_timeout"
@@ -599,7 +600,7 @@ mod tests {
             &"\0".repeat(10000),
             Some(502),
         );
-        assert!(output.len() + 1 <= 8192);
+        assert!(output.len() < 8192);
         let value: Value = serde_json::from_str(&output).unwrap();
         assert_eq!(value["error"]["kind"], "transport");
         assert_eq!(value["error"]["status"], 502);

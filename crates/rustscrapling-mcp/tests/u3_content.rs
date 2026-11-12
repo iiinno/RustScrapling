@@ -6,7 +6,8 @@ use std::time::{Duration, Instant};
 
 #[tokio::test]
 async fn http_callers_share_strict_decoding_and_content_acceptance() {
-    let cases: &[(u16, &str, &[u8], Result<&str, &str>)] = &[
+    type Case<'a> = (u16, &'a str, &'a [u8], Result<&'a str, &'a str>);
+    let cases: &[Case<'_>] = &[
         (
             200,
             "text/plain; charset=Shift_JIS",
@@ -46,8 +47,12 @@ async fn http_callers_share_strict_decoding_and_content_acceptance() {
             while served < 2 && Instant::now() < deadline {
                 match listener.accept() {
                     Ok((mut socket, _)) => {
-                        socket.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
-                        socket.set_write_timeout(Some(Duration::from_secs(2))).unwrap();
+                        socket
+                            .set_read_timeout(Some(Duration::from_secs(2)))
+                            .unwrap();
+                        socket
+                            .set_write_timeout(Some(Duration::from_secs(2)))
+                            .unwrap();
                         let mut request = Vec::new();
                         let mut buffer = [0; 1024];
                         while !request.windows(4).any(|part| part == b"\r\n\r\n") {
@@ -70,7 +75,10 @@ async fn http_callers_share_strict_decoding_and_content_acceptance() {
         let opened = server
             .execute_tool(
                 "open_request_session",
-                json!({"session_id": "u3-content"}).as_object().unwrap().clone(),
+                json!({"session_id": "u3-content"})
+                    .as_object()
+                    .unwrap()
+                    .clone(),
             )
             .await
             .unwrap();
@@ -80,7 +88,10 @@ async fn http_callers_share_strict_decoding_and_content_acceptance() {
             if tool == "session_make_request" {
                 args["session_id"] = json!("u3-content");
             }
-            let result = server.execute_tool(tool, args.as_object().unwrap().clone()).await.unwrap();
+            let result = server
+                .execute_tool(tool, args.as_object().unwrap().clone())
+                .await
+                .unwrap();
             match expected {
                 Ok(text) => {
                     assert_eq!(result.is_error, Some(false), "{result:?}");
@@ -90,7 +101,9 @@ async fn http_callers_share_strict_decoding_and_content_acceptance() {
                 }
                 Err(kind) => {
                     assert_eq!(result.is_error, Some(true), "{result:?}");
-                    assert!(serde_json::to_string(&result.content).unwrap().contains(kind));
+                    assert!(serde_json::to_string(&result.content)
+                        .unwrap()
+                        .contains(kind));
                 }
             }
         }
