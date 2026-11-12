@@ -170,10 +170,23 @@ async fn browser_get_and_session_if_chrome_is_available() {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let url = format!("http://{}/page", listener.local_addr().unwrap());
     let server = std::thread::spawn(move || {
-        for _ in 0..2 {
+        let mut pages_served = 0;
+        while pages_served < 2 {
             let (mut stream, _) = listener.accept().unwrap();
             let mut buf = [0; 2048];
-            let _ = stream.read(&mut buf).unwrap();
+            let size = stream.read(&mut buf).unwrap();
+            if size == 0 {
+                continue;
+            }
+            if !buf[..size].starts_with(b"GET /page ") {
+                // Closing the first browser may cancel an auxiliary request.
+                let _ = write!(
+                    stream,
+                    "HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                );
+                continue;
+            }
+            pages_served += 1;
             let body="<html><body><main><h1>Browser MCP</h1><p>CDP session success.</p></main></body></html>";
             write!(stream,"HTTP/1.1 200 OK\r\nContent-Length: {}\r\nContent-Type: text/html\r\nSet-Cookie: mcp_session=private; Path=/; SameSite=Lax\r\nConnection: close\r\n\r\n{body}",body.len()).unwrap();
         }
