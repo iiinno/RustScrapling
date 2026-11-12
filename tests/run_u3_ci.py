@@ -63,9 +63,12 @@ def public_diagnostic(text):
         if len(line) > 8192:
             lines.append("[OMITTED OVERSIZE DIAGNOSTIC LINE]")
             continue
+        loopback_error = line.startswith("owned loopback browser_fetch ")
         for pattern, replacement in DIAGNOSTIC_REDACTIONS[1:]:
+            if loopback_error and replacement == "[REDACTED STRING]":
+                continue
             line = re.sub(pattern, replacement, line)
-        lines.append(line)
+        lines.append(line[:512] if loopback_error else line)
     return "\n".join(lines)
 
 

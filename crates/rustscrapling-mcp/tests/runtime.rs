@@ -204,6 +204,18 @@ async fn browser_get_and_session_if_chrome_is_available() {
         json!({"session_id":"browser-test","url":url}),
     )
     .await;
+    if fetched.is_error == Some(true) {
+        let text = serde_json::to_value(&fetched.content[0]).unwrap();
+        let error: Value = serde_json::from_str(text["text"].as_str().unwrap()).unwrap();
+        eprintln!(
+            "owned loopback browser_fetch kind={} reason={}",
+            error["error"]["kind"].as_str().unwrap(),
+            error["error"]["message"]
+                .as_str()
+                .unwrap()
+                .replace(['\r', '\n'], " ")
+        );
+    }
     assert_eq!(fetched.is_error, Some(false), "{fetched:?}");
     let extracted = call(
         &handler,
