@@ -1,0 +1,30 @@
+name: Windows build
+
+# Windows 版 rustscrapling.exe を作る。research-stack を Windows で動かすときの配布物。
+on:
+  push:
+    branches: [ci/windows-build]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2022
+    env:
+      VCPKGRS_TRIPLET: x64-windows-static-md
+      VCPKG_ROOT: C:\vcpkg
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install libxml2 (static) and NASM
+        run: |
+          vcpkg install libxml2:x64-windows-static-md
+          choco install nasm -y --no-progress
+          echo "C:\Program Files\NASM" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+      - name: Build CLI
+        run: cargo build --release -p rustscrapling-cli --locked
+      - name: Smoke test
+        run: target\release\rustscrapling.exe --help
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rustscrapling-x86_64-pc-windows-msvc
+          path: target/release/rustscrapling.exe
+          if-no-files-found: error
